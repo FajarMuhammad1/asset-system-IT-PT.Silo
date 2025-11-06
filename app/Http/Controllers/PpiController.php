@@ -9,7 +9,9 @@ class PpiController extends Controller
     public function index()
     {
         $data = array(
-            'title' => 'PPI Request'
+            'title' => 'PPI Request',
+            'menuPpiAdmin' => 'Active',
+            
         );
         return view('admin.ppi.index', $data);
     }

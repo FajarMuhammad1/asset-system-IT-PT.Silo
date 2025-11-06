@@ -1,0 +1,103 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+
+
+class TeamController extends Controller
+{
+    public function index()
+    {
+        $data = array(
+            'title' => 'Team IT',
+            'menuteam' => 'active',
+            'team' => User::get(),
+            
+        );
+        return view('admin.team.index', $data);
+    }
+
+//FUNGSI MENAMBAH DATA
+ public function create()
+{
+    return view('admin.team.create', [
+        'title' => 'Tambah Team'
+    ]);
+}
+
+public function store(Request $request)
+{
+    $request->validate([
+        'nik' => 'required|unique:users',
+        'nama' => 'required',
+        'email' => 'required|email|unique:users',
+        'jabatan' => 'required',
+        'role' => 'required',
+        'status' => 'required',
+        'password' => 'required|min:5|confirmed',
+        
+    ]);
+
+    User::create([
+        'nik' => $request->nik,
+        'nama' => $request->nama,
+        'email' => $request->email,
+        'jabatan' => $request->jabatan,
+        'role' => $request->role,
+        'status' => $request->status,
+        'password' => Hash::make($request->password), // ✅ sudah diganti
+    ]);
+
+    return redirect()->route('team')->with('success', 'Team berhasil ditambahkan');
+}
+//END FUNGSI MENAMBAH DATA
+
+//FUNGSI EDIT DATA
+public function edit($id)
+{
+    $team = User::findOrFail($id);
+    return view('admin.team.edit', [
+        'title' => 'Edit Data Team',
+        'team' => $team
+    ]);
+}
+
+public function update(Request $request, $id)
+{
+    $request->validate([
+        'nik' => 'required|unique:users,nik,' . $id,
+        'nama' => 'required',
+        'email' => 'required|email|unique:users,email,' . $id,
+        'jabatan' => 'required',
+        'role' => 'required',
+        'status' => 'required',
+    ]);
+
+    $team = User::findOrFail($id);
+
+    $team->update([
+        'nik' => $request->nik,
+        'nama' => $request->nama,
+        'email' => $request->email,
+        'jabatan' => $request->jabatan,
+        'role' => $request->role,
+        'status' => $request->status,
+    ]);
+
+    return redirect()->route('team')->with('success', 'Data Team berhasil diupdate');
+}
+//END FUNGSI EDIT DATA
+
+//FUNGSI HAPUS DATA
+public function destroy($id)
+{
+    $team = User::findOrFail($id);
+    $team->delete();
+
+    return redirect()->route('team')->with('success', 'Data berhasil dihapus.');
+}
+//END FUNGSI HAPUS DATA
+}
