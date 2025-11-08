@@ -11,13 +11,9 @@ class TeamController extends Controller
 {
     public function index()
     {
-        $data = array(
-            'title' => 'Team IT',
-            'menuteam' => 'active',
-            'team' => User::get(),
-            
-        );
-        return view('admin.team.index', $data);
+       $team = User::whereIn('role', ['SuperAdmin', 'Admin', 'Staff'])->get();
+return view('admin.team.index', compact('team'))->with('title', 'Team IT');
+
     }
 
 //FUNGSI MENAMBAH DATA

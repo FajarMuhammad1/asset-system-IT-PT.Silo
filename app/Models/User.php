@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 
 class User extends Authenticatable
 {
+    
     use HasFactory, Notifiable;
 
     /**
@@ -17,15 +18,17 @@ class User extends Authenticatable
      *
      * @var array<int, string>
      */
-    protected $fillable = [
-         'nik',
-        'nama',
-        'email',
-        'jabatan',
-        'role',
-        'status',
-        'password',
-    ];
+  protected $fillable = [
+    'nik',
+    'nama',
+    'email',
+    'jabatan',
+    'departemen',  // tambahkan
+    'role',
+    'status',
+    'password',
+];
+
 
     /**
      * The attributes that should be hidden for serialization.

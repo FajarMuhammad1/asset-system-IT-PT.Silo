@@ -45,6 +45,19 @@
 
 <!-- Page level custom scripts -->
 <script src="{{ asset('sbadmin2/js/demo/datatables-demo.js') }}"></script>
+<!-- Tambahkan di bawah sebelum </body> -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('#kategori').select2({
+            theme: 'classic',
+            width: '100%',
+            allowClear: true
+        });
+    });
+</script>
 
 
      @if(session('success'))

@@ -4,7 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PpiController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TeamController;
+use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SuratJalanController;
 
 
 Route::get('/', function () {
@@ -30,7 +32,7 @@ Route::get ('ppi',[PpiController::class, 'index'])-> name('ppi');
 //team
 Route::get ('team',[TeamController::class, 'index'])-> name('team');
 
-//CRUD
+//CRUD Team
 
 //Create
 Route::get('/team/create', [TeamController::class, 'create'])->name('team.create');
@@ -42,5 +44,11 @@ Route::put('/team/update/{id}', [TeamController::class, 'update'])->name('team.u
 
 //Delete
 Route::delete('/team/destroy/{id}', [TeamController::class, 'destroy'])->name('team.destroy');
+
+//surat jalan
+Route::resource('surat-jalan', SuratJalanController::class);
+
+//Pengguna
+Route::resource('pengguna', PenggunaController::class);
 
 });

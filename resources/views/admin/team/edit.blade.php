@@ -2,7 +2,7 @@
 @section('content')
 
 <h3 class="h3 mb-4 text-gray-800">
-    <i class="fas fa-edit mr-2"></i> {{ $title }}
+    <i class="fas fa-user-edit mr-2"></i> {{ $title }}
 </h3>
 
 <div class="card">

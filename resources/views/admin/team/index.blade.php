@@ -119,12 +119,12 @@
                                 <i class="fas fa-edit"></i>
                             </a>
 
-                           <a href="#" 
-   class="btn btn-sm btn-danger btn-delete" 
-   data-id="{{ $item->id }}" 
-   data-nama="{{ $item->nama }}">
-   <i class="fas fa-trash"></i>
-</a>
+                            <a href="#" 
+                             class="btn btn-sm btn-danger btn-delete" 
+                             data-id="{{ $item->id }}" 
+                             data-nama="{{ $item->nama }}">
+                             <i class="fas fa-trash"></i>
+                            </a>
 
 
                             <form id="delete-form-{{ $item->id }}" action="{{ route('team.destroy', $item->id) }}" method="POST" class="d-none">

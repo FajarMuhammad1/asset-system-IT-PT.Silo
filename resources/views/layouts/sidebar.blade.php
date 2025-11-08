@@ -39,28 +39,43 @@
                     
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="charts.html">
+                <a class="nav-link" href="{{route('surat-jalan.index')}}">
                     <i class="fas fa-envelope "></i>
                     <span>Surat Jalan</span></a>
             </li>
+
+
+                <li class="nav-item{{ $menuPengguna ?? '' }}">
+                <a class="nav-link" href="{{ route('pengguna.index') }}">
+                    <i class="fas fa-fw fa-user"></i>
+                    <span>Pengguna/User</span></a>
+            </li>
+
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('team') }}">
                     <i class="fas fa-fw fa-users"></i>
                     <span>Team IT</span></a>
             </li>
+        
             <!-- Divider -->
              <hr class="sidebar-divider">
 
             <!-- Heading -->
             <div class="sidebar-heading">
-                Task Report
+                Task/Heldesk
             </div>
 
             <!-- Nav Item - Tables -->
             <li class="nav-item {{ $menuTeam ?? '' }}">
                 <a class="nav-link" href="tables.html">
+                    <i class="fas fa-fw fa-desktop"></i>
+                    <span>Helpdesk Monitoring</span></a>
+            </li>
+            <!-- Nav Item - Tables -->
+            <li class="nav-item {{ $menuTeam ?? '' }}">
+                <a class="nav-link" href="tables.html">
                     <i class="fas fa-fw fa-tasks"></i>
-                    <span>Task</span></a>
+                    <span>Task Info</span></a>
             </li>
            
 
