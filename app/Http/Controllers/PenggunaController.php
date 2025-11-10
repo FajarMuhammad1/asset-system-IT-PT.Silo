@@ -10,41 +10,36 @@ class PenggunaController extends Controller
 {
     public function index()
     {
-        // Ambil semua pengguna dengan role 'Pengguna'
         $penggunas = User::where('role', 'Pengguna')->get();
-        $data = array(
-            'menuPengguna' => 'active',
-        );
         return view('admin.pengguna.index', compact('penggunas'))
                ->with('title', 'Pengguna');
     }
 
     public function create()
     {
-        return view('admin.pengguna.create', [
-            'title' => 'Tambah Pengguna'
-        ]);
+        return view('admin.pengguna.create')
+               ->with('title', 'Tambah Pengguna');
     }
 
     public function store(Request $request)
     {
-        // Validasi input
         $request->validate([
             'nik'        => 'required|string|max:50|unique:users,nik',
             'nama'       => 'required|string|max:255',
             'email'      => 'required|email|unique:users,email',
             'jabatan'    => 'required|string|max:255',
             'departemen' => 'required|string|max:255',
+            'perusahaan' => 'nullable|string|max:255',
             'password'   => 'required|min:6|confirmed',
         ]);
 
-        // Simpan data pengguna
         User::create([
             'nik'        => $request->nik,
             'nama'       => $request->nama,
             'email'      => $request->email,
             'jabatan'    => $request->jabatan,
             'departemen' => $request->departemen,
+            'perusahaan' => $request->perusahaan,
             'password'   => Hash::make($request->password),
             'role'       => 'Pengguna',
         ]);
@@ -56,33 +51,31 @@ class PenggunaController extends Controller
     public function edit($id)
     {
         $pengguna = User::findOrFail($id);
-        return view('admin.pengguna.edit', [
-            'pengguna' => $pengguna,
-            'title'    => 'Edit Pengguna'
-        ]);
+        return view('admin.pengguna.edit', compact('pengguna'))
+               ->with('title', 'Edit Pengguna');
     }
 
     public function update(Request $request, $id)
     {
         $pengguna = User::findOrFail($id);
 
-        // Validasi input
         $request->validate([
             'nik'        => 'required|string|max:50|unique:users,nik,' . $pengguna->id,
             'nama'       => 'required|string|max:255',
             'email'      => 'required|email|unique:users,email,' . $pengguna->id,
             'jabatan'    => 'required|string|max:255',
             'departemen' => 'required|string|max:255',
+            'perusahaan' => 'nullable|string|max:255',
             'password'   => 'nullable|min:6|confirmed',
         ]);
 
-        // Update data pengguna
         $pengguna->update([
             'nik'        => $request->nik,
             'nama'       => $request->nama,
             'email'      => $request->email,
             'jabatan'    => $request->jabatan,
             'departemen' => $request->departemen,
+            'perusahaan' => $request->perusahaan,
             'password'   => $request->password ? Hash::make($request->password) : $pengguna->password,
         ]);
 

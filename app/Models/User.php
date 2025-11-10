@@ -24,6 +24,7 @@ class User extends Authenticatable
     'email',
     'jabatan',
     'departemen',  // tambahkan
+    'perusahaan',  // tambahkan
     'role',
     'status',
     'password',

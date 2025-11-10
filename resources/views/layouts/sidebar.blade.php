@@ -44,6 +44,21 @@
                     <span>Surat Jalan</span></a>
             </li>
 
+           <li class="nav-item">
+    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseBarang" aria-expanded="true" aria-controls="collapseBarang">
+        <i class="fas fa-boxes"></i>
+        <span>Data Barang</span>
+    </a>
+    <div id="collapseBarang" class="collapse" aria-labelledby="headingBarang" data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <h6 class="collapse-header">Data Barang:</h6>
+            <a class="collapse-item" href="{{ route('barangmasuk.index') }}">Barang Masuk</a>
+            <a class="collapse-item" href="#">Barang Keluar</a>
+        </div>
+    </div>
+</li>
+
+
 
                 <li class="nav-item{{ $menuPengguna ?? '' }}">
                 <a class="nav-link" href="{{ route('pengguna.index') }}">

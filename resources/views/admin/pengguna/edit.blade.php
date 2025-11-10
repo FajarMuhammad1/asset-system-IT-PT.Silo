@@ -40,7 +40,13 @@
             </div>
 
             <div class="form-group">
-                <label for="password">Password <small>(kosongkan jika tidak ingin diubah)</small></label>
+                <label for="perusahaan">Perusahaan</label>
+                <input type="text" name="perusahaan" id="perusahaan" class="form-control @error('perusahaan') is-invalid @enderror" value="{{ old('perusahaan', $pengguna->perusahaan) }}">
+                @error('perusahaan') <small class="text-danger">{{ $message }}</small> @enderror
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password <small class="text-muted">(Kosongkan jika tidak ingin diubah)</small></label>
                 <input type="password" name="password" id="password" class="form-control @error('password') is-invalid @enderror">
                 @error('password') <small class="text-danger">{{ $message }}</small> @enderror
             </div>
@@ -50,7 +56,7 @@
                 <input type="password" name="password_confirmation" id="password_confirmation" class="form-control">
             </div>
 
-            <button type="submit" class="btn btn-primary mt-3">Update</button>
+            <button type="submit" class="btn btn-primary mt-3">Perbarui</button>
             <a href="{{ route('pengguna.index') }}" class="btn btn-secondary mt-3">Batal</a>
         </form>
     </div>

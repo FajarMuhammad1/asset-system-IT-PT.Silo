@@ -7,6 +7,7 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SuratJalanController;
+use App\Http\Controllers\BarangMasukController;
 
 
 Route::get('/', function () {
@@ -50,5 +51,8 @@ Route::resource('surat-jalan', SuratJalanController::class);
 
 //Pengguna
 Route::resource('pengguna', PenggunaController::class);
+
+//barang masuk
+  Route::resource('barangmasuk', BarangMasukController::class);
 
 });
