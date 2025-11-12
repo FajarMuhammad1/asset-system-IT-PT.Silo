@@ -8,6 +8,8 @@ use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SuratJalanController;
 use App\Http\Controllers\BarangMasukController;
+use App\Http\Controllers\BarangKeluarController;
+use App\Http\Controllers\MasterBarangController;
 
 
 Route::get('/', function () {
@@ -54,5 +56,29 @@ Route::resource('pengguna', PenggunaController::class);
 
 //barang masuk
   Route::resource('barangmasuk', BarangMasukController::class);
+
+//master barang
+Route::resource('master-barang', MasterBarangController::class);
+
+// --- ROUTE BUAT BARANG KELUAR (BAST) ---
+Route::prefix('barangkeluar')->name('barangkeluar.')->group(function () {
+    
+    // 1. Tampilkan Form BAST
+    // URL: /barang-keluar/create
+    Route::get('/create', [BarangKeluarController::class, 'create'])->name('create');
+    
+    // 2. Proses Simpan Form BAST
+    // URL: /barang-keluar/store (Method: POST)
+    Route::post('/store', [BarangKeluarController::class, 'store'])->name('store');
+    
+    // 3. FUNGSI AJAX (Buat "Otomatis Ke Isi")
+    // URL: /barang-keluar/get-asset-details
+    Route::get('/get-asset-details', [BarangKeluarController::class, 'getAssetDetails'])->name('getAssetDetails');
+    Route::get('/', [BarangKeluarController::class, 'index'])->name('index');
+    
+    // 5. Halaman "Detail 1 BAST" (Buat liat TTD & Foto)
+    Route::get('/show/{id}', [BarangKeluarController::class, 'show'])->name('show');
+
+});
 
 });

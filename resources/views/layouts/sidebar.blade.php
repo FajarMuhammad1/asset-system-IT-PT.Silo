@@ -33,7 +33,7 @@
             <li class="nav-item">
                <a class="nav-link collapsed" href="{{ route('ppi') }}">
                     <i class="fas fa-fw fa-clipboard"></i>
-                    <span>PPI Request</span>
+                    <span>PPI Monitoring</span>
                 </a>
               
                     
@@ -51,9 +51,28 @@
     </a>
     <div id="collapseBarang" class="collapse" aria-labelledby="headingBarang" data-parent="#accordionSidebar">
         <div class="bg-white py-2 collapse-inner rounded">
-            <h6 class="collapse-header">Data Barang:</h6>
-            <a class="collapse-item" href="{{ route('barangmasuk.index') }}">Barang Masuk</a>
-            <a class="collapse-item" href="#">Barang Keluar</a>
+            
+            {{-- Judul header dari contoh lo --}}
+            <h6 class="collapse-header">Data Barang:</h6> 
+            
+            {{-- Link baru yang udah bener --}}
+            <a class="collapse-item" href="{{ route('master-barang.index') }}">
+                Master Barang 
+            </a>
+            <a class="collapse-item" href="{{ route('barangmasuk.create') }}">
+                Input Barang Masuk
+            </a>
+            <a class="collapse-item" href="{{ route('barangmasuk.index') }}">
+                Daftar Asset
+            </a>
+            <a class="collapse-item" href="{{ route('barangkeluar.create') }}"> 
+                Serah Terima (Keluar)
+            </a>
+            <a class="collapse-item" href="{{ route('barangkeluar.index') }}"> 
+                Riwayat Serah Terima
+            </a>
+        
+            
         </div>
     </div>
 </li>

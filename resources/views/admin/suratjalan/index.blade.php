@@ -26,51 +26,42 @@
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-bordered table-striped" id="dataTable" width="100%" cellspacing="0">
-               <thead class="bg-primary text-white text-center">
-    <tr>
-        <th rowspan="2">No</th>
-        <th rowspan="2">ID SJ</th>
-        <th rowspan="2">No SJ</th>
-        <th rowspan="2">No PPI</th>
-        <th rowspan="2">No PO</th>
-        <th rowspan="2">Kategori</th>
-        <th rowspan="2">Merk</th>
-        <th rowspan="2">Model</th>
-        <th rowspan="2">Spesifikasi</th>
-        <th colspan="2">Kode & Serial</th>
-        <th rowspan="2">Qty</th>
-        <th rowspan="2">Jenis SJ</th>
-        <th rowspan="2">Tanggal Input</th>
-        <th rowspan="2">BAST</th>
-        <th rowspan="2">File</th>
-        <th rowspan="2">Keterangan</th>
-        <th rowspan="2"><i class="fas fa-cog"></i></th>
-    </tr>
-    <tr>
-        <th>Serial Number</th>
-        <th>Kode Asset</th>
-    </tr>
-</thead>
-
-
+                <thead class="bg-primary text-white text-center">
+                    <tr>
+                        <th>No</th>
+                        <th>Id SJ </th> {{-- KOLOM BARU LO --}}
+                        <th>No SJ</th>
+                        <th>No PPI</th>
+                        <th>No PO</th>
+                        <th>Tanggal Input</th>
+                        <th>Jenis SJ</th>
+                        <th> BAST</th>
+                        <th>Jml. Item</th>
+                        <th>File</th>
+                        <th><i class="fas fa-cog"></i></th>
+                    </tr>
+                </thead>
                 <tbody>
                     @foreach ($suratJalan as $item)
                     <tr>
                         <td class="text-center">{{ $loop->iteration }}</td>
-                        <td>{{ $item->id_sj }}</td>
+                        <td>{{ $item->id_suratjalan }}</td> {{-- DATA KOLOM BARU LO --}}
                         <td>{{ $item->no_sj }}</td>
                         <td>{{ $item->no_ppi }}</td>
                         <td>{{ $item->no_po }}</td>
-                        <td>{{ $item->kategori }}</td>
-                        <td>{{ $item->merk }}</td>
-                        <td>{{ $item->model }}</td>
-                        <td>{{ $item->spesifikasi }}</td>
-                        <td>{{ $item->serial_number }}</td>
-                        <td>{{ $item->kode_asset }}</td>
-                        <td class="text-center">{{ $item->qty }}</td>
+                        <td>{{ \Carbon\Carbon::parse($item->tanggal_input)->format('d-m-Y') }}</td>
                         <td>{{ $item->jenis_surat_jalan }}</td>
-                        <td>{{ $item->tanggal_input }}</td>
-                        <td>{{ $item->bast }}</td>
+                        
+                        <td class="text-center">
+                            @if($item->is_bast_submitted)
+                                <span class="badge badge-success">Sudah</span>
+                            @else
+                                <span class="badge badge-danger">Belum</span>
+                            @endif
+                        </td>
+                        
+                        <td class="text-center">{{ $item->details_count }} Jenis</td>
+                        
                         <td class="text-center">
                             @if($item->file)
                                 <a href="{{ asset('storage/' . $item->file) }}" target="_blank" class="btn btn-sm btn-info">Lihat</a>
@@ -78,17 +69,22 @@
                                 -
                             @endif
                         </td>
-                        <td>{{ $item->keterangan ?? '-' }}</td>
                         <td class="text-center">
-                            <a href="{{ route('surat-jalan.update', $item->id_sj) }}" class="btn btn-sm btn-warning mb-1">
+                            <a href="{{ route('surat-jalan.show', $item->id_sj) }}" class="btn btn-sm btn-success mb-1" title="Lihat Detail">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{{ route('surat-jalan.edit', $item->id_sj) }}" class="btn btn-sm btn-warning mb-1" title="Edit">
                                 <i class="fas fa-edit"></i>
                             </a>
-
-                            <button type="button" class="btn btn-sm btn-danger btn-delete" data-id="{{ $item->id_sj }}" data-no="{{ $item->no_sj }}">
+                            <button type="button" class="btn btn-sm btn-danger btn-delete mb-1" 
+                                    data-id="{{ $item->id_sj }}" 
+                                    data-no="{{ $item->no_sj }}" 
+                                    title="Hapus">
                                 <i class="fas fa-trash"></i>
                             </button>
-
-                            <form id="delete-form-{{ $item->id_sj }}" action="{{ route('surat-jalan.destroy', $item->id_sj) }}" method="POST" class="d-none">
+                            <form id="delete-form-{{ $item->id_sj }}" 
+                                    action="{{ route('surat-jalan.destroy', $item->id_sj) }}" 
+                                    method="POST" class="d-none">
                                 @csrf
                                 @method('DELETE')
                             </form>
@@ -96,7 +92,6 @@
                     </tr>
                     @endforeach
                 </tbody>
-
             </table>
         </div>
     </div>
@@ -105,14 +100,13 @@
 @endsection
 
 @push('scripts')
+{{-- (Kode SweetAlert lo udah bener, biarin aja) --}}
 <script>
     const deleteButtons = document.querySelectorAll('.btn-delete');
-
     deleteButtons.forEach(button => {
         button.addEventListener('click', function () {
             const id = this.dataset.id;
             const noSJ = this.dataset.no;
-
             Swal.fire({
                 title: "Yakin ingin menghapus?",
                 text: "Surat Jalan No: " + noSJ + " akan dihapus permanen.",
@@ -127,7 +121,6 @@
                     document.getElementById('delete-form-' + id).submit();
                 }
             });
-
         });
     });
 </script>

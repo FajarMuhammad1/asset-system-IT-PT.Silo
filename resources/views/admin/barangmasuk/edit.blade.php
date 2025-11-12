@@ -1,84 +1,195 @@
-@extends('layouts.app')
+@extends('layouts.app') {{-- (Sesuaikan layout lo) --}}
 
 @section('content')
-<div class="container-fluid">
-    <h4 class="mb-4 text-gray-800"><i class="fas fa-pencil-alt mr-2"></i>{{$title}}</h4>
+<h1 class="h3 mb-4 text-gray-800">
+    <i class="fas fa-edit mr-2"></i> {{ $title }}
+</h1>
 
-    <div class="card shadow mb-4">
-        <div class="card-body">
-            <form action="{{ route('barangmasuk.update', $barangMasuk->id) }}" method="POST">
-                @csrf
-                @method('PUT')
+@if (session('success'))
+    <div class="alert alert-success">{{ session('success') }}</div>
+@endif
 
-                <div class="form-group">
-                    <label>No Surat Jalan</label>
-                    <input type="text" name="no_sj" value="{{ $barangMasuk->no_sj }}" class="form-control" required>
+<div class="card shadow mb-4">
+    <div class="card-body">
+        
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <strong>Terjadi kesalahan!</strong> Cek kembali input Anda.
+            </div>
+        @endif
+
+        <form action="{{ route('barangmasuk.update', $barangMasuk->id) }}" method="POST">
+            @csrf
+            @method('PUT')
+            
+            <p class="text-muted">Form ini digunakan untuk mengedit detail aset fisik yang sudah ada.</p>
+            <hr>
+            
+            <h5 class="font-weight-bold">1. Informasi Dokumen (Pilih SJ)</h5>
+            <div class="row">
+                {{-- DROPDOWN SURAT JALAN --}}
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label>Pilih ID Surat Jalan</label>
+                        <select name="surat_jalan_id" id="surat_jalan_id" class="form-control" required>
+                            <option value="">-- Pilih ID Surat Jalan --</option>
+                            @foreach ($daftarSuratJalan as $sj)
+                                <option value="{{ $sj->id_sj }}" {{-- Value TETAP id_sj (PK) --}}
+                                        data-no_ppi="{{ $sj->no_ppi }}"
+                                        data-no_po="{{ $sj->no_po }}"
+                                        {{-- LOGIKA 'selected' BUAT NAMPILIN DATA LAMA --}}
+                                        {{ old('surat_jalan_id', $barangMasuk->surat_jalan_id) == $sj->id_sj ? 'selected' : '' }}>
+                                    {{-- Teks Tampil digabung (SESUAI MAU LO) --}}
+                                    <strong>{{ $sj->id_suratjalan }}</strong> (No. SJ: {{ $sj->no_sj }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label>No PPI</label>
-                    <input type="text" name="no_ppi" value="{{ $barangMasuk->no_ppi }}" class="form-control" required>
-                </div>
+                {{-- FIELD 'Nomor SJ (Otomatis)' DIHAPUS --}}
 
-                <div class="form-group">
-                    <label>No PO</label>
-                    <input type="text" name="no_po" value="{{ $barangMasuk->no_po }}" class="form-control" required>
+                {{-- FIELD OTOMATIS: Nomor PPI (col-md-6) --}}
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Nomor PPI (Otomatis)</label>
+                        <input type="text" id="no_ppi_auto" class="form-control" readonly style="background-color: #e9ecef;">
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label>Nama Barang</label>
-                    <input type="text" name="nama_barang" value="{{ $barangMasuk->nama_barang }}" class="form-control" required>
+                
+                {{-- FIELD OTOMATIS: Nomor PO (col-md-6) --}}
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Nomor PO (Otomatis)</label>
+                        <input type="text" id="no_po_auto" class="form-control" readonly style="background-color: #e9ecef;">
+                    </div>
                 </div>
+            </div>
 
-                <div class="form-group">
-                    <label>Kategori</label>
-                    @php
-                        $selectedKategori = explode(',', $barangMasuk->kategori);
-                    @endphp
-                    <select id="kategori" name="kategori[]" class="form-control select2" multiple="multiple" required>
-                        @foreach ([
-                            'Access Point','Analogue Telephone','Antena Radio Rig','Camera','Consumable','CCTV','Dongle',
-                            'Extender','Fingerprint','GPS','Headset','Hard Disk Eksternal','IP Telephone','Keyboard',
-                            'Laptop','Modem','Monitor','Mouse','Mobile Phone','PC Desktop','Power Supply','Proyektor',
-                            'Print Server','Printer','Radio HT','Radio Rig','Router','Scanner','SSD Eksternal','Stavolt',
-                            'Switch Hub','UPS','TV','Webcam'
-                        ] as $kategori)
-                            <option value="{{ $kategori }}" {{ in_array($kategori, $selectedKategori) ? 'selected' : '' }}>
-                                {{ $kategori }}
-                            </option>
-                        @endforeach
-                    </select>
+            <hr>
+            <h5 class="font-weight-bold">2. Informasi Aset (Pilih Katalog)</h5>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label>Pilih Jenis Barang (dari Katalog)</label>
+                        <select name="master_barang_id" id="master_barang_id" class="form-control" required>
+                            <option value="">-- Pilih Barang --</option>
+                            @foreach ($daftarMasterBarang as $item)
+                                <option value="{{ $item->id }}" 
+                                        data-kategori="{{ $item->kategori }}"
+                                        data-merk="{{ $item->merk }}"
+                                        data-spek="{{ $item->spesifikasi }}"
+                                        {{-- LOGIKA 'selected' BUAT NAMPILIN DATA LAMA --}}
+                                        {{ old('master_barang_id', $barangMasuk->master_barang_id) == $item->id ? 'selected' : '' }}>
+                                    {{ $item->nama_barang }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label>Jumlah</label>
-                    <input type="number" name="jumlah" value="{{ $barangMasuk->jumlah }}" class="form-control" required>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Kategori (Otomatis)</label>
+                        <input type="text" id="kategori_auto" class="form-control" readonly style="background-color: #e9ecef;">
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label>Tanggal Masuk</label>
-                    <input type="date" name="tanggal_masuk" value="{{ $barangMasuk->tanggal_masuk }}" class="form-control" required>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Merk (Otomatis)</label>
+                        <input type="text" id="merk_auto" class="form-control" readonly style="background-color: #e9ecef;">
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label>Keterangan</label>
-                    <textarea name="keterangan" class="form-control" rows="3">{{ $barangMasuk->keterangan }}</textarea>
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label>Spesifikasi (Otomatis)</label>
+                        <textarea id="spek_auto" class="form-control" readonly rows="2" style="background-color: #e9ecef;"></textarea>
+                    </div>
                 </div>
+            </div>
+            
+            <hr>
+            <h5 class="font-weight-bold text-primary">3. Input Fisik (Wajib Manual)</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Serial Number (SN)</label>
+                        <input type="text" name="serial_number" class="form-control" value="{{ old('serial_number', $barangMasuk->serial_number) }}" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Kode Aset (Tempel Stiker)</label>
+                        <input type="text" name="kode_asset" class="form-control" value="{{ old('kode_asset', $barangMasuk->kode_asset) }}" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Tanggal Masuk (Aset Diterima)</label>
+                        <input type="date" name="tanggal_masuk" class="form-control" value="{{ old('tanggal_masuk', $barangMasuk->tanggal_masuk) }}" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                     <div class="form-group">
+                        <label>Keterangan (Opsional)</label>
+                        <textarea name="keterangan" class="form-control" rows="1">{{ old('keterangan', $barangMasuk->keterangan) }}</textarea>
+                    </div>
+                </div>
+            </div>
 
-                <button type="submit" class="btn btn-success">Update</button>
-                <a href="{{ route('barangmasuk.index') }}" class="btn btn-secondary">Batal</a>
-            </form>
-        </div>
+            <hr>
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-save mr-2"></i> Update Aset Ini
+            </button>
+            <a href="{{ route('barangmasuk.index') }}" class="btn btn-secondary btn-lg">Batal</a>
+        </form>
+
     </div>
 </div>
+@endsection
 
 @push('scripts')
+{{-- Asumsi lo pake jQuery --}}
 <script>
-    $(document).ready(function() {
-        $('.select2').select2({
-            width: '100%'
-        });
-    });
+$(document).ready(function() {
+    
+    // --- FUNGSI UNTUK OTOMATIS KEISI NO PPI & PO ---
+    function fillSjData() {
+        var selectedOption = $('#surat_jalan_id').find('option:selected');
+        
+        if (selectedOption.val() === "") {
+            // SCRIPT 'no_sj_auto' DIHAPUS DARI SINI
+            $('#no_ppi_auto').val('');
+            $('#no_po_auto').val('');
+        } else {
+            // SCRIPT 'no_sj_auto' DIHAPUS DARI SINI
+            $('#no_ppi_auto').val(selectedOption.data('no_ppi'));
+            $('#no_po_auto').val(selectedOption.data('no_po'));
+        }
+    }
+
+    // --- FUNGSI UNTUK OTOMATIS KEISI KATALOG ---
+    function fillMasterData() {
+        var selectedOption = $('#master_barang_id').find('option:selected');
+        
+        if (selectedOption.val() === "") {
+            $('#kategori_auto').val('');
+            $('#merk_auto').val('');
+            $('#spek_auto').val('');
+        } else {
+            $('#kategori_auto').val(selectedOption.data('kategori'));
+            $('#merk_auto').val(selectedOption.data('merk'));
+            $('#spek_auto').val(selectedOption.data('spek'));
+        }
+    }
+
+    // Panggil fungsi pas dropdown-nya ganti
+    $('#surat_jalan_id').on('change', fillSjData);
+    $('#master_barang_id').on('change', fillMasterData);
+
+    // Panggil fungsi pas halaman baru di-load (buat nanganin 'old()' value)
+    fillSjData();
+    fillMasterData();
+
+});
 </script>
 @endpush
-@endsection
