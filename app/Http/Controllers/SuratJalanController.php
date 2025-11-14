@@ -5,9 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\SuratJalan;
 use App\Models\SuratJalanDetail;
 use App\Models\MasterBarang;
+use App\Models\Ppi; // <--- [PENTING] Tambahin Model PPI
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage; // <-- Panggil Storage buat hapus file
+use Illuminate\Support\Facades\Storage;
 
 class SuratJalanController extends Controller
 {
@@ -16,11 +17,10 @@ class SuratJalanController extends Controller
      */
     public function index()
     {
-        // 'withCount' buat ngitung ada berapa JENIS barang di dalemnya
         $suratJalan = SuratJalan::withCount('details')->latest()->get(); 
         
         return view('admin.suratjalan.index', compact('suratJalan'))
-                             ->with('title', 'Surat Jalan');
+                            ->with('title', 'Surat Jalan');
     }
 
     /**
@@ -28,13 +28,19 @@ class SuratJalanController extends Controller
      */
     public function create()
     {
-        // Lo HARUS ngirim 'master_barang' (Katalog) ke view,
-        // buat ngisi dropdown "Pilih Barang"
+        // 1. Ambil Master Barang (Buat detail items barang keluar)
         $masterBarangList = MasterBarang::all(); 
         
+        // 2. [BARU] Ambil Data PPI buat Dropdown
+        // Cuma ambil yang statusnya udah di-acc admin (disetujui/selesai)
+        $daftarPpi = Ppi::whereIn('status', ['disetujui', 'selesai'])
+                        ->orderBy('created_at', 'desc')
+                        ->get();
+
         return view('admin.suratjalan.create', [
             'title' => 'Tambah Surat Jalan',
-            'masterBarangList' => $masterBarangList // <-- KIRIM KE VIEW
+            'masterBarangList' => $masterBarangList,
+            'daftarPpi' => $daftarPpi // <--- Kirim data PPI ke view
         ]);
     }
 
@@ -43,21 +49,17 @@ class SuratJalanController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validasi HEADER (Info Dokumen)
+        // 1. Validasi HEADER
         $request->validate([
-            // no_sj tidak unik lagi, tapi harus diisi
             'no_sj' => 'required',
-            
-            // KOLOM BARU LO: id_suratjalan (WAJIB UNIK)
             'id_suratjalan' => 'required|string|unique:surat_jalan,id_suratjalan', 
-            
-            'no_ppi' => 'required',
+            'no_ppi' => 'required', // Ini bakal nerima value dari Dropdown
             'no_po' => 'required',
             'tanggal_input' => 'required|date',
             'jenis_surat_jalan' => 'required',
             'file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:4096',
             
-            // 2. Validasi DETAILS (List Barangnya)
+            // 2. Validasi DETAILS
             'items' => 'required|array|min:1',
             'items.*.master_barang_id' => 'required|exists:master_barang,id',
             'items.*.qty' => 'required|integer|min:1',
@@ -66,27 +68,25 @@ class SuratJalanController extends Controller
         DB::beginTransaction(); 
 
         try {
-            // Ambil data header (TAMBAH 'id_suratjalan')
+            // Ambil data header
             $dataHeader = $request->only([
                 'no_sj', 'id_suratjalan', 'no_ppi', 'no_po', 'tanggal_input', 'jenis_surat_jalan', 'keterangan'
             ]);
             
-            // Kalo checkbox dicentang, $request->has() = true
             $dataHeader['is_bast_submitted'] = $request->has('is_bast_submitted');
 
             // Handle file upload
             if ($request->hasFile('file')) {
-                // Simpan file di storage/app/public/surat-jalan
                 $dataHeader['file'] = $request->file('file')->store('surat-jalan', 'public');
             }
 
-            // 1. SIMPAN HEADER DULU
+            // 1. SIMPAN HEADER
             $suratJalan = SuratJalan::create($dataHeader);
 
-            // 2. SIMPAN DETAILNYA (LOOPING)
+            // 2. SIMPAN DETAIL
             foreach ($request->items as $item) {
                 SuratJalanDetail::create([
-                    'surat_jalan_id' => $suratJalan->id_sj, // <-- Link ke header (PK int)
+                    'surat_jalan_id' => $suratJalan->id_sj,
                     'master_barang_id' => $item['master_barang_id'],
                     'qty' => $item['qty'],
                 ]);
@@ -99,7 +99,6 @@ class SuratJalanController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack(); 
-            // Tambah logika hapus file kalo transaction gagal
             if (isset($dataHeader['file'])) {
                 Storage::disk('public')->delete($dataHeader['file']);
             }
@@ -112,11 +111,10 @@ class SuratJalanController extends Controller
      */
     public function show(string $id_sj)
     {
-        // Ambil SJ + List Detailnya + Info Master Barangnya
         $suratJalan = SuratJalan::with('details.masterBarang')->findOrFail($id_sj);
         
         return view('admin.suratjalan.show', compact('suratJalan'))
-                             ->with('title', 'Detail Surat Jalan');
+                            ->with('title', 'Detail Surat Jalan');
     }
 
     /**
@@ -125,12 +123,18 @@ class SuratJalanController extends Controller
     public function edit(string $id_sj)
     {
         $suratJalan = SuratJalan::with('details.masterBarang')->findOrFail($id_sj);
-        $masterBarangList = MasterBarang::all(); // (Daftar barang buat nambah)
+        $masterBarangList = MasterBarang::all();
         
+        // [BARU] Ambil PPI juga buat jaga-jaga kalo mau edit No PPI
+        $daftarPpi = Ppi::whereIn('status', ['disetujui', 'selesai'])
+                        ->orderBy('created_at', 'desc')
+                        ->get();
+
         return view('admin.suratjalan.edit', [
             'title' => 'Edit Surat Jalan',
             'suratJalan' => $suratJalan,
-            'masterBarangList' => $masterBarangList
+            'masterBarangList' => $masterBarangList,
+            'daftarPpi' => $daftarPpi // <--- Kirim juga ke Edit
         ]);
     }
 
@@ -142,19 +146,13 @@ class SuratJalanController extends Controller
         $suratJalan = SuratJalan::findOrFail($id_sj);
 
         $request->validate([
-            // no_sj tidak unik lagi
             'no_sj' => 'required',
-            
-            // KOLOM BARU: id_suratjalan (WAJIB UNIK, kecualo ID sendiri)
             'id_suratjalan' => 'required|string|unique:surat_jalan,id_suratjalan,' . $id_sj . ',id_sj',
-            
             'no_ppi' => 'required',
             'no_po' => 'required',
             'tanggal_input' => 'required|date',
             'jenis_surat_jalan' => 'required',
             'file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:4096',
-            
-            // Update details sebaiknya di-handle di route/method lain (misal: PUT /details/{id})
         ]);
         
         $dataHeader = $request->only([
@@ -164,12 +162,9 @@ class SuratJalanController extends Controller
         $dataHeader['is_bast_submitted'] = $request->has('is_bast_submitted');
 
         if ($request->hasFile('file')) {
-            // --- LOGIKA HAPUS FILE LAMA (PENTING) ---
             if ($suratJalan->file) {
                 Storage::disk('public')->delete($suratJalan->file);
             }
-            // ----------------------------------------
-            
             $dataHeader['file'] = $request->file('file')->store('surat-jalan', 'public');
         }
 
@@ -180,19 +175,17 @@ class SuratJalanController extends Controller
     }
 
     /**
-     * Hapus SJ (dan detailnya otomatis kehapus)
+     * Hapus SJ
      */
     public function destroy(string $id_sj)
     {
         $suratJalan = SuratJalan::findOrFail($id_sj);
         
-        // --- LOGIKA HAPUS FILE YANG DISIMPAN ---
         if ($suratJalan->file) {
             Storage::disk('public')->delete($suratJalan->file);
         }
-        // ----------------------------------------
         
-        $suratJalan->delete(); // 'onDelete(cascade)' di migrasi bakal ngehapus 'details'-nya
+        $suratJalan->delete();
 
         return redirect()->route('surat-jalan.index')
                          ->with('success', 'Surat Jalan berhasil dihapus.');

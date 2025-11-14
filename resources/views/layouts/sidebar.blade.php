@@ -58,7 +58,7 @@
         </div>
 
         <li class="nav-item">
-            <a class="nav-link" href="{{ route('ppi') }}">
+            <a class="nav-link" href="{{ route('admin.ppi.index') }}">
                 <i class="fas fa-fw fa-clipboard"></i>
                 <span>PPI Monitoring</span>
             </a>
@@ -155,7 +155,7 @@
 
         {{-- Gw tambahin $menuPPI buat persiapan kalo nanti lo bikin controller PPI --}}
         <li class="nav-item {{ $menuPPI ?? '' }}">
-            <a class="nav-link" href="#"> {{-- Nanti ganti route('pengguna.permintaan.create') --}}
+            <a class="nav-link" href="{{ route('pengguna.ppi.create') }}"> {{-- Nanti ganti route('pengguna.permintaan.create') --}}
                 <i class="fas fa-fw fa-clipboard"></i>
                 <span>PPI Request</span>
             </a>

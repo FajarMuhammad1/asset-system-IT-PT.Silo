@@ -1,17 +1,31 @@
 <?php
+
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\PpiController;
+
+// KONTROLER UTAMA
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PenggunaDashboardController;
+use App\Http\Controllers\StaffDashboardController;
+
+// KONTROLER ADMIN
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\PenggunaController;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SuratJalanController;
 use App\Http\Controllers\BarangMasukController;
 use App\Http\Controllers\BarangKeluarController;
 use App\Http\Controllers\MasterBarangController;
-use App\Http\Controllers\PenggunaDashboardController;
-use App\Http\Controllers\StaffDashboardController;
+use App\Http\Controllers\Admin\PpiAdminController; // <-- Ini yang bener
 
+// KONTROLER PENGGUNA
+use App\Http\Controllers\Pengguna\PpiController as PenggunaPpiController;
+
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/', function () {
     return view('welcome');
@@ -26,13 +40,17 @@ Route::get ('logout',[AuthController::class, 'logout'])-> name('logout');
 
 
 // --- KAVLING 1: SUPER ADMIN & ADMIN ---
-// Cuma 'super admin' dan 'admin' yang boleh masuk
+// (Middleware udah pake huruf kecil)
 Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
     
-    // --- SEMUA RUTE ADMIN LO MASUK SINI ---
-    Route::get ('ppi',[PpiController::class, 'index'])-> name('ppi'); 
+    // === ROUTE MONITORING PPI (BARU) ===
+    Route::prefix('Admin')->name('admin.')->group(function() {
+        Route::get('/ppi-monitoring', [PpiAdminController::class, 'index'])->name('ppi.index');
+        Route::get('/ppi-monitoring/{id}', [PpiAdminController::class, 'show'])->name('ppi.show');
+        Route::put('/ppi-monitoring/{id}/update', [PpiAdminController::class, 'updateStatus'])->name('ppi.update');
+    });
     
     //Team
     Route::get ('team',[TeamController::class, 'index'])-> name('team');
@@ -67,15 +85,20 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
 
 
 // --- KAVLING 2: PENGGUNA ---
+// (Middleware & prefix udah pake huruf kecil)
 Route::middleware(['checkLogin:Pengguna'])->prefix('Pengguna')->name('pengguna.')->group(function () {
     
     Route::get('/dashboard', [PenggunaDashboardController::class, 'index'])->name('dashboard');
-    // Nanti rute 'permintaan.create' (PPI) lo taruh sini
+    
+    // Rute buat fitur PPI Pengguna
+    Route::get('/ppi/create', [PenggunaPpiController::class, 'create'])->name('ppi.create');
+    Route::post('/ppi/store', [PenggunaPpiController::class, 'store'])->name('ppi.store');
 
 });
 
 
 // --- KAVLING 3: STAFF ---
+// (Middleware & prefix udah pake huruf kecil)
 Route::middleware(['checkLogin:Staff'])->prefix('Staff')->name('staff.')->group(function () {
     
     Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('dashboard');
