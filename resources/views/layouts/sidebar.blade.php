@@ -1,6 +1,6 @@
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
-    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
+    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('admin.dashboard') }}">
         <div class="sidebar-brand-icon rotate-n-0">
             <i class="fas fa-cogs"></i>
         </div>
@@ -153,7 +153,7 @@
             Formulir
         </div>
 
-        {{-- Gw tambahin $menuPPI buat persiapan kalo nanti lo bikin controller PPI --}}
+      
         <li class="nav-item {{ $menuPPI ?? '' }}">
             <a class="nav-link" href="{{ route('pengguna.ppi.create') }}"> {{-- Nanti ganti route('pengguna.permintaan.create') --}}
                 <i class="fas fa-fw fa-clipboard"></i>

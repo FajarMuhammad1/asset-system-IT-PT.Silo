@@ -1,6 +1,6 @@
-@extends('layouts.app') {{-- Pastikan nama layout lo bener --}}
+@extends('layouts.app') 
 
-@section('title', $title) {{-- Nangkep $title dari controller --}}
+@section('title', $title) 
 
 @section('content')
 <div class="container-fluid">
