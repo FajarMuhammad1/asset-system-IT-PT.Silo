@@ -8,7 +8,7 @@
 <div class="card shadow mb-4">
     <div class="card-header">
         <a href="{{ route('barangkeluar.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus mr-2"></i> Buat BAST (Serah Terima) Baru
+            <i class="fas fa-plus mr-2"></i> Buat (Serah Terima) Baru
         </a>
     </div>
     <div class="card-body">

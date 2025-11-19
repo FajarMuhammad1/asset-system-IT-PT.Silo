@@ -1,4 +1,6 @@
-@extends('layouts.app') {{-- (Sesuaikan layout lo) --}}
+@extends('layouts.app') 
+
+@section('title', $title)
 
 @section('content')
 <h1 class="h3 mb-4 text-gray-800">
@@ -23,7 +25,6 @@
             </div>
         @endif
 
-        {{-- PENTING: enctype="multipart/form-data" buat upload file --}}
         <form action="{{ route('barangkeluar.store') }}" method="POST" id="bast-form" enctype="multipart/form-data">
             @csrf
             
@@ -34,7 +35,9 @@
             <h5 class="font-weight-bold">1. Pilih Aset (Scan/Pilih Kode Aset)</h5>
             <div class="form-group">
                 <label>Pilih Aset (Hanya yang berstatus 'Stok')</label>
-                <select name="barang_masuk_id" id="aset_select" class="form-control" required>
+                
+                {{-- [UPDATE] Tambah class 'select2-search' --}}
+                <select name="barang_masuk_id" id="aset_select" class="form-control select2-search" required>
                     <option value="">-- Pilih Aset (Kode Aset / SN) --</option>
                     @foreach ($asetStok as $aset)
                         <option value="{{ $aset->id }}" {{ old('barang_masuk_id') == $aset->id ? 'selected' : '' }}>
@@ -52,7 +55,7 @@
             </div>
 
             {{-- BAGIAN 2: DETAIL ASET (OTOMATIS) --}}
-            <div id="detail-aset-container" style="display: none;"> {{-- Sembunyiin awalnya --}}
+            <div id="detail-aset-container" style="display: none;">
                 <h5 class="font-weight-bold mt-4">2. Detail Aset (Otomatis)</h5>
                 <div class="row">
                     <div class="col-md-4"><div class="form-group"><label>No. SJ</label><input type="text" id="no_sj" class="form-control" readonly></div></div>
@@ -68,13 +71,15 @@
             </div>
 
             {{-- BAGIAN 3: INFORMASI SERAH TERIMA --}}
-            <div id="serah-terima-container" style="display: none;"> {{-- Sembunyiin awalnya --}}
+            <div id="serah-terima-container" style="display: none;">
                 <h5 class="font-weight-bold mt-4">3. Informasi Serah Terima</h5>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
                             <label>Serahkan Kepada (User Pemegang)</label>
-                            <select name="user_pemegang_id" class="form-control" required>
+                            
+                            {{-- [UPDATE] Tambah class 'select2-search' --}}
+                            <select name="user_pemegang_id" id="user_select" class="form-control select2-search" required>
                                 <option value="">-- Pilih User --</option>
                                 @foreach ($users as $user)
                                     <option value="{{ $user->id }}" {{ old('user_pemegang_id') == $user->id ? 'selected' : '' }}>
@@ -155,6 +160,10 @@
     .signature-pad {
         cursor: crosshair;
     }
+    /* [UPDATE] Bikin Select2 gak bentrok sama TTD pad */
+    .select2-container {
+        z-index: 1050; 
+    }
 </style>
 @endsection
 
@@ -162,9 +171,16 @@
 {{-- Library TTD (SignaturePad) --}}
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 
-{{-- Asumsi lo pake jQuery --}}
 <script>
 $(document).ready(function() {
+    
+    // [UPDATE] INISIALISASI SELECT2
+    $('.select2-search').select2({
+        placeholder: function(){
+            $(this).data('placeholder');
+        },
+        width: '100%'
+    });
     
     // --- SETUP SIGNATURE PAD ---
     const canvasPenerima = document.getElementById('ttd-penerima');
@@ -191,24 +207,21 @@ $(document).ready(function() {
         let spinner = $('#loading-spinner');
         let errorMsg = $('#aset-error');
         
-        // Reset dulu
         detailContainer.hide();
         serahTerimaContainer.hide();
         errorMsg.hide();
 
         if (asetId === "") {
-            return; // Kalo milih "--Pilih--", gak ngapa-ngapain
+            return;
         }
 
         spinner.show();
 
-        // Panggil route AJAX
         $.ajax({
             url: "{{ route('barangkeluar.getAssetDetails') }}",
             type: 'GET',
             data: { id: asetId },
             success: function(data) {
-                // Isi semua field read-only
                 $('#no_sj').val(data.no_sj);
                 $('#no_ppi').val(data.no_ppi);
                 $('#no_po').val(data.no_po);
@@ -219,13 +232,11 @@ $(document).ready(function() {
                 $('#serial_number').val(data.serial_number);
                 $('#kode_asset').val(data.kode_asset);
 
-                // Tampilkan form
                 spinner.hide();
                 detailContainer.slideDown();
                 serahTerimaContainer.slideDown();
             },
             error: function(xhr) {
-                // Kalo error (misal: Aset gak 'Stok' atau gak ketemu)
                 let error = xhr.responseJSON.error || "Gagal mengambil data aset.";
                 errorMsg.text('Error: ' + error).show();
                 spinner.hide();
@@ -235,24 +246,20 @@ $(document).ready(function() {
 
     // --- LOGIKA SUBMIT FORM (NYIMPEN TTD) ---
     $('#bast-form').submit(function(e) {
-        // Cek TTD Penerima
         if (signaturePadPenerima.isEmpty()) {
             alert("Tanda Tangan Penerima tidak boleh kosong!");
-            e.preventDefault(); // Stop form submit
+            e.preventDefault(); 
             return;
         }
-        // Cek TTD Petugas
         if (signaturePadPetugas.isEmpty()) {
             alert("Tanda Tangan Petugas IT tidak boleh kosong!");
-            e.preventDefault(); // Stop form submit
+            e.preventDefault(); 
             return;
         }
 
-        // Kalo udah diisi, ambil data Base64-nya
         let ttdPenerimaData = signaturePadPenerima.toDataURL('image/png');
         let ttdPetugasData = signaturePadPetugas.toDataURL('image/png');
 
-        // Masukin ke hidden input biar ke-kirim
         $('#input-ttd-penerima').val(ttdPenerimaData);
         $('#input-ttd-petugas').val(ttdPetugasData);
     });

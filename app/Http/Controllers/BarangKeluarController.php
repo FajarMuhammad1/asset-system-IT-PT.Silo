@@ -27,7 +27,7 @@ class BarangKeluarController extends Controller
         $users = User::orderBy('nama')->get(); // 'nama' diubah jadi 'name'
 
         return view('admin.barangkeluar.create', [
-            'title' => 'Form BAST (Barang Keluar)',
+            'title' => 'Form  (Barang Keluar)',
             'asetStok' => $asetStok,
             'users' => $users,
         ]);
@@ -69,7 +69,7 @@ class BarangKeluarController extends Controller
 
 
     /**
-     * Simpan data BAST (Serah Terima)
+     * Simpan data  (Serah Terima)
      */
     public function store(Request $request)
     {
@@ -143,7 +143,7 @@ class BarangKeluarController extends Controller
     // --- INI FUNGSI BARU YANG DITAMBAHKAN ---
 
     /**
-     * Tampilkan list/riwayat semua BAST (Serah Terima)
+     * Tampilkan list/riwayat semua  (Serah Terima)
      */
     public function index()
     {
@@ -156,7 +156,7 @@ class BarangKeluarController extends Controller
         ])->latest()->get();
 
         return view('admin.barangkeluar.index', [
-            'title' => 'Riwayat Serah Terima Aset (BAST)',
+            'title' => 'Riwayat Serah Terima Aset ',
             'logs' => $logs
         ]);
     }
@@ -170,7 +170,7 @@ class BarangKeluarController extends Controller
                              ->findOrFail($id);
 
         return view('admin.barangkeluar.show', [
-            'title' => 'Detail BAST',
+            'title' => 'Detail',
             'log' => $log
         ]);
     }

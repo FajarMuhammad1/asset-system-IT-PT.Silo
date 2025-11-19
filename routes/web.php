@@ -4,20 +4,22 @@ use Illuminate\Support\Facades\Route;
 
 // KONTROLER UTAMA
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\PenggunaDashboardController;
-use App\Http\Controllers\StaffDashboardController;
+use App\Http\Controllers\TeamController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PenggunaController;
 
 // KONTROLER ADMIN
-use App\Http\Controllers\TeamController;
-use App\Http\Controllers\PenggunaController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SuratJalanController;
 use App\Http\Controllers\BarangMasukController;
 use App\Http\Controllers\BarangKeluarController;
 use App\Http\Controllers\MasterBarangController;
-use App\Http\Controllers\Admin\PpiAdminController; // <-- Ini yang bener
+use App\Http\Controllers\StaffDashboardController;
+use App\Http\Controllers\Admin\ActivityLogController;
 
 // KONTROLER PENGGUNA
+use App\Http\Controllers\PenggunaDashboardController;
+use App\Http\Controllers\Admin\PpiAdminController; // 
 use App\Http\Controllers\Pengguna\PpiController as PenggunaPpiController;
 
 
@@ -37,6 +39,16 @@ Route::post ('login',[AuthController::class, 'loginProses'])-> name('loginProses
 
 //logout
 Route::get ('logout',[AuthController::class, 'logout'])-> name('logout');
+
+// Profile & Password Routes
+Route::middleware(['auth'])->group(function () {
+    
+    // Settings Profile & Password
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+
+});
 
 
 // --- KAVLING 1: SUPER ADMIN & ADMIN ---
@@ -80,6 +92,14 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
         Route::get('/', [BarangKeluarController::class, 'index'])->name('index');
         Route::get('/show/{id}', [BarangKeluarController::class, 'show'])->name('show');
     });
+
+    // ... 
+    Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
+    // ...
+    // --- ROUTE BUAT ACTIVITY LOG ---
+        Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity.log');
+    // ...
+});
 
 });
 

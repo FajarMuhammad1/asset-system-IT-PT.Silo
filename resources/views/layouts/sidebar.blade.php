@@ -135,8 +135,14 @@
 
         <li class="nav-item">
             <a class="nav-link" href="#"> {{-- GANTI # NANTI --}}
-                <i class="fas fa-fw fa-tasks"></i>
+                <i class="fas fa-info"></i>
                 <span>Task Info</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#"> {{-- GANTI # NANTI --}}
+                <i class="fas fa-fw fa-tasks"></i>
+                <span>Task Report</span>
             </a>
         </li>
 
