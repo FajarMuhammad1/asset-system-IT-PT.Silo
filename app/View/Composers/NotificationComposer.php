@@ -3,7 +3,7 @@
 namespace App\View\Composers;
 
 use Illuminate\View\View;
-use App\Models\Ppi; // Panggil Model PPI
+use App\Models\Ppi;
 use Illuminate\Support\Facades\Auth;
 
 class NotificationComposer
@@ -13,30 +13,55 @@ class NotificationComposer
      */
     public function compose(View $view)
     {
-        // Kita cuma mau nampilin notif ini ke Admin
-        // Pake strtolower biar aman
-        $user = Auth::user();
-        if (Auth::check() && in_array(strtolower($user->role), ['admin', 'super admin'])) {
-            
-            // 1. Ambil 5 PPI terbaru yang statusnya 'pending'
-            $pendingPpis = Ppi::with('user') // Ambil data user-nya sekalian
-                              ->where('status', 'pending')
-                              ->latest() // Urutkan dari yg terbaru
-                              ->take(5) // Ambil 5 aja
-                              ->get();
-            
-            // 2. Hitung TOTAL PPI yang pending (buat angka di lonceng)
-            $pendingPpiCount = Ppi::where('status', 'pending')->count();
+        // Default values (biar gak error undefined variable)
+        $notifCount = 0;
+        $notifItems = collect();
+        $notifLabel = 'Notifikasi';
 
-            // 3. Kirim data ini ke View
-            $view->with('pendingPpiCount', $pendingPpiCount);
-            $view->with('recentPendingPpis', $pendingPpis);
-        
-        } else {
+        if (Auth::check()) {
+            $user = Auth::user();
+            $role = strtolower($user->role);
+
+            // --- LOGIKA 1: ADMIN (Melihat Request Baru) ---
+            if (in_array($role, ['admin', 'super admin', 'superadmin'])) {
+                
+                // Ambil PPI yang masih Pending
+                $notifItems = Ppi::with('user')
+                                 ->where('status', 'pending')
+                                 ->latest()
+                                 ->take(5)
+                                 ->get();
+                
+                $notifCount = Ppi::where('status', 'pending')->count();
+                $notifLabel = 'Permintaan Masuk (Pending)';
+            } 
             
-            // Kalo yg login bukan Admin, kasih data kosong
-            $view->with('pendingPpiCount', 0);
-            $view->with('recentPendingPpis', collect()); // Kasih koleksi kosong
+            // --- LOGIKA 2: PENGGUNA (Melihat Status Update) ---
+            elseif ($role == 'pengguna') {
+                
+                // Ambil PPI milik user ini yang statusnya SUDAH DIPROSES (Bukan Pending)
+                // Kita urutkan berdasarkan 'updated_at' (kapan terakhir diubah admin)
+                $notifItems = Ppi::where('user_id', $user->id)
+                                 ->where('status', '!=', 'pending') 
+                                 ->latest('updated_at') 
+                                 ->take(5)
+                                 ->get();
+                
+                // Hitung jumlah notifikasi (bisa disesuaikan logikanya, misal yg belum dibaca)
+                // Disini kita hitung total yg sudah diproses sebagai notifikasi
+                $notifCount = $notifItems->count();
+                $notifLabel = 'Status Pengajuan Anda';
+            }
         }
+
+        // Kirim data ke View dengan nama variabel yang seragam
+        // (Pastikan di layouts/app.blade.php menggunakan variabel ini)
+        $view->with('notifCount', $notifCount);
+        $view->with('notifItems', $notifItems);
+        $view->with('notifLabel', $notifLabel);
+        
+        // Fallback untuk variabel lama (jika layout belum diupdate total)
+        $view->with('pendingPpiCount', $notifCount);
+        $view->with('recentPendingPpis', $notifItems);
     }
 }

@@ -113,6 +113,7 @@ Route::middleware(['checkLogin:Pengguna'])->prefix('Pengguna')->name('pengguna.'
     // Rute buat fitur PPI Pengguna
     Route::get('/ppi/create', [PenggunaPpiController::class, 'create'])->name('ppi.create');
     Route::post('/ppi/store', [PenggunaPpiController::class, 'store'])->name('ppi.store');
+    Route::get('/ppi/riwayat', [PenggunaPpiController::class, 'index'])->name('ppi.index'); 
 
 });
 

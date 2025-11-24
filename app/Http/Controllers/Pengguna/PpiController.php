@@ -1,11 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\Pengguna; // <-- Pastiin namespacenya bener
+namespace App\Http\Controllers\Pengguna;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Ppi; // <-- Panggil Model Ppi
-use App\Models\User; // <-- Panggil Model User (buat relasi)
+use App\Models\Ppi;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
@@ -18,16 +17,16 @@ class PpiController extends Controller
     {
         return view('pengguna.ppi.create', [
             'title' => 'Buat Pengajuan PPI',
-            'menuPPI' => 'active' // Biar sidebar nyala
+            'menuPPI' => 'active'
         ]);
     }
 
     /**
-     * Simpan PPI baru + Generate Nomor Otomatis.
+     * Simpan PPI baru + Generate Nomor Otomatis (Format Romawi & Perusahaan).
      */
     public function store(Request $request)
     {
-        // 1. Validasi Input (Tetap sama)
+        // 1. Validasi Input
         $request->validate([
             'perangkat'    => 'required|string|max:255',
             'ba_kerusakan' => 'required|string',
@@ -35,83 +34,70 @@ class PpiController extends Controller
             'file_ppi'     => 'nullable|mimes:pdf,jpg,jpeg,png|max:2048', // Max 2MB
         ]);
 
-        // 2. LOGIKA GENERATE NOMOR (VERSI BARU: ROMAWI + KODE DINAMIS)
+        // 2. LOGIKA GENERATE NOMOR PPI (DINAMIS)
         
         $user = Auth::user();
         $now = Carbon::now();
-        $tahun = $now->format('Y'); // Hasil: "2025"
+        $tahun = $now->format('Y'); 
+        $bulanAngka = $now->format('n'); // 1-12
         
-        // --- BAGIAN A: Dapetin Bulan Romawi ---
-        $bulanAngka = $now->format('n'); // Angka bulan (Misal: 11)
-        
+        // A. Konversi Bulan ke Romawi
         $romanMonths = [
             1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
             7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'
         ];
-        
-        $bulanRoman = $romanMonths[$bulanAngka]; // Hasil (kalo November): "XI"
-        
-        // --- BAGIAN B: Dapetin Kode Perusahaan (Dinamis) ---
-        // Asumsi lo punya kolom 'perusahaan' di tabel 'users'
-        // Ganti 'bci' / 'silo' / 'sbk' sesuai data di DB lo
-        
-        $kodePerusahaan = 'UNKNOWN'; // Default
-        
-        // Kita pake strtolower biar aman (BCI, bci, Bci semua jadi bci)
-        switch (strtolower($user->perusahaan)) { 
-            case 'bci':
-                $kodePerusahaan = 'BCI';
-                break;
-            case 'silo':
-                $kodePerusahaan = 'SILO';
-                break;
-            case 'sbk':
-                $kodePerusahaan = 'SBK';
-                break;
-            // Tambahin perusahaan lain kalo perlu...
-            default:
-                $kodePerusahaan = 'CORP'; // Kalo gak ketemu, pake 'CORP'
-        }
+        $bulanRoman = $romanMonths[$bulanAngka];
 
+        // B. Tentukan Kode Perusahaan dari User
+        // Pastikan di tabel 'users' ada kolom 'perusahaan'
+        $userPerusahaan = strtolower($user->perusahaan ?? '');
+        $kodePerusahaan = 'CORP'; // Default jika tidak dikenali
 
-        // --- BAGIAN C: Bikin Pola (Pattern) ---
-        // Format: .PPI-COMPANY.MONTH.YEAR
+        if ($userPerusahaan == 'bci') {
+            $kodePerusahaan = 'BCI';
+        } elseif ($userPerusahaan == 'silo') {
+            $kodePerusahaan = 'SILO';
+        } elseif ($userPerusahaan == 'sbk') {
+            $kodePerusahaan = 'SBK';
+        } 
+        // Tambahkan else if lain jika ada perusahaan lain
+
+        // C. Bikin Pola (Pattern) untuk Pencarian DB
+        // Format: .PPI-[PERUSAHAAN].[ROMAWI].[TAHUN]
+        // Contoh: .PPI-BCI.XI.2025
         $pattern = ".PPI-{$kodePerusahaan}.{$bulanRoman}.{$tahun}";
-        // Hasil (Kalo user 'BCI' & bulan November): ".PPI-BCI.XI.2025"
-        
 
-        // --- BAGIAN D: Tentukan Nomor Urut (Reset per Bulan & per Kode) ---
-        
-        // Cari data terakhir yang polanya SAMA (buat nge-reset nomor urut)
+        // D. Cari Nomor Urut Terakhir
+        // Kita cari data yang akhiran nomornya sama dengan $pattern
         $lastData = Ppi::where('no_ppi', 'like', "%{$pattern}")
-                       ->whereYear('created_at', $tahun)
-                       ->whereMonth('created_at', $bulanAngka)
                        ->latest('id')
                        ->first();
         
-        $urut = 1; // Nomor default kalo ini data pertama (untuk kode & bulan ini)
+        $urut = 1; // Default mulai dari 1
 
         if ($lastData) {
-            // Kalo data ketemu (misal: "0003.PPI-BCI.XI.2025")
+            // Contoh data: "0005.PPI-BCI.XI.2025"
+            // Kita pecah berdasarkan titik pertama
             $parts = explode('.', $lastData->no_ppi);
-            $lastUrut = (int)$parts[0]; // Ambil angka 0003
-            $urut = $lastUrut + 1; // Jadi 4
+            $lastUrut = (int) $parts[0]; // Ambil angka "0005" jadi 5
+            $urut = $lastUrut + 1;       // Jadi 6
         }
         
-        // Format 4 digit (0001, 0002, ..., 0004)
+        // Format jadi 4 digit (0001, 0002, dst)
         $nomorUrut = str_pad($urut, 4, '0', STR_PAD_LEFT); 
 
-        // Gabungin semua
+        // E. Gabung Semua Jadi Nomor Final
+        // Hasil: 0006.PPI-BCI.XI.2025
         $nomerOtomatis = $nomorUrut . $pattern; 
-        // Hasil: "0001.PPI-BCI.XI.2025"
 
-        // 3. Handle Upload File (Tetap sama)
+
+        // 3. Handle Upload File
         $filePath = null;
         if ($request->hasFile('file_ppi')) {
             $filePath = $request->file('file_ppi')->store('ppi_uploads', 'public');
         }
 
-        // 4. SIMPAN KE DATABASE (Tetap sama)
+        // 4. Simpan ke Database
         Ppi::create([
             'no_ppi'       => $nomerOtomatis,
             'tanggal'      => Carbon::now(),
@@ -127,5 +113,19 @@ class PpiController extends Controller
             ->with('success', 'PPI Berhasil dibuat! No Tiket: ' . $nomerOtomatis);
     }
 
-    // (Nanti tambahin fungsi index, show, edit buat user kalo perlu)
+    /**
+     * Tampilkan Riwayat PPI User
+     */
+    public function index()
+    {
+        $riwayatPpi = Ppi::where('user_id', Auth::id())
+                         ->latest()
+                         ->get();
+
+        return view('pengguna.ppi.index', [
+            'title' => 'Riwayat Pengajuan PPI Saya',
+            'menuPPI' => 'active',
+            'riwayatPpi' => $riwayatPpi
+        ]);
+    }
 }

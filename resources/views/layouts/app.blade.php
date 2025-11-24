@@ -174,7 +174,7 @@
                                 </a>
                                 
                                 {{-- =============================================== --}}
-                                {{-- [UPDATE] DIBUNGKUS IF & LINK DIBENERIN          --}}
+                                {{-- [UPDATE] DIBUNGKUS IF & LINK           --}}
                                 {{-- =============================================== --}}
                                 @if(in_array($userRole, ['admin', 'super admin', 'superadmin']))
                                 <a class="dropdown-item" href="{{ route('activity.log') }}">
@@ -182,9 +182,7 @@
                                     Activity Log
                                 </a>
                                 @endif
-                                {{-- =============================================== --}}
-                                {{-- [UPDATE] SELESAI                              --}}
-                                {{-- =============================================== --}}
+                                {{-- AKHIR UPDATE --}}
                                 
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">

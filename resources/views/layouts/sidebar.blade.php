@@ -1,12 +1,14 @@
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
-    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('admin.dashboard') }}">
+    <!-- Sidebar - Brand -->
+    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
         <div class="sidebar-brand-icon rotate-n-0">
             <i class="fas fa-cogs"></i>
         </div>
         <div class="sidebar-brand-text mx-3"> Asset System </div>
     </a>
 
+    <!-- Divider -->
     <hr class="sidebar-divider my-0">
 
     {{-- =============================================== --}}
@@ -21,20 +23,17 @@
         $activeClass = '';
 
         // 3. Cek Role untuk nentuin arah Link & Status Active
-        // Cek Admin (terima 'super admin', 'superadmin', 'admin')
         if (in_array($role, ['super admin', 'superadmin', 'admin'])) {
             $dashboardRoute = route('admin.dashboard');
-            $activeClass = $menuDashboard ?? ''; // Variable dari Controller Admin
+            $activeClass = Request::routeIs('admin.dashboard') ? 'active' : '';
         } 
-        // Cek Staff
         elseif ($role == 'staff') {
             $dashboardRoute = route('staff.dashboard');
-            $activeClass = $menuDashboardStaff ?? ''; // Variable dari Controller Staff
+            $activeClass = Request::routeIs('staff.dashboard') ? 'active' : '';
         } 
-        // Cek Pengguna
         elseif ($role == 'pengguna') {
             $dashboardRoute = route('pengguna.dashboard');
-            $activeClass = $menuDashboardPengguna ?? ''; // Variable dari Controller Pengguna
+            $activeClass = Request::routeIs('pengguna.dashboard') ? 'active' : '';
         }
     @endphp
 
@@ -51,20 +50,21 @@
     {{-- =============================================== --}}
     @if (in_array($role, ['super admin', 'superadmin', 'admin']))
         
+        <!-- Divider -->
         <hr class="sidebar-divider">
         
         <div class="sidebar-heading">
             Administration
         </div>
 
-        <li class="nav-item">
+        <li class="nav-item {{ Request::routeIs('admin.ppi.*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('admin.ppi.index') }}">
                 <i class="fas fa-fw fa-clipboard"></i>
                 <span>PPI Monitoring</span>
             </a>
         </li>
         
-        <li class="nav-item">
+        <li class="nav-item {{ Request::routeIs('surat-jalan.*') ? 'active' : '' }}">
             <a class="nav-link" href="{{route('surat-jalan.index')}}">
                 <i class="fas fa-envelope "></i>
                 <span>Surat Jalan</span>
@@ -88,20 +88,21 @@
             </div>
         </li>
 
-        <li class="nav-item">
+        <li class="nav-item {{ Request::routeIs('pengguna.*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('pengguna.index') }}">
                 <i class="fas fa-fw fa-user"></i>
                 <span>Pengguna/User</span>
             </a>
         </li>
 
-        <li class="nav-item">
+        <li class="nav-item {{ Request::routeIs('team*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('team') }}">
                 <i class="fas fa-fw fa-users"></i>
                 <span>Team IT</span>
             </a>
         </li>
     
+        <!-- Divider -->
         <hr class="sidebar-divider">
 
         <div class="sidebar-heading">
@@ -127,6 +128,7 @@
     {{-- =============================================== --}}
     @elseif ($role == 'staff')
 
+        <!-- Divider -->
         <hr class="sidebar-divider">
 
         <div class="sidebar-heading">
@@ -134,14 +136,15 @@
         </div>
 
         <li class="nav-item">
-            <a class="nav-link" href="#"> {{-- GANTI # NANTI --}}
-                <i class="fas fa-info"></i>
+            <a class="nav-link" href="#"> {{-- GANTI # NANTI DENGAN ROUTE STAFF --}}
+                <i class="fas fa-fw fa-info-circle"></i>
                 <span>Task Info</span>
             </a>
         </li>
+
         <li class="nav-item">
-            <a class="nav-link" href="#"> {{-- GANTI # NANTI --}}
-                <i class="fas fa-fw fa-tasks"></i>
+            <a class="nav-link" href="#"> {{-- GANTI # NANTI DENGAN ROUTE REPORT --}}
+                <i class="fas fa-fw fa-file-alt"></i>
                 <span>Task Report</span>
             </a>
         </li>
@@ -151,19 +154,24 @@
     {{-- =============================================== --}}
     @elseif ($role == 'pengguna')
 
+        <!-- Divider -->
         <hr class="sidebar-divider">
-
-        {{-- NOTE: DASHBOARD DISINI UDAH DIHAPUS KARENA UDAH DIHANDLE DI ATAS --}}
         
         <div class="sidebar-heading">
             Formulir
         </div>
 
-      
-        <li class="nav-item {{ $menuPPI ?? '' }}">
-            <a class="nav-link" href="{{ route('pengguna.ppi.create') }}"> {{-- Nanti ganti route('pengguna.permintaan.create') --}}
+        <li class="nav-item {{ Request::routeIs('pengguna.ppi.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('pengguna.ppi.create') }}">
                 <i class="fas fa-fw fa-clipboard"></i>
                 <span>PPI Request</span>
+            </a>
+        </li>
+
+        <li class="nav-item {{ Request::routeIs('pengguna.ppi.index') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('pengguna.ppi.index') }}">
+                <i class="fas fa-fw fa-history"></i>
+                <span>Riwayat Pengajuan</span>
             </a>
         </li>
     
@@ -173,6 +181,7 @@
     {{-- =============================================== --}}
 
 
+    <!-- Sidebar Toggler (Sidebar) -->
     <hr class="sidebar-divider d-none d-md-block">
     <div class="text-center d-none d-md-inline">
         <button class="rounded-circle border-0" id="sidebarToggle"></button>
