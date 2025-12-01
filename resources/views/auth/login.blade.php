@@ -39,8 +39,23 @@
                                 <div class="p-5">
                                     <div class="text-center">
                                         <h1 class="h4 text-gray-900 mb-4">
-                                            <i class="fas fa-cogs mr-2"></i>
-                                            Resource asset system 
+                         <a class="sidebar-brand d-flex flex-column align-items-center justify-content-center"  style="height: auto; padding: 1.5rem 0;">
+    
+                                    {{-- Bagian Gambar --}}
+                                    <div class="sidebar-brand-icon">
+                                        <img src="{{ asset('image/Images.png') }}" 
+                                            alt="Icon" 
+                                            width="150" 
+                                            height="auto" 
+                                            class="img-fluid">
+                                    </div>
+
+                                    {{-- Bagian Teks  --}}
+                                    <div class="sidebar-brand-text mx-3 mt-2">
+                                        Resource asset system
+                                    </div>
+
+                                </a>
                                         </h1>
                                     </div>
                                     <form class="user" method="POST" action="{{ route('loginProses') }}">
