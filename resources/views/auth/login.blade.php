@@ -94,9 +94,6 @@
                                         
                                     </form>
                                     <hr>
-                                    <div class="text-center">
-                                        <a class="small" href="register.html">Buat Akun Baru</a>
-                                    </div>
                                 </div>
                             </div>
                         </div>

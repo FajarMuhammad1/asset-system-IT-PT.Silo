@@ -16,11 +16,17 @@ use App\Http\Controllers\BarangKeluarController;
 use App\Http\Controllers\MasterBarangController;
 use App\Http\Controllers\StaffDashboardController;
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\HelpdeskController;
+
+
+// KONTROLER STAFF
+use App\Http\Controllers\Staff\StaffHelpdeskController;
 
 // KONTROLER PENGGUNA
 use App\Http\Controllers\PenggunaDashboardController;
 use App\Http\Controllers\Admin\PpiAdminController; // 
 use App\Http\Controllers\Pengguna\PpiController as PenggunaPpiController;
+use App\Http\Controllers\Pengguna\TicketController as PenggunaTicketController;
 
 
 /*
@@ -93,6 +99,15 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
         Route::get('/show/{id}', [BarangKeluarController::class, 'show'])->name('show');
     });
 
+    // Helpdesk (Admin)
+    Route::prefix('Admin')->name('admin.')->group(function () {
+         Route::get('/helpdesk', [HelpdeskController::class, 'index'])->name('helpdesk.index');
+         Route::get('/helpdesk/{id}', [HelpdeskController::class, 'show'])->name('helpdesk.show');
+         Route::post('/helpdesk/{id}/assign', [HelpdeskController::class, 'assignTeknisi'])->name('helpdesk.assign');
+
+
+    });
+
     // ... 
     Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     // ...
@@ -114,15 +129,27 @@ Route::middleware(['checkLogin:Pengguna'])->prefix('Pengguna')->name('pengguna.'
     Route::get('/ppi/create', [PenggunaPpiController::class, 'create'])->name('ppi.create');
     Route::post('/ppi/store', [PenggunaPpiController::class, 'store'])->name('ppi.store');
     Route::get('/ppi/riwayat', [PenggunaPpiController::class, 'index'])->name('ppi.index'); 
+    // [BARU] Fitur Helpdesk (Tiket)
+    Route::get('/helpdesk', [PenggunaTicketController::class, 'index'])->name('helpdesk.index');
+    Route::get('/helpdesk/create', [PenggunaTicketController::class, 'create'])->name('helpdesk.create');
+    Route::post('/helpdesk', [PenggunaTicketController::class, 'store'])->name('helpdesk.store');
+    Route::get('/helpdesk/{id}', [PenggunaTicketController::class, 'show'])->name('helpdesk.show');
 
 });
 
 
 // --- KAVLING 3: STAFF ---
-// (Middleware & prefix udah pake huruf kecil)
+
 Route::middleware(['checkLogin:Staff'])->prefix('Staff')->name('staff.')->group(function () {
     
     Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('dashboard');
     // Nanti rute 'helpdesk.index' (Tugas Staff) lo taruh sini
+    
+        // Fitur Helpdesk Staff
+        Route::get('/helpdesk', [StaffHelpdeskController::class, 'index'])->name('helpdesk.index');
+        Route::get('/helpdesk/{id}', [StaffHelpdeskController::class, 'show'])->name('helpdesk.show');
+        Route::post('/helpdesk/{id}/start', [StaffHelpdeskController::class, 'start'])->name('helpdesk.start');
+        Route::post('/helpdesk/{id}/finish', [StaffHelpdeskController::class, 'finish'])->name('helpdesk.finish');
+        Route::post('/helpdesk/{id}/reject', [StaffHelpdeskController::class, 'reject'])->name('helpdesk.reject');
 
 });

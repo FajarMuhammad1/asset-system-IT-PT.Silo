@@ -109,12 +109,13 @@
             Task/Heldesk
         </div>
 
-        <li class="nav-item">
-            <a class="nav-link" href="#"> {{-- GANTI # NANTI --}}
-                <i class="fas fa-fw fa-desktop"></i>
-                <span>Helpdesk Monitoring</span>
-            </a>
-        </li>
+       <li class="nav-item">
+    <a class="nav-link" href="{{ route('admin.helpdesk.index') }}">
+        <i class="fas fa-fw fa-desktop"></i>
+        <span>Helpdesk Monitoring</span>
+    </a>
+</li>
+
         
         <li class="nav-item">
             <a class="nav-link" href="#"> {{-- GANTI # NANTI --}}
@@ -136,7 +137,7 @@
         </div>
 
         <li class="nav-item">
-            <a class="nav-link" href="#"> {{-- GANTI # NANTI DENGAN ROUTE STAFF --}}
+            <a class="nav-link" href="{{ route('staff.helpdesk.index') }}"> {{-- GANTI # NANTI DENGAN ROUTE STAFF --}}
                 <i class="fas fa-fw fa-info-circle"></i>
                 <span>Task Info</span>
             </a>
@@ -174,6 +175,13 @@
                 <span>Riwayat Pengajuan</span>
             </a>
         </li>
+
+          <li class="nav-item {{ Request::routeIs('pengguna.helpdesk.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('pengguna.helpdesk.index') }}">
+            <i class="fas fa-fw fa-headset"></i>
+            <span>Lapor Kerusakan</span>
+        </a>
+    </li>
     
     @endif
     {{-- =============================================== --}}
