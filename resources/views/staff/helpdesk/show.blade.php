@@ -30,12 +30,24 @@
             <hr>
 
             <!-- ====================================================== -->
-            <!--                AKSI UNTUK STAFF                      -->
+            <!--        AKSI UNTUK STAFF — SEMUA TOMBOL SELALU ADA     -->
             <!-- ====================================================== -->
 
-            {{-- 1. Admin sudah assign, tapi staff belum mulai --}}
-            @if($ticket->status === 'Open' && $ticket->started_at === null)
+            @if($ticket->status === 'Closed')
+                <div class="alert alert-success">
+                    Tiket selesai pada: <b>{{ $ticket->tgl_selesai }}</b>
+                </div>
+                <p><strong>Solusi Teknis:</strong></p>
+                <div class="alert alert-secondary">{{ $ticket->solusi_teknisi }}</div>
 
+            @elseif($ticket->status === 'Ditolak')
+                <div class="alert alert-danger">
+                    <strong>Tugas Ditolak:</strong> {{ $ticket->alasan_penolakan }}
+                </div>
+
+            @else
+
+                <!-- Tombol MULAI KERJAKAN -->
                 <form action="{{ route('staff.helpdesk.start', $ticket->id) }}"
                       method="POST" class="d-inline">
                     @csrf
@@ -44,38 +56,19 @@
                     </button>
                 </form>
 
+                <!-- Tombol TOLAK TUGAS -->
                 <button class="btn btn-danger"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalTolak">
+                        data-toggle="modal"
+                        data-target="#modalTolak">
                     <i class="fas fa-times"></i> Tolak Tugas
                 </button>
 
-            {{-- 2. Staff sudah mulai mengerjakan (status Progres) --}}
-            @elseif($ticket->status === 'Progres' && $ticket->started_at !== null)
-
+                <!-- Tombol SELESAIKAN TIKET -->
                 <button class="btn btn-success"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalSelesai">
+                        data-toggle="modal"
+                        data-target="#modalSelesai">
                     <i class="fas fa-check"></i> Selesaikan Tiket
                 </button>
-
-            {{-- 3. Tiket sudah selesai --}}
-            @elseif($ticket->status === 'Closed')
-
-                <div class="alert alert-success">
-                    Tiket selesai pada:
-                    <b>{{ $ticket->tgl_selesai }}</b>
-                </div>
-
-                <p><strong>Solusi Teknis:</strong></p>
-                <div class="alert alert-secondary">{{ $ticket->solusi_teknisi }}</div>
-
-            {{-- 4. Tiket ditolak staff --}}
-            @elseif($ticket->status === 'Ditolak')
-
-                <div class="alert alert-danger">
-                    <strong>Tugas Ditolak:</strong> {{ $ticket->alasan_penolakan }}
-                </div>
 
             @endif
 
@@ -84,7 +77,7 @@
 </div>
 
 <!-- ====================================================== -->
-<!-- MODAL SELESAIKAN TIKET -->
+<!-- MODAL SELESAIKAN TIKET (Bootstrap 4 OK) -->
 <!-- ====================================================== -->
 <div class="modal fade" id="modalSelesai" tabindex="-1">
     <div class="modal-dialog">
@@ -94,7 +87,9 @@
 
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title">Selesaikan Tiket</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
             </div>
 
             <div class="modal-body">
@@ -103,7 +98,7 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
                 <button type="submit" class="btn btn-success">Selesaikan</button>
             </div>
         </form>
@@ -111,7 +106,7 @@
 </div>
 
 <!-- ====================================================== -->
-<!-- MODAL TOLAK TUGAS -->
+<!-- MODAL TOLAK TUGAS (Bootstrap 4 OK) -->
 <!-- ====================================================== -->
 <div class="modal fade" id="modalTolak" tabindex="-1">
     <div class="modal-dialog">
@@ -121,7 +116,9 @@
 
             <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title">Tolak Tugas</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
             </div>
 
             <div class="modal-body">
@@ -130,7 +127,7 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
                 <button type="submit" class="btn btn-danger">Tolak</button>
             </div>
         </form>
@@ -138,5 +135,3 @@
 </div>
 
 @endsection
-
-

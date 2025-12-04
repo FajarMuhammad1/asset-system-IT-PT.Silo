@@ -120,7 +120,7 @@
         <li class="nav-item">
             <a class="nav-link" href="#"> {{-- GANTI # NANTI --}}
                 <i class="fas fa-fw fa-tasks"></i>
-                <span>Task Info</span>
+                <span>Task Report dari Team IT</span>
             </a>
         </li>
     
@@ -137,7 +137,7 @@
         </div>
 
         <li class="nav-item">
-            <a class="nav-link" href="{{ route('staff.helpdesk.index') }}"> {{-- GANTI # NANTI DENGAN ROUTE STAFF --}}
+            <a class="nav-link" href="{{ route('staff.helpdesk.index') }}">
                 <i class="fas fa-fw fa-info-circle"></i>
                 <span>Task Info</span>
             </a>

@@ -4,7 +4,14 @@
 
 <div class="container-fluid">
 
-    <h1 class="h3 mb-4 text-gray-800">Detail Tiket: {{ $ticket->no_tiket }}</h1>
+    <!-- Header + Tombol Kembali -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 text-gray-800">Detail Tiket: {{ $ticket->no_tiket }}</h1>
+        
+        <a href="{{ route('admin.helpdesk.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Kembali
+        </a>
+    </div>
 
     <div class="card shadow mb-4">
         <div class="card-body">
@@ -26,6 +33,21 @@
                     <th width="200">Pelapor</th>
                     <td>{{ $ticket->pelapor->nama }}</td>
                 </tr>
+
+                <!-- Tambahan Jabatan, Departemen, Perusahaan -->
+                <tr>
+                    <th>Jabatan</th>
+                    <td>{{ $ticket->pelapor->jabatan ?? '-' }}</td>
+                </tr>
+                <tr>
+                    <th>Departemen</th>
+                    <td>{{ $ticket->pelapor->departemen ?? '-' }}</td>
+                </tr>
+                <tr>
+                    <th>Perusahaan</th>
+                    <td>{{ $ticket->pelapor->perusahaan ?? '-' }}</td>
+                </tr>
+
                 <tr>
                     <th>Prioritas</th>
                     <td>{{ $ticket->prioritas }}</td>
@@ -74,6 +96,13 @@
                     <i class="fas fa-user-cog mr-1"></i> Assign Teknisi
                 </button>
             </form>
+
+            <hr>
+
+            <!-- Tombol kembali lagi di bawah -->
+            <a href="{{ route('admin.helpdesk.index') }}" class="btn btn-secondary mt-3">
+                <i class="fas fa-arrow-left"></i> Kembali ke Daftar Tiket
+            </a>
 
         </div>
     </div>

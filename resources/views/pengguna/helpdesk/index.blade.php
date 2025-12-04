@@ -15,38 +15,40 @@
                 <i class="fas fa-plus fa-sm text-white-50"></i> Buat Laporan Baru
             </a>
         </div>
+
         <div class="card-body">
             <div class="table-responsive">
+
                 <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
                     <thead class="bg-light">
                         <tr>
                             <th>No Tiket</th>
                             <th>Tanggal</th>
                             <th>Judul Masalah</th>
-                            <th>Aset Terkait</th>
                             <th>Status</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
+
                     <tbody>
                         @forelse($tickets as $item)
                         <tr>
                             <td class="font-weight-bold text-primary">{{ $item->no_tiket }}</td>
                             <td>{{ $item->created_at->format('d M Y') }}</td>
                             <td>{{ Str::limit($item->judul_masalah, 40) }}</td>
+
                             <td>
-                                @if($item->barang_masuk_id)
-                                    {{ $item->aset->masterBarang->nama_barang ?? '-' }}
+                                @if($item->status == 'Open')
+                                    <span class="badge badge-warning">Open</span>
+                                @elseif($item->status == 'Progres')
+                                    <span class="badge badge-info">Diproses</span>
+                                @elseif($item->status == 'Closed')
+                                    <span class="badge badge-success">Selesai</span>
                                 @else
-                                    <span class="text-muted font-italic">Umum / Non-Aset</span>
+                                    <span class="badge badge-danger">Ditolak</span>
                                 @endif
                             </td>
-                            <td>
-                                @if($item->status == 'Open') <span class="badge badge-warning">Open</span>
-                                @elseif($item->status == 'Progres') <span class="badge badge-info">Diproses</span>
-                                @elseif($item->status == 'Closed') <span class="badge badge-success">Selesai</span>
-                                @else <span class="badge badge-danger">Ditolak</span> @endif
-                            </td>
+
                             <td>
                                 <a href="{{ route('pengguna.helpdesk.show', $item->id) }}" class="btn btn-sm btn-secondary">
                                     <i class="fas fa-eye"></i> Detail
@@ -55,13 +57,16 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="text-center py-3">Belum ada tiket laporan.</td>
+                            <td colspan="5" class="text-center py-3">Belum ada tiket laporan.</td>
                         </tr>
                         @endforelse
                     </tbody>
+
                 </table>
+
             </div>
         </div>
     </div>
+
 </div>
 @endsection

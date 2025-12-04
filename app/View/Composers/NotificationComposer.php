@@ -3,65 +3,84 @@
 namespace App\View\Composers;
 
 use Illuminate\View\View;
-use App\Models\Ppi;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Ppi;
+use App\Models\Ticket;
+use Illuminate\Support\Collection;
 
 class NotificationComposer
 {
-    /**
-     * Bind data to the view.
-     */
     public function compose(View $view)
     {
-        // Default values (biar gak error undefined variable)
+        // default
+        $notifications = collect();
         $notifCount = 0;
-        $notifItems = collect();
-        $notifLabel = 'Notifikasi';
 
-        if (Auth::check()) {
-            $user = Auth::user();
-            $role = strtolower($user->role);
-
-            // --- LOGIKA 1: ADMIN (Melihat Request Baru) ---
-            if (in_array($role, ['admin', 'super admin', 'superadmin'])) {
-                
-                // Ambil PPI yang masih Pending
-                $notifItems = Ppi::with('user')
-                                 ->where('status', 'pending')
-                                 ->latest()
-                                 ->take(5)
-                                 ->get();
-                
-                $notifCount = Ppi::where('status', 'pending')->count();
-                $notifLabel = 'Permintaan Masuk (Pending)';
-            } 
-            
-            // --- LOGIKA 2: PENGGUNA (Melihat Status Update) ---
-            elseif ($role == 'pengguna') {
-                
-                // Ambil PPI milik user ini yang statusnya SUDAH DIPROSES (Bukan Pending)
-                // Kita urutkan berdasarkan 'updated_at' (kapan terakhir diubah admin)
-                $notifItems = Ppi::where('user_id', $user->id)
-                                 ->where('status', '!=', 'pending') 
-                                 ->latest('updated_at') 
-                                 ->take(5)
-                                 ->get();
-                
-                // Hitung jumlah notifikasi (bisa disesuaikan logikanya, misal yg belum dibaca)
-                // Disini kita hitung total yg sudah diproses sebagai notifikasi
-                $notifCount = $notifItems->count();
-                $notifLabel = 'Status Pengajuan Anda';
-            }
+        // pastikan user login
+        if (! Auth::check()) {
+            $view->with('notifications', $notifications);
+            $view->with('notifCount', $notifCount);
+            return;
         }
 
-        // Kirim data ke View dengan nama variabel yang seragam
-        // (Pastikan di layouts/app.blade.php menggunakan variabel ini)
+        $user = Auth::user();
+        $role = strtolower($user->role ?? '');
+
+        // hanya untuk admin / superadmin
+        if (! in_array($role, ['admin', 'super admin', 'superadmin'])) {
+            $view->with('notifications', $notifications);
+            $view->with('notifCount', $notifCount);
+            return;
+        }
+
+        // ambil ppi pending (model -> biasa)
+        $ppis = Ppi::with('user')
+            ->where('status', 'pending')
+            ->latest()
+            ->get();
+
+        // ambil helpdesk open
+        $helpdesks = Ticket::with('pelapor')
+            ->where('status', 'Open')
+            ->latest()
+            ->get();
+
+        // bangun array plain notifications (hindari memasukkan model langsung)
+        $list = [];
+
+        foreach ($ppis as $p) {
+            $list[] = [
+                'type'   => 'PPI',
+                'title'  => 'PPI Baru dari ' . ($p->user->name ?? 'User'),
+                'detail' => $p->perangkat ?? '-',
+                'time'   => $p->created_at,
+                // pakai route dengan parameter array (id) agar tidak memaksa model
+                'url'    => route('admin.ppi.show', ['id' => $p->id]),
+            ];
+        }
+
+        foreach ($helpdesks as $t) {
+            $list[] = [
+                'type'   => 'HELPDESK',
+                'title'  => 'Tiket Baru: ' . $t->judul_masalah,
+                'detail' => $t->pelapor->nama ?? '-',
+                'time'   => $t->created_at,
+                'url'    => route('admin.helpdesk.show', ['id' => $t->id]),
+            ];
+        }
+
+        // convert ke collection, sort by time desc, ambil 5
+        $notifications = collect($list)
+                            ->sortByDesc(function ($item) {
+                                return $item['time'] instanceof \DateTime ? $item['time']->getTimestamp() : strtotime($item['time']);
+                            })
+                            ->values()
+                            ->take(5);
+
+        $notifCount = $notifications->count();
+
+        // kirim ke view
+        $view->with('notifications', $notifications);
         $view->with('notifCount', $notifCount);
-        $view->with('notifItems', $notifItems);
-        $view->with('notifLabel', $notifLabel);
-        
-        // Fallback untuk variabel lama (jika layout belum diupdate total)
-        $view->with('pendingPpiCount', $notifCount);
-        $view->with('recentPendingPpis', $notifItems);
     }
 }

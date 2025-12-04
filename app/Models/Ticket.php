@@ -24,7 +24,8 @@ class Ticket extends Model
         'status', 
         'tgl_selesai', 
         'solusi_teknisi',
-        'alasan_penolakan'
+        'alasan_penolakan',
+        'started_at'
     ];
 
     // --- KONFIGURASI ACTIVITY LOG (Spatie) ---

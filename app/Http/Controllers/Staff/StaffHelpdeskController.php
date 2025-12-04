@@ -28,14 +28,17 @@ class StaffHelpdeskController extends Controller
      * Detail tiket yang diterima staff
      */
     public function show($id)
-    {
-        $ticket = Ticket::where('teknisi_id', Auth::id())->findOrFail($id);
+{
+    $ticket = Ticket::where('id', $id)
+                    ->where('teknisi_id', Auth::id())
+                    ->firstOrFail();
 
-        return view('staff.helpdesk.show', [
-            'title' => 'Detail Tiket',
-            'ticket' => $ticket
-        ]);
-    }
+    return view('staff.helpdesk.show', [
+        'title' => 'Detail Tiket',
+        'ticket' => $ticket
+    ]);
+}
+
 
     /**
      * Staff mulai mengerjakan tiket
@@ -94,7 +97,7 @@ class StaffHelpdeskController extends Controller
         ]);
 
         $ticket->update([
-            'status'             => 'Ditolak',
+            'status'             => 'Reject',
             'alasan_penolakan'   => $request->alasan_penolakan
         ]);
 
