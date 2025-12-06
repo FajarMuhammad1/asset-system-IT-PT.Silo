@@ -29,7 +29,7 @@
                     </div>
                     <div>
                         <label class="small font-weight-bold text-gray-500">TEKNISI</label>
-                        <p>{{ $ticket->teknisi->name ?? 'Belum ditugaskan' }}</p>
+                        <p>{{ $ticket->teknisi->nama ?? 'Belum ditugaskan' }}</p>
                     </div>
                 </div>
             </div>

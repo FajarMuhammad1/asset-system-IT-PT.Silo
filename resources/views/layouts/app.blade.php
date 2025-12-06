@@ -56,16 +56,21 @@
                     </li>
 
                     {{-- ======================================================= --}}
-                    {{--                      NOTIFIKASI ADMIN                   --}}
+                    {{--               AREA NOTIFIKASI & PESAN ADMIN             --}}
                     {{-- ======================================================= --}}
 
                     @php
+                        // Definisikan role user
                         $userRole = strtolower(auth()->user()->role);
+
+                        // Role yang diizinkan melihat Notif Admin
+                        $allowedRoles = ['admin', 'super admin', 'superadmin'];
                     @endphp
 
-                    @if(in_array($userRole, ['admin', 'super admin', 'superadmin']))
+                    {{-- ===================== NOTIFIKASI ADMIN ===================== --}}
+                    @if(in_array($userRole, $allowedRoles))
 
-                        {{-- Bell Notification --}}
+                        {{-- Bell Notification Admin --}}
                         <li class="nav-item dropdown no-arrow mx-1">
 
                             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
@@ -136,43 +141,101 @@
                                         </div>
                                     </a>
 
-                                @endforelse                           
+                                @endforelse
                             </div>
+                        </li>
 
+                        {{-- Messages Admin --}}
+                        <li class="nav-item dropdown no-arrow mx-1">
+                            <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button"
+                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-envelope fa-fw"></i>
+                                <span class="badge badge-danger badge-counter">7</span>
+                            </a>
+
+                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                                 aria-labelledby="messagesDropdown">
+                                <h6 class="dropdown-header">Message Center</h6>
+
+                                <a class="dropdown-item d-flex align-items-center" href="#">
+                                    <div class="dropdown-list-image mr-3">
+                                        <img class="rounded-circle" src="{{ asset('sbadmin2/img/undraw_profile_1.svg') }}" alt="...">
+                                        <div class="status-indicator bg-success"></div>
+                                    </div>
+                                    <div class="font-weight-bold">
+                                        <div class="text-truncate">
+                                            Hi there! I am wondering if you can help me with a problem I've been having.
+                                        </div>
+                                        <div class="small text-gray-500">Emily Fowler · 58m</div>
+                                    </div>
+                                </a>
+
+                                <a class="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a>
+                            </div>
                         </li>
 
                     @endif
-                    {{-- END NOTIF ADMIN --}}
+                    {{-- ===================== END NOTIFIKASI ADMIN ===================== --}}
 
-                    {{-- MESSAGES (SELALU TAMPIL) --}}
-                    <li class="nav-item dropdown no-arrow mx-1">
-                        <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button"
-                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fas fa-envelope fa-fw"></i>
-                            <span class="badge badge-danger badge-counter">7</span>
-                        </a>
 
-                        <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                             aria-labelledby="messagesDropdown">
-                            <h6 class="dropdown-header">Message Center</h6>
+                    {{-- ======================================================= --}}
+                    {{--              NOTIFIKASI USER / STAFF / PELAPOR          --}}
+                    {{-- ======================================================= --}}
+                    @if(!in_array($userRole, $allowedRoles))
 
-                            <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="dropdown-list-image mr-3">
-                                    <img class="rounded-circle" src="{{ asset('sbadmin2/img/undraw_profile_1.svg') }}" alt="...">
-                                    <div class="status-indicator bg-success"></div>
-                                </div>
+                        <li class="nav-item dropdown no-arrow mx-1">
 
-                                <div class="font-weight-bold">
-                                    <div class="text-truncate">
-                                        Hi there! I am wondering if you can help me with a problem I've been having.
-                                    </div>
-                                    <div class="small text-gray-500">Emily Fowler · 58m</div>
-                                </div>
+                            <a class="nav-link dropdown-toggle" href="#" id="userNotifDropdown" role="button"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+
+                                <i class="fas fa-bell fa-fw"></i>
+
+                                @if(isset($notifCount) && $notifCount > 0)
+                                    <span class="badge badge-danger badge-counter">
+                                        {{ $notifCount > 5 ? '5+' : $notifCount }}
+                                    </span>
+                                @endif
                             </a>
 
-                            <a class="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a>
-                        </div>
-                    </li>
+                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                                aria-labelledby="userNotifDropdown">
+
+                                <h6 class="dropdown-header">Notifikasi</h6>
+
+                                @forelse($notifications as $notif)
+                                    <a class="dropdown-item d-flex align-items-center" href="{{ $notif['url'] }}">
+                                        <div class="mr-3">
+                                            <div class="icon-circle {{ $notif['color'] }}">
+                                                <i class="fas fa-bell text-white"></i>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div class="small text-gray-500">{{ $notif['time']->diffForHumans() }}</div>
+                                            <span class="font-weight-bold">{{ $notif['title'] }}</span>
+                                            <br>
+                                            <span class="small">{{ Str::limit($notif['detail'], 40) }}</span>
+                                        </div>
+                                    </a>
+                                @empty
+                                    <a class="dropdown-item d-flex align-items-center" href="#">
+                                        <div class="mr-3">
+                                            <div class="icon-circle bg-secondary">
+                                                <i class="fas fa-bell text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span class="font-weight-bold">Tidak ada notifikasi.</span>
+                                        </div>
+                                    </a>
+                                @endforelse
+                            </div>
+                        </li>
+
+                    @endif
+
+                    {{-- ===================== END NOTIFIKASI USER ===================== --}}
+
 
                     {{-- User Dropdown --}}
                     <div class="topbar-divider d-none d-sm-block"></div>
@@ -201,7 +264,7 @@
                                 Settings
                             </a>
 
-                            @if(in_array($userRole, ['admin', 'super admin', 'superadmin']))
+                            @if(in_array($userRole, $allowedRoles))
                                 <a class="dropdown-item" href="{{ route('activity.log') }}">
                                     <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Activity Log
