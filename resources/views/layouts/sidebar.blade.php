@@ -117,12 +117,12 @@
 </li>
 
         
-        <li class="nav-item">
-            <a class="nav-link" href="#"> {{-- GANTI # NANTI --}}
-                <i class="fas fa-fw fa-tasks"></i>
-                <span>Task Report dari Team IT</span>
-            </a>
-        </li>
+         <li class="nav-item {{ request()->routeIs('admin.taskreport.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('taskreport.index') }}">
+            <i class="fas fa-fw fa-tasks"></i>
+            <span>Task Report dari Team IT</span>
+        </a>
+    </li>
     
     {{-- =============================================== --}}
     {{-- KAVLING STAFF                                   --}}
@@ -143,12 +143,12 @@
             </a>
         </li>
 
-        <li class="nav-item">
-            <a class="nav-link" href="#"> {{-- GANTI # NANTI DENGAN ROUTE REPORT --}}
-                <i class="fas fa-fw fa-file-alt"></i>
-                <span>Task Report</span>
-            </a>
-        </li>
+        <li class="nav-item {{ Request::routeIs('staff.reports.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('staff.reports.index') }}">
+            <i class="fas fa-fw fa-file-contract"></i>
+            <span>Task Report</span>
+        </a>
+    </li>
 
     {{-- =============================================== --}}
     {{-- KAVLING PENGGUNA                                --}}

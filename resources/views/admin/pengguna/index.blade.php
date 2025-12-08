@@ -21,7 +21,7 @@
                         <th>Email</th>
                         <th>Jabatan</th>
                         <th>Departemen</th>
-                        <th>Perusahaan</th>
+                        <th>Perusahaan/PT</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>

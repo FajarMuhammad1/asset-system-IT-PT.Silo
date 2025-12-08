@@ -10,9 +10,6 @@ use Carbon\Carbon;
 
 class PpiController extends Controller
 {
-    /**
-     * Tampilkan form buat bikin PPI.
-     */
     public function create()
     {
         return view('pengguna.ppi.create', [
@@ -21,9 +18,6 @@ class PpiController extends Controller
         ]);
     }
 
-    /**
-     * Simpan PPI baru + Generate Nomor Otomatis (Format Romawi & Perusahaan).
-     */
     public function store(Request $request)
     {
         // 1. Validasi Input
@@ -31,73 +25,75 @@ class PpiController extends Controller
             'perangkat'    => 'required|string|max:255',
             'ba_kerusakan' => 'required|string',
             'keterangan'   => 'nullable|string',
-            'file_ppi'     => 'nullable|mimes:pdf,jpg,jpeg,png|max:2048', // Max 2MB
+            'file_ppi'     => 'nullable|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
-        // 2. LOGIKA GENERATE NOMOR PPI (DINAMIS)
-        
+        // Ambil user
         $user = Auth::user();
+
+        // 2. Tanggal & Bulan ke Romawi
         $now = Carbon::now();
-        $tahun = $now->format('Y'); 
-        $bulanAngka = $now->format('n'); // 1-12
-        
-        // A. Konversi Bulan ke Romawi
+        $tahun = $now->format('Y');
+        $bulanAngka = $now->format('n');
+
         $romanMonths = [
-            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
-            7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'
+            1=>'I',2=>'II',3=>'III',4=>'IV',5=>'V',6=>'VI',
+            7=>'VII',8=>'VIII',9=>'IX',10=>'X',11=>'XI',12=>'XII'
         ];
         $bulanRoman = $romanMonths[$bulanAngka];
 
-        // B. Tentukan Kode Perusahaan dari User
-        // Pastikan di tabel 'users' ada kolom 'perusahaan'
-        $userPerusahaan = strtolower($user->perusahaan ?? '');
-        $kodePerusahaan = 'CORP'; // Default jika tidak dikenali
+        // 3. LOGIKA PERUSAHAAN OTOMATIS (PT atau tanpa PT)
+        $raw = strtoupper(trim($user->perusahaan ?? ''));
 
-        if ($userPerusahaan == 'bci') {
-            $kodePerusahaan = 'BCI';
-        } elseif ($userPerusahaan == 'silo') {
-            $kodePerusahaan = 'SILO';
-        } elseif ($userPerusahaan == 'sbk') {
-            $kodePerusahaan = 'SBK';
-        } 
-        // Tambahkan else if lain jika ada perusahaan lain
+        if (str_contains($raw, 'PT')) {
 
-        // C. Bikin Pola (Pattern) untuk Pencarian DB
-        // Format: .PPI-[PERUSAHAAN].[ROMAWI].[TAHUN]
-        // Contoh: .PPI-BCI.XI.2025
+            // Pisahkan berdasarkan spasi dan titik
+            $parts = preg_split('/[ .]+/', $raw);
+
+            // Buang PT
+            $cleanParts = array_filter($parts, fn($p) => $p !== 'PT');
+
+            // Gabungkan kembali jadi nama perusahaan
+            $kodePerusahaan = implode(' ', $cleanParts);
+
+        } else {
+            // Jika tidak ada PT, ambil apa adanya
+            $kodePerusahaan = $raw;
+        }
+
+        // Jika masih kosong, default
+        if (!$kodePerusahaan) {
+            $kodePerusahaan = "CORP";
+        }
+
+        // 4. Pola generate nomor
         $pattern = ".PPI-{$kodePerusahaan}.{$bulanRoman}.{$tahun}";
 
-        // D. Cari Nomor Urut Terakhir
-        // Kita cari data yang akhiran nomornya sama dengan $pattern
+        // 5. Ambil nomor terakhir berdasarkan pattern
         $lastData = Ppi::where('no_ppi', 'like', "%{$pattern}")
                        ->latest('id')
                        ->first();
-        
-        $urut = 1; // Default mulai dari 1
+
+        $urut = 1;
 
         if ($lastData) {
-            // Contoh data: "0005.PPI-BCI.XI.2025"
-            // Kita pecah berdasarkan titik pertama
             $parts = explode('.', $lastData->no_ppi);
-            $lastUrut = (int) $parts[0]; // Ambil angka "0005" jadi 5
-            $urut = $lastUrut + 1;       // Jadi 6
+            $lastUrut = (int) $parts[0];
+            $urut = $lastUrut + 1;
         }
-        
-        // Format jadi 4 digit (0001, 0002, dst)
-        $nomorUrut = str_pad($urut, 4, '0', STR_PAD_LEFT); 
 
-        // E. Gabung Semua Jadi Nomor Final
-        // Hasil: 0006.PPI-BCI.XI.2025
-        $nomerOtomatis = $nomorUrut . $pattern; 
+        $nomorUrut = str_pad($urut, 4, '0', STR_PAD_LEFT);
 
+        // 6. Gabungkan menjadi nomor final
+        $nomerOtomatis = $nomorUrut . $pattern;
 
-        // 3. Handle Upload File
+        // 7. Upload file jika ada
         $filePath = null;
         if ($request->hasFile('file_ppi')) {
             $filePath = $request->file('file_ppi')->store('ppi_uploads', 'public');
         }
 
-        // 4. Simpan ke Database
+        // 8. Simpan ke database
         Ppi::create([
             'no_ppi'       => $nomerOtomatis,
             'tanggal'      => Carbon::now(),
@@ -113,9 +109,6 @@ class PpiController extends Controller
             ->with('success', 'PPI Berhasil dibuat! No Tiket: ' . $nomerOtomatis);
     }
 
-    /**
-     * Tampilkan Riwayat PPI User
-     */
     public function index()
     {
         $riwayatPpi = Ppi::where('user_id', Auth::id())

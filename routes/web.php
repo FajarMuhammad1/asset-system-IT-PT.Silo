@@ -17,10 +17,13 @@ use App\Http\Controllers\MasterBarangController;
 use App\Http\Controllers\StaffDashboardController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\HelpdeskController;
+use App\Http\Controllers\Admin\TaskReportAdminController;
 
 
 // KONTROLER STAFF
 use App\Http\Controllers\Staff\StaffHelpdeskController;
+use App\Http\Controllers\Staff\StaffReportController;
+
 
 // KONTROLER PENGGUNA
 use App\Http\Controllers\PenggunaDashboardController;
@@ -115,6 +118,9 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
         Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity.log');
     // ...
 });
+    // --- ROUTE BUAT TASK REPORT ADMIN ---
+    Route::get('/task-reports', [TaskReportAdminController::class, 'index'])->name('taskreport.index');
+    Route::get('/task-reports/{id}', [TaskReportAdminController::class, 'show'])->name('taskreport.show');
 
 });
 
@@ -151,5 +157,12 @@ Route::middleware(['checkLogin:Staff'])->prefix('Staff')->name('staff.')->group(
         Route::post('/helpdesk/{id}/start', [StaffHelpdeskController::class, 'start'])->name('helpdesk.start');
         Route::post('/helpdesk/{id}/finish', [StaffHelpdeskController::class, 'finish'])->name('helpdesk.finish');
         Route::post('/helpdesk/{id}/reject', [StaffHelpdeskController::class, 'reject'])->name('helpdesk.reject');
+
+    // Fitur Laporan Tugas Staff
+        Route::get('/reports', [StaffReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/create', [StaffReportController::class, 'create'])->name('reports.create');
+        Route::post('/reports', [StaffReportController::class, 'store'])->name('reports.store');
+        Route::get('/reports/{id}', [StaffReportController::class, 'show'])->name('reports.show');
+
 
 });
