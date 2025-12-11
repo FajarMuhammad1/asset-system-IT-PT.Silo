@@ -8,48 +8,37 @@ use Illuminate\Database\Eloquent\Model;
 class LogSerahTerima extends Model
 {
     use HasFactory;
-    
+
     protected $table = 'log_serah_terima';
-    
+
+    // WAJIB MENAMBAHKAN 'admin_id' DISINI
     protected $fillable = [
         'barang_masuk_id',
         'user_pemegang_id',
-        'admin_id',
+        'admin_id',            // <--- INI YANG KURANG TADI
         'tanggal_serah_terima',
         'keterangan',
+        'foto_bukti',
+        'kondisi_saat_serah',
         'ttd_penerima',
         'ttd_petugas',
-        'foto_bukti',
-        'file' // Ini udah bener
+        'status',
+        'file_bast_final' // Tambahkan juga jika nanti mau simpan nama file PDF
     ];
 
-    /**
-     * Relasi ke Aset (tabel 'barang_masuk')
-     * "1 Log ini milik 1 Aset"
-     */
+    // Relasi (Biarkan seperti yang sudah ada)
     public function aset()
     {
-        // 'barang_masuk_id' adalah foreign key di tabel INI
         return $this->belongsTo(BarangMasuk::class, 'barang_masuk_id');
     }
 
-    /**
-     * Relasi ke User (Pemegang/Penerima)
-     * "1 Log ini milik 1 User (Pemegang)"
-     */
     public function pemegang()
     {
-        // 'user_pemegang_id' adalah foreign key di tabel INI
         return $this->belongsTo(User::class, 'user_pemegang_id');
     }
 
-    /**
-     * Relasi ke User (Admin/Petugas IT)
-     * "1 Log ini dibuat oleh 1 User (Admin)"
-     */
     public function admin()
     {
-        // 'admin_id' adalah foreign key di tabel INI
         return $this->belongsTo(User::class, 'admin_id');
     }
 }

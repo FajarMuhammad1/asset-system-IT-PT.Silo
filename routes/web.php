@@ -30,6 +30,7 @@ use App\Http\Controllers\PenggunaDashboardController;
 use App\Http\Controllers\Admin\PpiAdminController; // 
 use App\Http\Controllers\Pengguna\PpiController as PenggunaPpiController;
 use App\Http\Controllers\Pengguna\TicketController as PenggunaTicketController;
+use App\Http\Controllers\UserBASTController;
 
 
 /*
@@ -94,13 +95,15 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::resource('master-barang', MasterBarangController::class);
     
     //Barang Keluar (BAST)
-    Route::prefix('barangkeluar')->name('barangkeluar.')->group(function () {
-        Route::get('/create', [BarangKeluarController::class, 'create'])->name('create');
-        Route::post('/store', [BarangKeluarController::class, 'store'])->name('store');
-        Route::get('/get-asset-details', [BarangKeluarController::class, 'getAssetDetails'])->name('getAssetDetails');
-        Route::get('/', [BarangKeluarController::class, 'index'])->name('index');
-        Route::get('/show/{id}', [BarangKeluarController::class, 'show'])->name('show');
-    });
+   Route::prefix('barangkeluar')->name('barangkeluar.')->group(function () {
+    Route::get('/', [BarangKeluarController::class, 'index'])->name('index');
+    Route::get('/create', [BarangKeluarController::class, 'create'])->name('create');
+    Route::get('/get-asset-details', [BarangKeluarController::class, 'getAssetDetails'])->name('getAssetDetails');
+    Route::post('/store', [BarangKeluarController::class, 'store'])->name('store');
+    Route::get('/{id}', [BarangKeluarController::class, 'show'])->name('show');
+    Route::post('/{id}/admin-sign', [BarangKeluarController::class, 'adminSign'])->name('adminSign');
+});
+
 
     // Helpdesk (Admin)
     Route::prefix('Admin')->name('admin.')->group(function () {
@@ -140,6 +143,20 @@ Route::middleware(['checkLogin:Pengguna'])->prefix('Pengguna')->name('pengguna.'
     Route::get('/helpdesk/create', [PenggunaTicketController::class, 'create'])->name('helpdesk.create');
     Route::post('/helpdesk', [PenggunaTicketController::class, 'store'])->name('helpdesk.store');
     Route::get('/helpdesk/{id}', [PenggunaTicketController::class, 'show'])->name('helpdesk.show');
+
+// BAST Untuk Pengguna (TTD)
+Route::prefix('user/bast')->name('userbast.')->middleware('auth')->group(function () {
+
+    // List BAST yang harus ditandatangani user
+    Route::get('/', [UserBASTController::class, 'index'])->name('index');
+
+    // Halaman TTD user
+    Route::get('/sign/{id}', [UserBASTController::class, 'sign'])->name('sign');
+
+    // Submit TTD user
+    Route::post('/sign/{id}', [UserBASTController::class, 'submitSign'])->name('submit');
+});
+
 
 });
 

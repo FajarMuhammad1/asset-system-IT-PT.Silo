@@ -182,6 +182,12 @@
             <span>Lapor Kerusakan</span>
         </a>
     </li>
+       <li class="nav-item">
+        <a class="nav-link" href="{{ route('pengguna.userbast.index') }}">
+            <i class="fas fa-info-circle"></i>
+            <span>Informasi Barang</span>
+        </a>
+    </li>
     
     @endif
     {{-- =============================================== --}}

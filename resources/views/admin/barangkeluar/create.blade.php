@@ -1,269 +1,262 @@
 @extends('layouts.app') 
 
-@section('title', $title)
+@section('title', 'Buat Serah Terima Aset (BAST)')
 
 @section('content')
-<h1 class="h3 mb-4 text-gray-800">
-    <i class="fas fa-upload mr-2"></i> {{ $title }}
-</h1>
+<div class="container-fluid">
 
-@if (session('success'))
-    <div class="alert alert-success">{{ session('success') }}</div>
-@endif
+    <h1 class="h3 mb-4 text-gray-800">
+        <i class="fas fa-handshake mr-2"></i> Form Serah Terima Aset
+    </h1>
 
-<div class="card shadow mb-4">
-    <div class="card-body">
+    {{-- Tampilkan Error Validasi Global --}}
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <form action="{{ route('barangkeluar.store') }}" method="POST" id="bast-form" enctype="multipart/form-data">
+        @csrf
         
-        @if ($errors->any())
-            <div class="alert alert-danger">
-                <strong>Terjadi kesalahan!</strong> Cek kembali input Anda:
-                <ul>
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
-        <form action="{{ route('barangkeluar.store') }}" method="POST" id="bast-form" enctype="multipart/form-data">
-            @csrf
-            
-            <p class="text-muted">Form ini akan mengubah status aset dari <strong>'Stok'</strong> menjadi <strong>'Dipakai'</strong>.</p>
-            <hr>
-
-            {{-- BAGIAN 1: PILIH ASET --}}
-            <h5 class="font-weight-bold">1. Pilih Aset (Scan/Pilih Kode Aset)</h5>
-            <div class="form-group">
-                <label>Pilih Aset (Hanya yang berstatus 'Stok')</label>
-                
-                {{-- [UPDATE] Tambah class 'select2-search' --}}
-                <select name="barang_masuk_id" id="aset_select" class="form-control select2-search" required>
-                    <option value="">-- Pilih Aset (Kode Aset / SN) --</option>
-                    @foreach ($asetStok as $aset)
-                        <option value="{{ $aset->id }}" {{ old('barang_masuk_id') == $aset->id ? 'selected' : '' }}>
-                            {{ $aset->kode_asset }} | {{ $aset->masterBarang->nama_barang }} (SN: {{ $aset->serial_number }})
-                        </option>
-                    @endforeach
-                </select>
-                <div id="aset-error" class="text-danger mt-2" style="display: none;"></div>
-            </div>
-            
-            <div id="loading-spinner" style="display: none;" class="text-center my-3">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="sr-only">Loading...</span>
-                </div>
-            </div>
-
-            {{-- BAGIAN 2: DETAIL ASET (OTOMATIS) --}}
-            <div id="detail-aset-container" style="display: none;">
-                <h5 class="font-weight-bold mt-4">2. Detail Aset (Otomatis)</h5>
-                <div class="row">
-                    <div class="col-md-4"><div class="form-group"><label>No. SJ</label><input type="text" id="no_sj" class="form-control" readonly></div></div>
-                    <div class="col-md-4"><div class="form-group"><label>No. PPI</label><input type="text" id="no_ppi" class="form-control" readonly></div></div>
-                    <div class="col-md-4"><div class="form-group"><label>No. PO</label><input type="text" id="no_po" class="form-control" readonly></div></div>
-                    <div class="col-md-4"><div class="form-group"><label>Kategori</label><input type="text" id="kategori" class="form-control" readonly></div></div>
-                    <div class="col-md-4"><div class="form-group"><label>Merk</label><input type="text" id="merk" class="form-control" readonly></div></div>
-                    <div class="col-md-4"><div class="form-group"><label>Model</label><input type="text" id="model" class="form-control" readonly></div></div>
-                    <div class="col-md-6"><div class="form-group"><label>Serial Number</label><input type="text" id="serial_number" class="form-control" readonly></div></div>
-                    <div class="col-md-6"><div class="form-group"><label>Kode Aset</label><input type="text" id="kode_asset" class="form-control" readonly></div></div>
-                    <div class="col-md-12"><div class="form-group"><label>Spesifikasi</label><textarea id="spesifikasi" class="form-control" readonly rows="2"></textarea></div></div>
-                </div>
-            </div>
-
-            {{-- BAGIAN 3: INFORMASI SERAH TERIMA --}}
-            <div id="serah-terima-container" style="display: none;">
-                <h5 class="font-weight-bold mt-4">3. Informasi Serah Terima</h5>
-                <div class="row">
-                    <div class="col-md-6">
+        <div class="row">
+            {{-- KOLOM KIRI: PILIH BARANG --}}
+            <div class="col-lg-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 bg-primary text-white">
+                        <h6 class="m-0 font-weight-bold">1. Pilih Aset (Stok Tersedia)</h6>
+                    </div>
+                    <div class="card-body">
+                        
                         <div class="form-group">
-                            <label>Serahkan Kepada (User Pemegang)</label>
-                            
-                            {{-- [UPDATE] Tambah class 'select2-search' --}}
-                            <select name="user_pemegang_id" id="user_select" class="form-control select2-search" required>
-                                <option value="">-- Pilih User --</option>
-                                @foreach ($users as $user)
-                                    <option value="{{ $user->id }}" {{ old('user_pemegang_id') == $user->id ? 'selected' : '' }}>
-                                        {{ $user->name }} ({{ $user->email }})
+                            <label class="font-weight-bold">Cari Aset</label>
+                            <select name="barang_masuk_id" id="aset_select" class="form-control select2" required>
+                                <option value="">-- Cari Kode / SN / Nama Barang --</option>
+                                @foreach ($asetStok as $aset)
+                                    <option value="{{ $aset->id }}">
+                                        {{ $aset->kode_asset }} - {{ $aset->masterBarang->nama_barang }} (SN: {{ $aset->serial_number }})
                                     </option>
                                 @endforeach
                             </select>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Tanggal Serah Terima</label>
-                            <input type="date" name="tanggal_serah_terima" class="form-control" value="{{ old('tanggal_serah_terima', date('Y-m-d')) }}" required>
+
+                        {{-- AREA DETAIL ASET (MUNCUL OTOMATIS) --}}
+                        <div id="loading-asset" class="text-center py-3" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <small class="d-block mt-2">Mengambil data...</small>
                         </div>
-                    </div>
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            <label>Keterangan </label>
-                            <textarea name="keterangan" class="form-control" rows="2">{{ old('keterangan') }}</textarea>
+
+                        <div id="detail-aset" class="alert alert-secondary mt-3" style="display:none; border-left: 5px solid #4e73df;">
+                            <h6 class="font-weight-bold text-dark mb-2">Detail Aset:</h6>
+                            <table class="table table-sm table-borderless mb-0" style="font-size: 0.9rem;">
+                                <tr>
+                                    <td width="35%" class="text-muted">Merk / Model</td>
+                                    <td class="font-weight-bold" id="d_merk_model"></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Serial Number</td>
+                                    <td class="font-weight-bold" id="d_sn"></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Spesifikasi</td>
+                                    <td id="d_spek"></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Dokumen (SJ/PO)</td>
+                                    <td id="d_dokumen"></td>
+                                </tr>
+                            </table>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Bukti Foto (Opsional)</label>
-                            <input type="file" name="foto_bukti" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>File Pendukung (Opsional)</label>
-                            <input type="file" name="file" class="form-control">
-                        </div>
+
                     </div>
                 </div>
-
-                {{-- BAGIAN 4: TANDA TANGAN --}}
-                <h5 class="font-weight-bold mt-4">4. Tanda Tangan</h5>
-                <div class="row">
-                    {{-- TTD Penerima --}}
-                    <div class="col-md-6">
-                        <label>TTD Penerima</label>
-                        <div class="canvas-wrapper">
-                            <canvas id="ttd-penerima" class="signature-pad" width=400 height=200></canvas>
-                        </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger clear-pad" data-target="ttd-penerima">Hapus TTD</button>
-                        <input type="hidden" name="ttd_penerima" id="input-ttd-penerima">
-                    </div>
-                    {{-- TTD Petugas --}}
-                    <div class="col-md-6">
-                        <label>TTD Petugas IT (Anda)</label>
-                        <div class="canvas-wrapper">
-                            <canvas id="ttd-petugas" class="signature-pad" width=400 height=200></canvas>
-                        </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger clear-pad" data-target="ttd-petugas">Hapus TTD</button>
-                        <input type="hidden" name="ttd_petugas" id="input-ttd-petugas">
-                    </div>
-                </div>
-
-                <hr>
-                <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="fas fa-check-circle mr-2"></i> Serahkan Aset
-                </button>
             </div>
 
-        </form>
-    </div>
-</div>
+            {{-- KOLOM KANAN: PENERIMA & TANDA TANGAN --}}
+            <div class="col-lg-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 bg-success text-white">
+                        <h6 class="m-0 font-weight-bold">2. Data Penerima & Penyerahan</h6>
+                    </div>
+                    <div class="card-body">
+                        
+                        <div class="form-group">
+                            <label class="font-weight-bold">User Penerima (Karyawan)</label>
+                            <select name="user_pemegang_id" class="form-control select2" required>
+                                <option value="">-- Pilih Nama User --</option>
+                                @foreach ($users as $u)
+                                    <option value="{{ $u->id }}">{{ $u->nama }} - {{ $u->jabatan ?? 'Karyawan' }}</option>
+                                @endforeach
+                            </select>
+                        </div>
 
-<style>
-    /* Bikin canvas TTD ada border */
-    .canvas-wrapper {
-        border: 1px dashed #ccc;
-        border-radius: 5px;
-        width: 400px; 
-        height: 200px;
-        margin-bottom: 5px;
-    }
-    .signature-pad {
-        cursor: crosshair;
-    }
-    /* [UPDATE] Bikin Select2 gak bentrok sama TTD pad */
-    .select2-container {
-        z-index: 1050; 
-    }
-</style>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Tanggal Serah Terima</label>
+                                    <input type="date" name="tanggal_serah_terima" class="form-control" value="{{ date('Y-m-d') }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Bukti Foto (Opsional)</label>
+                                    <input type="file" name="foto_bukti" class="form-control-file" style="font-size: 0.9rem;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Keterangan / Kelengkapan</label>
+                            <textarea name="keterangan" class="form-control" rows="2" placeholder="Contoh: Unit lengkap tas, charger, mouse..."></textarea>
+                        </div>
+
+                        <hr>
+
+                        {{-- FITUR TANDA TANGAN LANGSUNG --}}
+                        <h6 class="font-weight-bold text-dark">Tanda Tangan Langsung (Opsional)</h6>
+                        <div class="alert alert-warning py-2" style="font-size: 0.85rem;">
+                            <i class="fas fa-info-circle"></i> 
+                            Jika User ada ditempat, silakan tanda tangan disini agar status langsung <strong>SELESAI</strong>. 
+                            <br>Jika dikosongkan, status akan menjadi <strong>DRAFT</strong> (User tanda tangan via login).
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 text-center">
+                                <label class="small font-weight-bold mb-1">Penerima (User)</label>
+                                <div class="border rounded" style="background: #f8f9fc;">
+                                    <canvas id="pad-penerima" width="230" height="120" style="touch-action: none; cursor: crosshair;"></canvas>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-danger mt-1 btn-block" onclick="clearPenerima()">
+                                    <i class="fas fa-eraser"></i> Hapus
+                                </button>
+                                <input type="hidden" name="ttd_penerima" id="inp-penerima">
+                            </div>
+
+                            <div class="col-md-6 text-center">
+                                <label class="small font-weight-bold mb-1">Penyerah (Admin)</label>
+                                <div class="border rounded" style="background: #f8f9fc;">
+                                    <canvas id="pad-petugas" width="230" height="120" style="touch-action: none; cursor: crosshair;"></canvas>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-danger mt-1 btn-block" onclick="clearPetugas()">
+                                    <i class="fas fa-eraser"></i> Hapus
+                                </button>
+                                <input type="hidden" name="ttd_petugas" id="inp-petugas">
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary btn-lg btn-block shadow">
+                            <i class="fas fa-save mr-2"></i> PROSES SERAH TERIMA
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
 @endsection
 
 @push('scripts')
-{{-- Library TTD (SignaturePad) --}}
+{{-- Load Library Select2 & SignaturePad --}}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 
 <script>
-$(document).ready(function() {
-    
-    // [UPDATE] INISIALISASI SELECT2
-    $('.select2-search').select2({
-        placeholder: function(){
-            $(this).data('placeholder');
-        },
-        width: '100%'
-    });
-    
-    // --- SETUP SIGNATURE PAD ---
-    const canvasPenerima = document.getElementById('ttd-penerima');
-    const signaturePadPenerima = new SignaturePad(canvasPenerima);
+    // Variabel Global untuk Signature Pad
+    let padPenerima, padPetugas;
 
-    const canvasPetugas = document.getElementById('ttd-petugas');
-    const signaturePadPetugas = new SignaturePad(canvasPetugas);
+    $(document).ready(function() {
+        // 1. Inisialisasi Select2 (Pencarian)
+        $('.select2').select2({
+            theme: "classic",
+            width: '100%'
+        });
 
-    // Hapus TTD
-    $('.clear-pad').click(function() {
-        let target = $(this).data('target');
-        if (target === 'ttd-penerima') {
-            signaturePadPenerima.clear();
-        } else if (target === 'ttd-petugas') {
-            signaturePadPetugas.clear();
+        // 2. Inisialisasi Signature Pad
+        // Perlu resize canvas agar resolusi bagus di layar retina/HP
+        function resizeCanvas(canvas) {
+            var ratio =  Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
         }
-    });
 
-    // --- LOGIKA AJAX (OTOMATIS KE ISI) ---
-    $('#aset_select').change(function() {
-        let asetId = $(this).val();
-        let detailContainer = $('#detail-aset-container');
-        let serahTerimaContainer = $('#serah-terima-container');
-        let spinner = $('#loading-spinner');
-        let errorMsg = $('#aset-error');
+        var canvas1 = document.getElementById('pad-penerima');
+        var canvas2 = document.getElementById('pad-petugas');
         
-        detailContainer.hide();
-        serahTerimaContainer.hide();
-        errorMsg.hide();
+        // Panggil resize saat awal load
+        resizeCanvas(canvas1);
+        resizeCanvas(canvas2);
 
-        if (asetId === "") {
-            return;
-        }
+        padPenerima = new SignaturePad(canvas1, { backgroundColor: 'rgb(255, 255, 255)' });
+        padPetugas = new SignaturePad(canvas2, { backgroundColor: 'rgb(255, 255, 255)' });
 
-        spinner.show();
+        // 3. AJAX: Ambil Detail Aset saat Dropdown Berubah
+        $('#aset_select').change(function() {
+            let asetId = $(this).val();
+            
+            // Reset Tampilan
+            $('#detail-aset').hide();
+            
+            if (!asetId) return;
 
-        $.ajax({
-            url: "{{ route('barangkeluar.getAssetDetails') }}",
-            type: 'GET',
-            data: { id: asetId },
-            success: function(data) {
-                $('#no_sj').val(data.no_sj);
-                $('#no_ppi').val(data.no_ppi);
-                $('#no_po').val(data.no_po);
-                $('#kategori').val(data.kategori);
-                $('#merk').val(data.merk);
-                $('#model').val(data.model);
-                $('#spesifikasi').val(data.spesifikasi);
-                $('#serial_number').val(data.serial_number);
-                $('#kode_asset').val(data.kode_asset);
+            $('#loading-asset').show();
 
-                spinner.hide();
-                detailContainer.slideDown();
-                serahTerimaContainer.slideDown();
-            },
-            error: function(xhr) {
-                let error = xhr.responseJSON.error || "Gagal mengambil data aset.";
-                errorMsg.text('Error: ' + error).show();
-                spinner.hide();
+            $.ajax({
+                url: "{{ route('barangkeluar.getAssetDetails') }}", // Pastikan route ini ada di web.php
+                type: "GET",
+                data: { id: asetId },
+                success: function(response) {
+                    $('#loading-asset').hide();
+                    
+                    // Isi Data ke Tabel
+                    $('#d_merk_model').text((response.merk || '-') + ' ' + (response.model || ''));
+                    $('#d_sn').text(response.serial_number);
+                    $('#d_spek').text(response.spesifikasi || '-');
+                    $('#d_dokumen').text((response.no_sj || '-') + ' / ' + (response.no_po || '-'));
+
+                    // Munculkan Tabel
+                    $('#detail-aset').fadeIn();
+                },
+                error: function(xhr) {
+                    $('#loading-asset').hide();
+                    console.log(xhr); // Log error ke console browser
+                    alert("Gagal mengambil data aset! " + (xhr.responseJSON ? xhr.responseJSON.error : 'Terjadi Kesalahan Server'));
+                }
+            });
+        });
+
+        // 4. Submit Form: Masukkan TTD ke Input Hidden
+        $('#bast-form').submit(function(e) {
+            // Cek apakah ada coretan? Kalau ada, simpan ke input hidden.
+            if (!padPenerima.isEmpty()) {
+                $('#inp-penerima').val(padPenerima.toDataURL());
             }
+            if (!padPetugas.isEmpty()) {
+                $('#inp-petugas').val(padPetugas.toDataURL());
+            }
+            
+            // Lanjut submit...
+            return true;
         });
     });
 
-    // --- LOGIKA SUBMIT FORM (NYIMPEN TTD) ---
-    $('#bast-form').submit(function(e) {
-        if (signaturePadPenerima.isEmpty()) {
-            alert("Tanda Tangan Penerima tidak boleh kosong!");
-            e.preventDefault(); 
-            return;
-        }
-        if (signaturePadPetugas.isEmpty()) {
-            alert("Tanda Tangan Petugas IT tidak boleh kosong!");
-            e.preventDefault(); 
-            return;
-        }
-
-        let ttdPenerimaData = signaturePadPenerima.toDataURL('image/png');
-        let ttdPetugasData = signaturePadPetugas.toDataURL('image/png');
-
-        $('#input-ttd-penerima').val(ttdPenerimaData);
-        $('#input-ttd-petugas').val(ttdPetugasData);
-    });
-
-});
+    // Fungsi Tombol Hapus TTD
+    function clearPenerima() {
+        padPenerima.clear();
+        $('#inp-penerima').val('');
+    }
+    function clearPetugas() {
+        padPetugas.clear();
+        $('#inp-petugas').val('');
+    }
 </script>
 @endpush

@@ -8,172 +8,210 @@ use App\Models\LogSerahTerima;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage; // <-- PENTING BUAT FILE
+use Illuminate\Support\Facades\Storage;
 
 class BarangKeluarController extends Controller
 {
     /**
-     * Tampilkan Form BAST (Serah Terima)
+     * FORM ADMIN UNTUK MEMBUAT BAST
      */
     public function create()
     {
-        // 1. Ambil SEMUA ASET yang statusnya 'Stok'
+        // Ambil barang yang statusnya 'Stok'
         $asetStok = BarangMasuk::with('masterBarang', 'suratJalan')
-                                ->where('status', 'Stok')
-                                ->get();
-                                    
-        // 2. Ambil SEMUA USER (buat milih pemegang)
-        // --- INI YANG DIPERBAIKI ---
-        $users = User::orderBy('nama')->get(); // 'nama' diubah jadi 'name'
+            ->where('status', 'Stok')
+            ->get();
+
+        // Ambil user karyawan (bukan admin)
+        $users = User::where('role', '!=', 'admin')->orderBy('nama')->get();
 
         return view('admin.barangkeluar.create', [
-            'title' => 'Form  (Barang Keluar)',
+            'title' => 'Form Serah Terima Aset (BAST)',
             'asetStok' => $asetStok,
             'users' => $users,
         ]);
     }
 
     /**
-     * FUNGSI BARU: Ambil detail Aset via AJAX
+     * API / AJAX DETAILS ASET
      */
     public function getAssetDetails(Request $request)
     {
-        if (!$request->has('id')) {
-            return response()->json(['error' => 'ID Aset tidak ada.'], 400);
+        if (!$request->id) {
+            return response()->json(['error' => 'ID Aset kosong'], 400);
         }
 
         try {
-            $aset = BarangMasuk::with('masterBarang', 'suratJalan')
-                                ->findOrFail($request->id);
+            $aset = BarangMasuk::with('masterBarang', 'suratJalan')->findOrFail($request->id);
 
-            if ($aset->status != 'Stok') {
-                return response()->json(['error' => 'Aset ini tidak berstatus Stok!'], 422);
+            if ($aset->status !== 'Stok') {
+                return response()->json(['error' => 'Aset tidak berstatus Stok'], 422);
             }
-            
-            return response()->json([
-                'kode_asset' => $aset->kode_asset,
-                'serial_number' => $aset->serial_number,
-                'no_sj' => $aset->suratJalan->no_sj ?? 'N/A',
-                'no_ppi' => $aset->suratJalan->no_ppi ?? 'N/A',
-                'no_po' => $aset->suratJalan->no_po ?? 'N/A',
-                'kategori' => $aset->masterBarang->kategori ?? 'N/A',
-                'merk' => $aset->masterBarang->merk ?? 'N/A',
-                'model' => $aset->masterBarang->nama_barang ?? 'N/A',
-                'spesifikasi' => $aset->masterBarang->spesifikasi ?? 'N/A',
-            ]);
 
+            return response()->json([
+                'kode_asset'    => $aset->kode_asset,
+                'serial_number' => $aset->serial_number,
+                'no_sj'         => $aset->suratJalan->nomor_surat_jalan ?? '-',
+                'no_ppi'        => $aset->suratJalan->nomor_ppi ?? '-',
+                'no_po'         => $aset->suratJalan->no_po ?? '-',
+                'kategori'      => $aset->masterBarang->kategori->nama_kategori ?? '-', 
+                'merk'          => $aset->masterBarang->merk ?? '-',
+                'model'         => $aset->masterBarang->nama_barang ?? '-',
+                'spesifikasi'   => $aset->masterBarang->spesifikasi ?? '-',
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Aset tidak ditemukan.'], 404);
+            return response()->json(['error' => 'Aset tidak ditemukan: ' . $e->getMessage()], 404);
         }
     }
 
-
     /**
-     * Simpan data  (Serah Terima)
+     * PROSES SIMPAN BAST (Hybrid: Draft atau Langsung Selesai)
      */
     public function store(Request $request)
     {
-        // 1. Validasi
+        // 1. Validasi Input
         $request->validate([
-            'barang_masuk_id' => 'required|exists:barang_masuk,id',
-            'user_pemegang_id' => 'required|exists:users,id',
+            'barang_masuk_id'      => 'required|exists:barang_masuk,id',
+            'user_pemegang_id'     => 'required|exists:users,id',
             'tanggal_serah_terima' => 'required|date',
-            'keterangan' => 'nullable|string',
-            'ttd_penerima' => 'required|string', 
-            'ttd_petugas' => 'required|string',
-            'foto_bukti' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'file' => 'nullable|file|mimes:pdf,doc,docx|max:4096',
+            'keterangan'           => 'nullable|string',
+            'foto_bukti'           => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'ttd_penerima'         => 'nullable|string', // Base64
+            'ttd_petugas'          => 'nullable|string', // Base64
         ]);
 
         DB::beginTransaction();
         try {
-            $aset = BarangMasuk::find($request->barang_masuk_id);
+            $aset = BarangMasuk::findOrFail($request->barang_masuk_id);
 
-            if ($aset->status != 'Stok') {
-                throw new \Exception('Aset ini sudah tidak berstatus Stok.');
+            // Validasi Status Barang
+            if ($aset->status !== 'Stok') {
+                throw new \Exception("Aset ini sudah tidak tersedia (bukan Stok).");
             }
 
-            $logData = [
-                'barang_masuk_id' => $aset->id,
-                'user_pemegang_id' => $request->user_pemegang_id,
-                'admin_id' => Auth::id(),
-                'tanggal_serah_terima' => $request->tanggal_serah_terima,
-                'keterangan' => $request->keterangan,
-                'ttd_penerima' => $request->ttd_penerima,
-                'ttd_petugas' => $request->ttd_petugas,
-            ];
-
+            // CEK: Apakah Tanda Tangan diisi di form?
+            $isDirectHandover = $request->filled('ttd_penerima') && $request->filled('ttd_petugas');
+            
+            // Upload Foto jika ada
+            $fotoPath = null;
             if ($request->hasFile('foto_bukti')) {
-                $path = $request->file('foto_bukti')->store('bukti_serah_terima', 'public');
-                $logData['foto_bukti'] = $path;
+                $fotoPath = $request->file('foto_bukti')->store('bukti_serah_terima', 'public');
             }
 
-            if ($request->hasFile('file')) {
-                $path = $request->file('file')->store('file_serah_terima', 'public');
-                $logData['file'] = $path;
+            // Insert ke log_serah_terima
+            LogSerahTerima::create([
+                'barang_masuk_id'      => $aset->id,
+                'user_pemegang_id'     => $request->user_pemegang_id,
+                
+                // Pastikan 'admin_id' terisi user yang sedang login
+                'admin_id'             => Auth::id(), 
+                
+                'tanggal_serah_terima' => $request->tanggal_serah_terima,
+                'keterangan'           => $request->keterangan,
+                'foto_bukti'           => $fotoPath,
+                'kondisi_saat_serah'   => $aset->kondisi ?? 'Baik',
+                
+                // Simpan TTD jika ada
+                'ttd_penerima'         => $request->ttd_penerima,
+                'ttd_petugas'          => $request->ttd_petugas, 
+                
+                // Logic Status
+                'status'               => $isDirectHandover ? 'selesai' : 'menunggu_ttd_user'
+            ]);
+
+            // UPDATE STATUS ASET: Hanya jika langsung selesai (TTD lengkap)
+            if ($isDirectHandover) {
+                $aset->update([
+                    'status' => 'Dipakai',
+                    'user_pemegang_id' => $request->user_pemegang_id,
+                    'lokasi_sekarang' => 'User ID: ' . $request->user_pemegang_id
+                ]);
+                
+                $pesan = 'BAST Berhasil! Aset resmi diserahkan & status Selesai.';
+            } else {
+                // Jika cuma Draft, status aset tetap 'Stok' dulu
+                $pesan = 'Draft BAST dibuat. Menunggu User login untuk tanda tangan.';
             }
-
-            // UPDATE ASETNYA
-            $aset->status = 'Dipakai';
-            $aset->user_pemegang_id = $request->user_pemegang_id;
-            $aset->save();
-
-            // CATAT DI LOG
-            LogSerahTerima::create($logData);
 
             DB::commit();
 
-            return redirect()->route('barangmasuk.index') 
-                             ->with('success', 'Aset berhasil diserahkan.');
+            return redirect()->route('barangkeluar.index')->with('success', $pesan);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            if (isset($logData['foto_bukti']) && Storage::disk('public')->exists($logData['foto_bukti'])) {
-                Storage::disk('public')->delete($logData['foto_bukti']);
-            }
-            if (isset($logData['file']) && Storage::disk('public')->exists($logData['file'])) {
-                Storage::disk('public')->delete($logData['file']);
-            }
-            
-            return back()->withInput()->with('error', 'Gagal menyerahkan aset! Error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal: ' . $e->getMessage())->withInput();
         }
     }
 
-
-    // --- INI FUNGSI BARU YANG DITAMBAHKAN ---
-
     /**
-     * Tampilkan list/riwayat semua  (Serah Terima)
+     * DAFTAR BAST
      */
     public function index()
     {
-        // Ambil semua log, urut dari terbaru
-        // Kita pake 'with' relasi yang tadi kita bikin di Model
-        $logs = LogSerahTerima::with([
-            'aset.masterBarang', // Ambil info aset & masternya (Nama Barang)
-            'pemegang',          // Ambil info user pemegang
-            'admin'              // Ambil info admin yg nyerahin
-        ])->latest()->get();
+        $logs = LogSerahTerima::with(['aset.masterBarang', 'pemegang', 'admin'])
+            ->latest()
+            ->get();
 
         return view('admin.barangkeluar.index', [
-            'title' => 'Riwayat Serah Terima Aset ',
-            'logs' => $logs
+            'title' => 'Riwayat Serah Terima (BAST)',
+            'logs'  => $logs
         ]);
     }
 
     /**
-     * Tampilkan detail 1 BAST (termasuk TTD & Foto)
+     * DETAIL 1 BAST
      */
     public function show($id)
     {
-        $log = LogSerahTerima::with('aset.masterBarang', 'pemegang', 'admin')
-                             ->findOrFail($id);
+        $log = LogSerahTerima::with(['aset.masterBarang', 'pemegang', 'admin'])
+            ->findOrFail($id);
 
         return view('admin.barangkeluar.show', [
-            'title' => 'Detail',
+            'title' => 'Detail BAST',
             'log' => $log
         ]);
     }
 
-    // --- BATAS FUNGSI BARU ---
+    /**
+     * USER TANDA TANGAN (Dipanggil dari halaman User)
+     */
+    public function userSign(Request $request, $id)
+    {
+        // Validasi input 'ttd_penerima' (Sesuai name di form user)
+        $request->validate(['ttd_penerima' => 'required|string']);
+
+        $log = LogSerahTerima::findOrFail($id);
+        
+        $log->update([
+            'ttd_penerima' => $request->ttd_penerima, // Perbaikan nama field
+            'status' => 'menunggu_ttd_admin'
+        ]);
+        
+        return back()->with('success', 'TTD User berhasil disimpan.');
+    }
+
+    /**
+     * ADMIN TANDA TANGAN (Dipanggil dari halaman Detail Admin)
+     */
+    public function adminSign(Request $request, $id)
+    {
+        // Validasi input 'ttd_petugas' (Sesuai name di form admin)
+        $request->validate(['ttd_petugas' => 'required|string']);
+
+        $log = LogSerahTerima::findOrFail($id);
+        
+        $log->update([
+            'ttd_petugas' => $request->ttd_petugas, // Perbaikan nama field
+            'status' => 'selesai'
+        ]);
+
+        // Finalisasi aset menjadi 'Dipakai'
+        $log->aset->update([
+            'status' => 'Dipakai',
+            'user_pemegang_id' => $log->user_pemegang_id,
+            'lokasi_sekarang' => 'User ID: ' . $log->user_pemegang_id
+        ]);
+
+        return back()->with('success', 'TTD Admin disimpan. BAST Selesai.');
+    }
 }
