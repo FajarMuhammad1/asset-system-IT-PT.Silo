@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BarangMasuk;
 use App\Models\User;
 use App\Models\LogSerahTerima;
+use App\Models\SuratJalan; // [BARU] Import Model Surat Jalan
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -99,23 +100,16 @@ class BarangKeluarController extends Controller
             }
 
             // Insert ke log_serah_terima
-            LogSerahTerima::create([
+            $log = LogSerahTerima::create([
                 'barang_masuk_id'      => $aset->id,
                 'user_pemegang_id'     => $request->user_pemegang_id,
-                
-                // Pastikan 'admin_id' terisi user yang sedang login
                 'admin_id'             => Auth::id(), 
-                
                 'tanggal_serah_terima' => $request->tanggal_serah_terima,
                 'keterangan'           => $request->keterangan,
                 'foto_bukti'           => $fotoPath,
                 'kondisi_saat_serah'   => $aset->kondisi ?? 'Baik',
-                
-                // Simpan TTD jika ada
                 'ttd_penerima'         => $request->ttd_penerima,
                 'ttd_petugas'          => $request->ttd_petugas, 
-                
-                // Logic Status
                 'status'               => $isDirectHandover ? 'selesai' : 'menunggu_ttd_user'
             ]);
 
@@ -127,9 +121,13 @@ class BarangKeluarController extends Controller
                     'lokasi_sekarang' => 'User ID: ' . $request->user_pemegang_id
                 ]);
                 
+                // [BARU] Cek Surat Jalan Otomatis
+                if ($aset->surat_jalan_id) {
+                    $this->checkAndCloseSuratJalan($aset->surat_jalan_id);
+                }
+
                 $pesan = 'BAST Berhasil! Aset resmi diserahkan & status Selesai.';
             } else {
-                // Jika cuma Draft, status aset tetap 'Stok' dulu
                 $pesan = 'Draft BAST dibuat. Menunggu User login untuk tanda tangan.';
             }
 
@@ -177,13 +175,12 @@ class BarangKeluarController extends Controller
      */
     public function userSign(Request $request, $id)
     {
-        // Validasi input 'ttd_penerima' (Sesuai name di form user)
         $request->validate(['ttd_penerima' => 'required|string']);
 
         $log = LogSerahTerima::findOrFail($id);
         
         $log->update([
-            'ttd_penerima' => $request->ttd_penerima, // Perbaikan nama field
+            'ttd_penerima' => $request->ttd_penerima, 
             'status' => 'menunggu_ttd_admin'
         ]);
         
@@ -191,27 +188,68 @@ class BarangKeluarController extends Controller
     }
 
     /**
-     * ADMIN TANDA TANGAN (Dipanggil dari halaman Detail Admin)
+     * ADMIN TANDA TANGAN (FINALISASI)
      */
     public function adminSign(Request $request, $id)
     {
-        // Validasi input 'ttd_petugas' (Sesuai name di form admin)
         $request->validate(['ttd_petugas' => 'required|string']);
 
-        $log = LogSerahTerima::findOrFail($id);
+        // [PENTING] Load 'aset' untuk tahu surat_jalan_id
+        $log = LogSerahTerima::with('aset')->findOrFail($id);
         
+        // 1. Simpan TTD Admin & Update Status BAST
         $log->update([
-            'ttd_petugas' => $request->ttd_petugas, // Perbaikan nama field
+            'ttd_petugas' => $request->ttd_petugas, 
             'status' => 'selesai'
         ]);
 
-        // Finalisasi aset menjadi 'Dipakai'
-        $log->aset->update([
-            'status' => 'Dipakai',
-            'user_pemegang_id' => $log->user_pemegang_id,
-            'lokasi_sekarang' => 'User ID: ' . $log->user_pemegang_id
-        ]);
+        // 2. Finalisasi Aset menjadi 'Dipakai'
+        if ($log->aset) {
+            $log->aset->update([
+                'status' => 'Dipakai',
+                'user_pemegang_id' => $log->user_pemegang_id,
+                'lokasi_sekarang' => 'User ID: ' . $log->user_pemegang_id
+            ]);
 
-        return back()->with('success', 'TTD Admin disimpan. BAST Selesai.');
+            // [BARU] 3. Cek Otomatis Surat Jalan
+            if ($log->aset->surat_jalan_id) {
+                $this->checkAndCloseSuratJalan($log->aset->surat_jalan_id);
+            }
+        }
+
+        return back()->with('success', 'TTD Admin disimpan. BAST Selesai & Status Surat Jalan diperbarui.');
+    }
+
+    /**
+     * [HELPER BARU] Cek apakah semua barang di Surat Jalan sudah 'Dipakai'?
+     * Jika ya, otomatis centang 'is_bast_submitted' di tabel surat_jalan
+     */
+    private function checkAndCloseSuratJalan($suratJalanId)
+    {
+        // 1. Ambil Surat Jalan beserta semua barangnya
+        // Pastikan nama model SuratJalan sudah di-import di atas
+        $suratJalan = SuratJalan::with('BarangMasuk')->find($suratJalanId);
+
+        if (!$suratJalan) return;
+
+        // 2. Hitung total barang di SJ ini
+        $totalItems = $suratJalan->barangMasuk->count();
+
+        // Jika tidak ada barang, abaikan
+        if ($totalItems === 0) return;
+
+        // 3. Hitung barang yang statusnya sudah 'Dipakai' (Artinya sudah Serah Terima)
+        // Kita hitung juga yang 'Rusak' jaga-jaga jika barang rusak dianggap sudah "keluar" dari proses BAST
+        $completedItems = $suratJalan->barangMasuk
+            ->whereIn('status', ['Dipakai', 'Rusak']) 
+            ->count();
+
+        // 4. LOGIKA: Jika Jumlah Selesai == Total Barang, maka SJ dianggap Selesai (Submitted)
+        if ($completedItems === $totalItems) {
+            $suratJalan->update(['is_bast_submitted' => true]);
+        } else {
+            // Opsional: Jika ada barang diretur jadi Stok lagi, uncheck (biar akurat)
+            $suratJalan->update(['is_bast_submitted' => false]);
+        }
     }
 }

@@ -112,11 +112,11 @@
 
 <div class="row">
 
-    <div class="col-lg-8">
+    <div class="col-lg-4">
         
         <div class="card shadow mb-4">
             <div class="card-header py-3 bg-gradient-light">
-                <h6 class="m-0 font-weight-bold text-success">🏆 Top 5 Staff IT Teraktif (Input Task Report)</h6>
+                <h6 class="m-0 font-weight-bold text-success">🏆 Top 5 Staff IT Teraktif</h6>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -125,8 +125,7 @@
                             <tr>
                                 <th width="10%" class="text-center">Rank</th>
                                 <th>Nama Staff</th>
-                                <th>Jabatan</th>
-                                <th class="text-center">Total Task</th>
+                                <th class="text-center">Total</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -139,21 +138,18 @@
                                     @else {{ $index + 1 }}
                                     @endif
                                 </td>
-                                <td class="font-weight-bold">{{ $tech->nama }}</td>
-                                <td>{{ $tech->jabatan ?? '-' }}</td>
-                                <td class="text-center">
-                                    {{-- Menggunakan variable total_task sesuai query controller --}}
-                                    <span class="badge badge-success px-3 py-1" style="font-size: 0.9em;">
-                                        {{ $tech->total_task }} <i class="fas fa-clipboard-check ml-1"></i>
+                                <td>
+                                    <span class="font-weight-bold">{{ $tech->nama }}</span><br>
+                                    <small class="text-muted">{{ $tech->jabatan ?? '-' }}</small>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <span class="badge badge-success px-2 py-1">
+                                        {{ $tech->total_task }}
                                     </span>
                                 </td>
                             </tr>
                             @empty
-                            <tr>
-                                <td colspan="4" class="text-center text-muted py-3">
-                                    <i class="fas fa-info-circle mr-1"></i> Belum ada data task report yang diinput.
-                                </td>
-                            </tr>
+                            <tr><td colspan="3" class="text-center text-muted small py-3">Belum ada data task.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -164,31 +160,29 @@
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                 <h6 class="m-0 font-weight-bold text-primary">Riwayat BAST Terakhir</h6>
-                <a href="{{ route('barangkeluar.index') }}" class="btn btn-sm btn-info">Lihat Semua</a>
+                <a href="{{ route('barangkeluar.index') }}" class="btn btn-sm btn-info">Lihat</a>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-bordered" width="100%" cellspacing="0">
+                    <table class="table table-bordered table-sm" width="100%" cellspacing="0">
                         <thead>
-                            <tr><th>Tanggal</th><th>Barang</th><th>Penerima</th><th class="text-center">Status</th></tr>
+                            <tr><th>Tgl</th><th>Barang</th><th class="text-center">Sts</th></tr>
                         </thead>
                         <tbody>
                             @forelse ($recentBast ?? [] as $bast)
                             <tr>
-                                <td>{{ \Carbon\Carbon::parse($bast->tanggal_serah_terima)->format('d/m/Y') }}</td>
+                                <td>{{ \Carbon\Carbon::parse($bast->tanggal_serah_terima)->format('d/m') }}</td>
                                 <td>
-                                    {{ $bast->aset->masterBarang->nama_barang ?? '-' }}
-                                    <br><small class="text-muted">{{ $bast->aset->kode_asset ?? '' }}</small>
+                                    {{ Str::limit($bast->aset->masterBarang->nama_barang ?? '-', 15) }}
+                                    <br><small class="text-muted">{{ $bast->pemegang->nama ?? '-' }}</small>
                                 </td>
-                                <td>{{ $bast->pemegang->nama ?? '-' }}</td>
-                                <td class="text-center">
-                                    @if($bast->status == 'selesai') <span class="badge badge-success">Selesai</span>
-                                    @elseif($bast->status == 'menunggu_ttd_user') <span class="badge badge-warning text-dark">User</span>
-                                    @else <span class="badge badge-info">Admin</span> @endif
+                                <td class="text-center align-middle">
+                                    @if($bast->status == 'selesai') <i class="fas fa-check-circle text-success"></i>
+                                    @else <i class="fas fa-clock text-warning"></i> @endif
                                 </td>
                             </tr>
                             @empty
-                            <tr><td colspan="4" class="text-center text-muted">Belum ada data transaksi.</td></tr>
+                            <tr><td colspan="3" class="text-center text-muted small">Belum ada data.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -202,7 +196,7 @@
 
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Sebaran Laporan per Dept.</h6>
+                <h6 class="m-0 font-weight-bold text-primary">Sebaran Tiket per Dept.</h6>
             </div>
             <div class="card-body">
                 <div class="chart-pie pt-4 pb-2">
@@ -245,6 +239,70 @@
         </div>
 
     </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Statistik PPI Masuk (Per PT)</h6>
+            </div>
+            <div class="card-body">
+                
+                @if(empty($ppiPerCompany))
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-folder-open fa-3x mb-3 text-gray-300"></i><br>
+                        Belum ada data PPI.
+                    </div>
+                @else
+                    <div class="accordion" id="accordionPPI">
+                        @foreach($ppiPerCompany as $ptName => $data)
+                            @php 
+                                $collapseId = 'collapse' . Str::slug($ptName); 
+                            @endphp
+
+                            <div class="card mb-2 border-left-primary">
+                                <div class="card-header p-0" id="heading{{ $collapseId }}">
+                                    <h2 class="mb-0">
+                                        <button class="btn btn-link btn-block text-left d-flex justify-content-between align-items-center text-decoration-none py-3" 
+                                                type="button" 
+                                                data-toggle="collapse" 
+                                                data-target="#{{ $collapseId }}" 
+                                                aria-expanded="false" 
+                                                aria-controls="{{ $collapseId }}">
+                                            
+                                            <span class="font-weight-bold text-dark text-uppercase" style="font-size: 0.9rem;">
+                                                <i class="fas fa-building mr-2 text-gray-400"></i> {{ $ptName }}
+                                            </span>
+                                            
+                                            <span class="badge badge-primary badge-pill">{{ $data['total_company'] }}</span>
+                                        </button>
+                                    </h2>
+                                </div>
+
+                                <div id="{{ $collapseId }}" class="collapse" aria-labelledby="heading{{ $collapseId }}" data-parent="#accordionPPI">
+                                    <div class="card-body bg-light py-2 px-3">
+                                        <small class="text-muted text-uppercase font-weight-bold mb-2 d-block" style="font-size: 0.75rem;">Detail Departemen:</small>
+                                        <ul class="list-group list-group-flush shadow-sm rounded">
+                                            @foreach($data['departments'] as $dept)
+                                                <li class="list-group-item d-flex justify-content-between align-items-center bg-white px-3 py-2 border-bottom">
+                                                    <span style="font-size: 0.85rem;">{{ $dept['name'] }}</span>
+                                                    <span class="badge badge-secondary" style="font-size: 0.8em;">{{ $dept['count'] }}</span>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="mt-3 text-center small text-muted font-italic">
+                        *Klik nama perusahaan untuk melihat detail departemen.
+                    </div>
+                @endif
+
+            </div>
+        </div>
+    </div>
+
 </div>
 
 @endsection

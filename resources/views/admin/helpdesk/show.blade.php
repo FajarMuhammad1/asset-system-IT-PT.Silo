@@ -52,10 +52,29 @@
                     <th>Prioritas</th>
                     <td>{{ $ticket->prioritas }}</td>
                 </tr>
-                <tr>
+                                <tr>
                     <th>Status</th>
                     <td>
-                        <span class="badge badge-info">{{ $ticket->status }}</span>
+                        @if($ticket->status == 'Open')
+                            {{-- Kuning --}}
+                            <span class="badge badge-warning text-dark">{{ $ticket->status }}</span>
+                        
+                        @elseif($ticket->status == 'Progres')
+                            {{-- Biru Langit --}}
+                            <span class="badge badge-info">{{ $ticket->status }}</span>
+                        
+                        @elseif($ticket->status == 'Closed')
+                            {{-- Hijau --}}
+                            <span class="badge badge-success">{{ $ticket->status }}</span>
+                        
+                        @elseif($ticket->status == 'Reject')
+                            {{-- Merah --}}
+                            <span class="badge badge-danger">{{ $ticket->status }}</span>
+                        
+                        @else
+                            {{-- Abu-abu (Default) --}}
+                            <span class="badge badge-secondary">{{ $ticket->status }}</span>
+                        @endif
                     </td>
                 </tr>
                 <tr>

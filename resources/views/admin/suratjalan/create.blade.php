@@ -27,7 +27,7 @@
             
             <div class="row">
                 
-                {{-- 1. Input ID SURAT JALAN (DARI HO) --}}
+                {{-- 1. Input ID SURAT JALAN --}}
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>ID Surat Jalan <span class="text-danger">*</span></label>
@@ -58,7 +58,7 @@
                     </div>
                 </div>
                 
-                {{-- 3. Input Nomor PPI (UPDATE: JADI DROPDOWN) --}}
+                {{-- 3. Input Nomor PPI --}}
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Nomor PPI <span class="text-danger">*</span></label>
@@ -134,18 +134,14 @@
                     </div>
                 </div>
 
-                {{-- 8. Checkbox BAST --}}
-                <div class="col-md-4 d-flex align-items-center">
-                    <div class="form-check mt-3">
-                        <input class="form-check-input" 
-                               type="checkbox" 
-                               name="is_bast_submitted" 
-                               value="1" 
-                               id="bastCheck" 
-                               {{ old('is_bast_submitted') ? 'checked' : '' }}>
-                        <label class="form-check-label font-weight-bold text-success" for="bastCheck">
-                            <i class="fas fa-check-circle mr-1"></i> BAST Sudah Selesai?
-                        </label>
+                {{-- 8. Status BAST (INFO ONLY - OTOMATIS) --}}
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Status Serah Terima (BAST)</label>
+                        <div class="alert alert-light border small text-muted py-2 mb-0">
+                            <i class="fas fa-info-circle mr-1 text-info"></i> 
+                            Status otomatis <strong>Selesai</strong> setelah semua barang diserahterimakan di menu <a href="{{ route('barangkeluar.index') }}">BAST</a>.
+                        </div>
                     </div>
                 </div>
 

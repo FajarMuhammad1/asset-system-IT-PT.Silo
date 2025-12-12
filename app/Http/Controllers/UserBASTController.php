@@ -47,7 +47,7 @@ class UserBASTController extends Controller
 
         // Security 2: Pastikan statusnya memang belum ditandatangani
         if ($bast->status != 'menunggu_ttd_user') {
-            return redirect()->route('userbast.index')
+            return redirect()->route('pengguna.userbast.index')
                 ->with('error', 'Dokumen ini tidak dalam status perlu tanda tangan.');
         }
 
@@ -82,7 +82,7 @@ class UserBASTController extends Controller
         $bast->save();
 
         // Redirect kembali ke halaman index (Daftar BAST)
-        return redirect()->route('pengguna.bast.index')
+        return redirect()->route('pengguna.userbast.index')
             ->with('success', 'Tanda tangan berhasil dikirim! Menunggu konfirmasi admin.');
     }
 }

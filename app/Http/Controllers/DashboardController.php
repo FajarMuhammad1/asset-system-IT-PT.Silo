@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB; // PENTING
+use Illuminate\Support\Facades\DB; // PENTING: Untuk Query Chart & Raw SQL
+use Illuminate\Support\Str; // Untuk Slug ID Accordion
 use App\Models\User;
 use App\Models\Ppi;
 use App\Models\BarangMasuk;
@@ -21,7 +22,6 @@ class DashboardController extends Controller
         $penggunaCount = User::where('role', 'Pengguna')->count();
         $assetCount = BarangMasuk::count();
         
-        // PENGAMAN: Cek jika tabel belum ada
         try {
             $ppiPendingCount = Ppi::where('status', 'pending')->count();
         } catch (\Exception $e) { $ppiPendingCount = 0; }
@@ -70,7 +70,7 @@ class DashboardController extends Controller
 
 
         // ==========================================
-        // 5. CHART PIE: STATISTIK DEPARTEMEN
+        // 5. CHART PIE: STATISTIK DEPARTEMEN (TIKET)
         // ==========================================
         try {
             $ticketStats = DB::table('tickets')
@@ -89,22 +89,62 @@ class DashboardController extends Controller
         // ==========================================
         // 6. TABEL TOP STAFF (BERDASARKAN TASK REPORT)
         // ==========================================
-        // [FIXED] Menggunakan kolom 'staff_id' sesuai file SQL kamu
-        
         try {
             $topTechnicians = DB::table('task_reports')
-                // PERBAIKAN UTAMA DISINI: pakai 'staff_id'
                 ->join('users', 'task_reports.staff_id', '=', 'users.id') 
-                
-                ->select('users.name', 'users.jabatan', DB::raw('count(*) as total_task'))
-                ->groupBy('users.id', 'users.name', 'users.jabatan')
+                ->where('users.role', 'Staff') // Filter Staff
+                ->select('users.nama', 'users.jabatan', DB::raw('count(*) as total_task'))
+                ->groupBy('users.id', 'users.nama', 'users.jabatan')
                 ->orderByDesc('total_task')
                 ->limit(5)
                 ->get();
                 
         } catch (\Exception $e) {
-            // Jika error, kembalikan array kosong agar dashboard tetap jalan
             $topTechnicians = [];
+        }
+
+
+        // ==========================================
+        // [BARU] 7. STATISTIK PPI (PERUSAHAAN -> DEPARTEMEN)
+        // ==========================================
+        try {
+            // Ambil data: Perusahaan, Departemen, Jumlah PPI
+            // Asumsi: Tabel 'ppis' punya relasi ke 'users' via 'user_id'
+            $rawPpiStats = DB::table('ppis')
+                ->join('users', 'ppis.user_id', '=', 'users.id')
+                ->select('users.perusahaan', 'users.departemen', DB::raw('count(*) as total'))
+                ->groupBy('users.perusahaan', 'users.departemen')
+                ->orderBy('users.perusahaan')
+                ->get();
+
+            // Format Data: ['PT A' => ['total' => 10, 'departments' => [['name' => 'HR', 'count' => 5], ...]]]
+            $ppiPerCompany = [];
+
+            foreach ($rawPpiStats as $stat) {
+                $pt = $stat->perusahaan ?? 'Tanpa Perusahaan';
+                $dept = $stat->departemen ?? 'Umum';
+                $count = $stat->total;
+
+                // Init Array jika PT belum ada
+                if (!isset($ppiPerCompany[$pt])) {
+                    $ppiPerCompany[$pt] = [
+                        'total_company' => 0,
+                        'departments' => []
+                    ];
+                }
+
+                // Tambah Total
+                $ppiPerCompany[$pt]['total_company'] += $count;
+
+                // Tambah Detail Dept
+                $ppiPerCompany[$pt]['departments'][] = [
+                    'name' => $dept,
+                    'count' => $count
+                ];
+            }
+
+        } catch (\Exception $e) {
+            $ppiPerCompany = [];
         }
 
 
@@ -129,7 +169,9 @@ class DashboardController extends Controller
             'deptData'        => $deptData,
             
             'maintenanceData' => $maintenanceData,
-            'topTechnicians'  => $topTechnicians
+            'topTechnicians'  => $topTechnicians,
+            
+            'ppiPerCompany'   => $ppiPerCompany // [BARU] Data Accordion PPI
         ]);
     }
 }

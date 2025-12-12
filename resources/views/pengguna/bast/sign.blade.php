@@ -1,4 +1,4 @@
-@extends('layouts.app') {{-- Sesuaikan dengan layout user kamu --}}
+@extends('layouts.app') 
 
 @section('content')
 <div class="container py-4">
@@ -24,28 +24,69 @@
                         <div class="form-group">
                             <label class="font-weight-bold">Syarat & Ketentuan (Harap baca sampai selesai)</label>
                             
-                            <div id="sk-box" class="border rounded p-3 bg-light" style="height: 200px; overflow-y: scroll; text-align: justify;">
-                                <p><strong>1. Tanggung Jawab Penggunaan</strong><br>
-                                Karyawan bertanggung jawab penuh atas keamanan dan kondisi aset yang diserahkan. Kerusakan akibat kelalaian (human error) akan menjadi tanggung jawab pemegang aset.</p>
+                            <div id="sk-box" class="border rounded p-3 bg-light" style="height: 250px; overflow-y: scroll; text-align: justify;">
                                 
-                                <p><strong>2. Larangan Instalasi Ilegal</strong><br>
-                                Dilarang keras menginstal perangkat lunak bajakan atau software yang tidak berlisensi resmi perusahaan pada perangkat ini.</p>
+                                @php
+                                    // 1. Coba ambil dari relasi kategori->nama_kategori
+                                    // 2. Kalau null, coba ambil langsung kolom kategori
+                                    // 3. Default '-'
+                                    $kategoriRaw = $bast->aset->masterBarang->kategori->nama_kategori 
+                                                   ?? $bast->aset->masterBarang->kategori 
+                                                   ?? '-';
+                                    
+                                    // Bersihkan spasi depan/belakang agar pembacaan akurat
+                                    $kategori = trim($kategoriRaw);
+                                @endphp
+
+                                {{-- DEBUGGING: Tampilkan kategori yang terbaca sistem --}}
+                                <div class="alert alert-warning py-2 mb-3">
+                                    <small>
+                                        <i class="fas fa-tag mr-1"></i> Sistem Membaca Kategori: <strong>"{{ $kategori }}"</strong>
+                                    </small>
+                                </div>
+
+                                {{-- === LOGIKA S&K (MENGGUNAKAN 'STRIPOS' AGAR TIDAK PEDULI HURUF BESAR/KECIL) === --}}
                                 
-                                <p><strong>3. Pengembalian Aset</strong><br>
-                                Apabila karyawan mengundurkan diri atau dimutasi, aset wajib dikembalikan dalam kondisi lengkap dan baik kepada departemen IT.</p>
+                                {{-- Cek jika mengandung kata "Radio" --}}
+                                @if (stripos($kategori, 'Radio') !== false || stripos($kategori, 'Rig') !== false)
+                                    <h6 class="font-weight-bold">Khusus Perangkat Komunikasi (Radio Rig/HT):</h6>
+                                    <ul>
+                                        <li>Pemegang wajib menjaga alat dan menggunakannya sesuai SOP komunikasi perusahaan.</li>
+                                        <li>Tidak boleh memodifikasi frekuensi tanpa izin IT.</li>
+                                        <li>Bertanggung jawab penuh atas kehilangan atau kerusakan unit.</li>
+                                        <li>Wajib melaporkan jika terjadi gangguan sinyal atau kerusakan fisik.</li>
+                                    </ul>
 
-                                <p><strong>4. Pelaporan Kerusakan</strong><br>
-                                Segala bentuk kerusakan hardware atau software wajib dilaporkan ke IT Support maksimal 1x24 jam setelah kejadian.</p>
+                                {{-- Cek jika mengandung kata "Laptop", "Komputer", atau "PC" --}}
+                                @elseif (stripos($kategori, 'Laptop') !== false || stripos($kategori, 'Komputer') !== false || stripos($kategori, 'PC') !== false)
+                                    <h6 class="font-weight-bold">Khusus Perangkat Komputer/Laptop:</h6>
+                                    <ul>
+                                        <li>Pemegang wajib menjaga kerahasiaan data perusahaan yang tersimpan di dalam perangkat.</li>
+                                        <li>Dilarang menginstall software ilegal (bajakan) atau aplikasi yang membahayakan keamanan jaringan.</li>
+                                        <li>Dilarang meminjamkan perangkat kepada pihak luar tanpa izin tertulis.</li>
+                                        <li>Wajib melakukan update antivirus dan menjaga kebersihan fisik perangkat.</li>
+                                    </ul>
 
-                                <p><strong>5. Keamanan Data</strong><br>
-                                Karyawan wajib menjaga kerahasiaan data perusahaan yang tersimpan di dalam perangkat ini.</p>
+                                @else
+                                    {{-- DEFAULT S&K --}}
+                                    <h6 class="font-weight-bold">Syarat & Ketentuan Umum:</h6>
+                                    <p><strong>1. Tanggung Jawab Penggunaan</strong><br>
+                                    Karyawan bertanggung jawab penuh atas keamanan dan kondisi aset yang diserahkan. Kerusakan akibat kelalaian (human error) akan menjadi tanggung jawab pemegang aset.</p>
+                                    
+                                    <p><strong>2. Pengembalian Aset</strong><br>
+                                    Apabila karyawan mengundurkan diri atau dimutasi, aset wajib dikembalikan dalam kondisi lengkap dan baik kepada departemen IT.</p>
+
+                                    <p><strong>3. Pelaporan Kerusakan</strong><br>
+                                    Segala bentuk kerusakan hardware atau software wajib dilaporkan ke IT Support maksimal 1x24 jam setelah kejadian.</p>
+                                @endif
+                                {{-- ====================================== --}}
                                 
                                 <br>
                                 <p class="text-center text-muted"><em>--- Akhir dari Syarat & Ketentuan ---</em></p>
                             </div>
                             
                             {{-- Notifikasi kecil --}}
-                            <small id="sk-warning" class="text-danger">* Silakan scroll S&K sampai bawah untuk menyetujui.</small>
+                            <small id="sk-warning" class="text-danger">* Silakan scroll S&K sampai mentok bawah untuk menyetujui.</small>
                         </div>
 
                         {{-- CHECKBOX PERSETUJUAN --}}
@@ -93,6 +134,10 @@ document.addEventListener("DOMContentLoaded", function() {
     const skBox = document.getElementById('sk-box');
     const agreeCheck = document.getElementById('agree-check');
     const skWarning = document.getElementById('sk-warning');
+
+    // Reset state saat reload
+    agreeCheck.checked = false;
+    agreeCheck.disabled = true;
 
     skBox.addEventListener('scroll', function() {
         // Cek apakah sudah scroll sampai bawah (dengan toleransi 5px)

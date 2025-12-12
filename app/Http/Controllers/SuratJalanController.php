@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SuratJalan;
 use App\Models\SuratJalanDetail;
 use App\Models\MasterBarang;
-use App\Models\Ppi; // <--- [PENTING] Tambahin Model PPI
+use App\Models\Ppi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -28,11 +28,8 @@ class SuratJalanController extends Controller
      */
     public function create()
     {
-        // 1. Ambil Master Barang (Buat detail items barang keluar)
         $masterBarangList = MasterBarang::all(); 
         
-        // 2. [BARU] Ambil Data PPI buat Dropdown
-        // Cuma ambil yang statusnya udah di-acc admin (disetujui/selesai)
         $daftarPpi = Ppi::whereIn('status', ['disetujui', 'selesai'])
                         ->orderBy('created_at', 'desc')
                         ->get();
@@ -40,7 +37,7 @@ class SuratJalanController extends Controller
         return view('admin.suratjalan.create', [
             'title' => 'Tambah Surat Jalan',
             'masterBarangList' => $masterBarangList,
-            'daftarPpi' => $daftarPpi // <--- Kirim data PPI ke view
+            'daftarPpi' => $daftarPpi
         ]);
     }
 
@@ -49,17 +46,14 @@ class SuratJalanController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validasi HEADER
         $request->validate([
             'no_sj' => 'required',
             'id_suratjalan' => 'required|string|unique:surat_jalan,id_suratjalan', 
-            'no_ppi' => 'required', // Ini bakal nerima value dari Dropdown
+            'no_ppi' => 'required',
             'no_po' => 'required',
             'tanggal_input' => 'required|date',
             'jenis_surat_jalan' => 'required',
             'file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:4096',
-            
-            // 2. Validasi DETAILS
             'items' => 'required|array|min:1',
             'items.*.master_barang_id' => 'required|exists:master_barang,id',
             'items.*.qty' => 'required|integer|min:1',
@@ -68,22 +62,19 @@ class SuratJalanController extends Controller
         DB::beginTransaction(); 
 
         try {
-            // Ambil data header
             $dataHeader = $request->only([
                 'no_sj', 'id_suratjalan', 'no_ppi', 'no_po', 'tanggal_input', 'jenis_surat_jalan', 'keterangan'
             ]);
             
-            $dataHeader['is_bast_submitted'] = $request->has('is_bast_submitted');
+            // [MODIFIKASI] Default FALSE. Status ini akan otomatis TRUE jika semua barang sudah di-BAST-kan.
+            $dataHeader['is_bast_submitted'] = false; 
 
-            // Handle file upload
             if ($request->hasFile('file')) {
                 $dataHeader['file'] = $request->file('file')->store('surat-jalan', 'public');
             }
 
-            // 1. SIMPAN HEADER
             $suratJalan = SuratJalan::create($dataHeader);
 
-            // 2. SIMPAN DETAIL
             foreach ($request->items as $item) {
                 SuratJalanDetail::create([
                     'surat_jalan_id' => $suratJalan->id_sj,
@@ -125,7 +116,6 @@ class SuratJalanController extends Controller
         $suratJalan = SuratJalan::with('details.masterBarang')->findOrFail($id_sj);
         $masterBarangList = MasterBarang::all();
         
-        // [BARU] Ambil PPI juga buat jaga-jaga kalo mau edit No PPI
         $daftarPpi = Ppi::whereIn('status', ['disetujui', 'selesai'])
                         ->orderBy('created_at', 'desc')
                         ->get();
@@ -134,7 +124,7 @@ class SuratJalanController extends Controller
             'title' => 'Edit Surat Jalan',
             'suratJalan' => $suratJalan,
             'masterBarangList' => $masterBarangList,
-            'daftarPpi' => $daftarPpi // <--- Kirim juga ke Edit
+            'daftarPpi' => $daftarPpi 
         ]);
     }
 
@@ -159,7 +149,8 @@ class SuratJalanController extends Controller
             'no_sj', 'id_suratjalan', 'no_ppi', 'no_po', 'tanggal_input', 'jenis_surat_jalan', 'keterangan'
         ]);
         
-        $dataHeader['is_bast_submitted'] = $request->has('is_bast_submitted');
+        // [MODIFIKASI] HAPUS logic update manual is_bast_submitted
+        // $dataHeader['is_bast_submitted'] = $request->has('is_bast_submitted'); <--- Dihapus agar tidak konflik
 
         if ($request->hasFile('file')) {
             if ($suratJalan->file) {
