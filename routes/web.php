@@ -90,9 +90,13 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     
     //Barang Masuk (Aset)
     Route::resource('barangmasuk', BarangMasukController::class);
-    
+    Route::get('/barangmasuk/{id}/cetak-label', [BarangMasukController::class, 'cetakLabel'])->name('barangmasuk.cetak_label');
+    Route::get('/scan', [BarangMasukController::class, 'scanPage'])->name('scan.index');
+    Route::post('/scan/cek', [BarangMasukController::class, 'processScan'])->name('scan.process');
+
     //Master Barang (Katalog)
     Route::resource('master-barang', MasterBarangController::class);
+    
     
     //Barang Keluar (BAST)
    Route::prefix('barangkeluar')->name('barangkeluar.')->group(function () {

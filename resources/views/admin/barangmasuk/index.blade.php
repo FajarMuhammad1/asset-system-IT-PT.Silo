@@ -1,4 +1,4 @@
-@extends('layouts.app') {{-- (Sesuaikan layout lo) --}}
+@extends('layouts.app')
 
 @section('content')
 <h1 class="h3 mb-4 text-gray-800">
@@ -6,87 +6,141 @@
 </h1>
 
 @if (session('success'))
-    <div class="alert alert-success">{{ session('success') }}</div>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ session('success') }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
 @endif
 
 <div class="card shadow mb-4">
-    <div class="card-header">
-        <a href="{{ route('barangmasuk.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus mr-2"></i> Input Aset (Barang Masuk) Baru
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">Data Barang Masuk</h6>
+        <a href="{{ route('barangmasuk.create') }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus mr-2"></i> Input Aset Baru
         </a>
     </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-bordered table-striped" id="dataTable" width="100%" cellspacing="0">
+            <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
                 <thead class="bg-primary text-white text-center">
                     <tr>
-                        <th>No</th>
-                        <th>Kode Aset</th>
-                        <th>Serial Number</th>
+                        <th style="width: 5%">No</th>
+                        <th style="width: 15%">Kode Aset</th> 
                         <th>Nama Barang</th>
+                        <th>Serial Number</th>
                         <th>Kategori</th>
                         <th>Merk</th>
                         <th>Status</th>
-                        <th>Pengguna/User</th>
-                        <th>Id SJ </th>
-                        <th>No SJ</th>
-                        <th><i class="fas fa-cog"></i></th>
+                        <th>Pemegang</th>
+                        <th>No. SJ</th>
+                        <th style="width: 12%">Aksi</th> {{-- Lebar kolom aksi sedikit ditambah --}}
                     </tr>
                 </thead>
                 <tbody>
-                    {{-- Pastiin controller lo pake: BarangMasuk::with('masterBarang', 'suratJalan', 'pemegang') --}}
                     @forelse ($barangMasuk as $item)
                     <tr>
-                        <td class="text-center">{{ $loop->iteration }}</td>
-                        <td>{{ $item->kode_asset }}</td>
-                        <td>{{ $item->serial_number }}</td>
-                        {{-- Data dari Relasi 'masterBarang' --}}
-                        <td>{{ $item->masterBarang->nama_barang ?? 'N/A' }}</td>
-                        <td>{{ $item->masterBarang->kategori ?? 'N/A' }}</td>
-                        <td>{{ $item->masterBarang->merk ?? 'N/A' }}</td>
+                        <td class="text-center align-middle">{{ $loop->iteration }}</td>
                         
-                        {{-- Status Aset --}}
-                        <td class="text-center">
-                            @if ($item->status == 'Stok')
-                                <span class="badge badge-success">{{ $item->status }}</span>
-                            @elseif ($item->status == 'Dipakai')
-                                <span class="badge badge-warning">{{ $item->status }}</span>
+                        {{-- 1. LOGIKA KODE ASET --}}
+                        <td class="align-middle text-center">
+                            @if($item->kode_asset)
+                                {{-- Jika Aset Tetap --}}
+                                <span class="badge badge-primary shadow-sm px-2 py-1" style="font-size: 12px; letter-spacing: 0.5px;">
+                                    <i class="fas fa-barcode mr-1"></i> {{ $item->kode_asset }}
+                                </span>
                             @else
-                                <span class="badge badge-danger">{{ $item->status }}</span>
+                                {{-- Jika Consumable --}}
+                                <span class="badge badge-secondary px-2 py-1" style="font-size: 11px;">
+                                    <i class="fas fa-box-open mr-1"></i> Habis Pakai
+                                </span>
+                            @endif
+                        </td>
+
+                        <td class="align-middle font-weight-bold">{{ $item->masterBarang->nama_barang ?? '-' }}</td>
+                        
+                        {{-- 2. LOGIKA SERIAL NUMBER --}}
+                        <td class="align-middle text-center">
+                            @if($item->serial_number)
+                                <span class="text-dark">{{ $item->serial_number }}</span>
+                            @else
+                                <span class="text-muted font-italic small">-</span>
+                            @endif
+                        </td>
+
+                        {{-- Perbaikan: Langsung panggil kategori sebagai string --}}
+                        <td class="align-middle">{{ $item->masterBarang->kategori ?? '-' }}</td>
+                        
+                        <td class="align-middle">{{ $item->masterBarang->merk ?? '-' }}</td>
+                        
+                        {{-- 3. LOGIKA STATUS --}}
+                        <td class="align-middle text-center">
+                            @if ($item->status == 'Stok')
+                                <span class="badge badge-success">Tersedia</span>
+                            @elseif ($item->status == 'Dipakai')
+                                <span class="badge badge-warning text-dark">Dipakai</span>
+                            @elseif ($item->status == 'Rusak')
+                                <span class="badge badge-danger">Rusak</span>
+                            @elseif ($item->status == 'Hilang')
+                                <span class="badge badge-dark">Hilang</span>
+                            @else
+                                <span class="badge badge-secondary">{{ $item->status }}</span>
                             @endif
                         </td>
                         
-                        {{-- Data dari Relasi 'pemegang' (User) --}}
-                        <td>{{ $item->pemegang->nama ?? '-' }}</td>
+                        <td class="align-middle">
+                            @if($item->pemegang)
+                                <i class="fas fa-user text-muted mr-1"></i> {{ $item->pemegang->nama }}
+                            @else
+                                <small class="text-muted">Gudang IT</small>
+                            @endif
+                        </td>
                         
-                        {{-- Data dari Relasi 'suratJalan' --}}
-                        <td>{{ $item->suratJalan->id_suratjalan ?? 'N/A' }}</td>
-                        <td>{{ $item->suratJalan->no_sj ?? 'N/A' }}</td>
+                        <td class="align-middle text-center">
+                            <small>{{ $item->suratJalan->no_sj ?? '-' }}</small>
+                        </td>
                         
-                        <td class="text-center">
-                            <a href="{{ route('barangmasuk.show', $item->id) }}" class="btn btn-sm btn-success mb-1" title="Lihat Detail">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{{ route('barangmasuk.edit', $item->id) }}" class="btn btn-sm btn-warning mb-1" title="Edit Aset">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <button type="button" class="btn btn-sm btn-danger btn-delete mb-1" 
-                                    data-id="{{ $item->id }}" 
-                                    data-sn="{{ $item->serial_number }}" 
-                                    title="Hapus Aset">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                            <form id="delete-form-{{ $item->id }}" 
-                                  action="{{ route('barangmasuk.destroy', $item->id) }}" 
-                                  method="POST" class="d-none">
-                                @csrf
-                                @method('DELETE')
-                            </form>
+                        <td class="align-middle text-center">
+                            <div class="btn-group" role="group">
+                                
+                                {{-- === TOMBOL BARU: CETAK LABEL === --}}
+                                @if($item->kode_asset)
+                                    <a href="{{ route('barangmasuk.cetak_label', $item->id) }}" 
+                                       target="_blank" 
+                                       class="btn btn-sm btn-dark" 
+                                       title="Cetak Label Barcode">
+                                        <i class="fas fa-print"></i>
+                                    </a>
+                                @endif
+
+                                <a href="{{ route('barangmasuk.edit', $item->id) }}" class="btn btn-sm btn-warning" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+
+                                <button type="button" class="btn btn-sm btn-danger btn-delete" 
+                                        data-id="{{ $item->id }}" 
+                                        data-nama="{{ $item->masterBarang->nama_barang ?? 'Barang' }}"
+                                        data-kode="{{ $item->kode_asset ?? 'Consumable' }}" 
+                                        title="Hapus">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                
+                                <form id="delete-form-{{ $item->id }}" 
+                                      action="{{ route('barangmasuk.destroy', $item->id) }}" 
+                                      method="POST" class="d-none">
+                                    @csrf
+                                    @method('DELETE')
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="11" class="text-center">Belum ada data aset. Silakan input barang masuk.</td>
+                        <td colspan="10" class="text-center py-4 text-muted">
+                            <i class="fas fa-folder-open fa-3x mb-3"></i><br>
+                            Belum ada data aset masuk.
+                        </td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -97,21 +151,29 @@
 @endsection
 
 @push('scripts')
-{{-- Script SweetAlert buat Hapus Aset --}}
+{{-- SweetAlert2 Logic --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    // Inisialisasi DataTable
+    $(document).ready(function() {
+        $('#dataTable').DataTable();
+    });
+
+    // Logic Tombol Hapus
     document.querySelectorAll('.btn-delete').forEach(button => {
         button.addEventListener('click', function () {
             const id = this.dataset.id;
-            const sn = this.dataset.sn;
+            const nama = this.dataset.nama;
+            const kode = this.dataset.kode;
 
             Swal.fire({
-                title: "Yakin ingin menghapus?",
-                text: `Aset dengan SN: "${sn}" akan dihapus permanen.`,
+                title: "Hapus Aset ini?",
+                html: `Barang: <b>${nama}</b><br>Kode: <span class="badge badge-danger">${kode}</span><br><br>Data yang dihapus tidak bisa dikembalikan!`,
                 icon: "warning",
                 showCancelButton: true,
-                confirmButtonColor: "#d33",
-                cancelButtonColor: "#3085d6",
-                confirmButtonText: "Ya, Hapus",
+                confirmButtonColor: "#e74a3b",
+                cancelButtonColor: "#858796",
+                confirmButtonText: "Ya, Hapus!",
                 cancelButtonText: "Batal"
             }).then((result) => {
                 if (result.isConfirmed) {

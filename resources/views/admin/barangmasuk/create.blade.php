@@ -1,4 +1,4 @@
-@extends('layouts.app') {{-- (Sesuaikan layout lo) --}}
+@extends('layouts.app')
 
 @section('content')
 <h1 class="h3 mb-4 text-gray-800">
@@ -26,25 +26,24 @@
         <form action="{{ route('barangmasuk.store') }}" method="POST">
             @csrf
             
-            <p class="text-muted">Form ini digunakan untuk mendaftarkan <strong>satu per satu</strong> aset fisik (serial number) yang masuk.</p>
+            <p class="text-muted">Form ini digunakan untuk mendaftarkan <strong>satu per satu</strong> aset fisik yang masuk.</p>
             <hr>
             
+            {{-- BAGIAN 1: SURAT JALAN --}}
             <h5 class="font-weight-bold">1. Informasi Dokumen (Pilih SJ)</h5>
             <div class="row">
-                {{-- DROPDOWN SURAT JALAN --}}
                 <div class="col-md-12">
                     <div class="form-group">
                         <label>Pilih ID Surat Jalan </label>
                         <select name="surat_jalan_id" id="surat_jalan_id" class="form-control" required>
                             <option value="">-- Pilih ID Surat Jalan --</option>
                             @foreach ($daftarSuratJalan as $sj)
-                                <option value="{{ $sj->id_sj }}" {{-- Value = PK (Integer) --}}
+                                <option value="{{ $sj->id_sj }}" 
                                         data-id_suratjalan="{{ $sj->id_suratjalan }}"
                                         data-no_sj="{{ $sj->no_sj }}"
                                         data-no_ppi="{{ $sj->no_ppi }}"
                                         data-no_po="{{ $sj->no_po }}"
                                         {{ old('surat_jalan_id') == $sj->id_sj ? 'selected' : '' }}>
-                                    {{-- Teks Tampil digabung --}}
                                     <strong>{{ $sj->id_suratjalan }}</strong> (No. SJ: {{ $sj->no_sj }})
                                 </option>
                             @endforeach
@@ -52,7 +51,7 @@
                     </div>
                 </div>
 
-                {{-- TAMPILAN BARU (col-md-4) --}}
+                {{-- Detail SJ (Auto Fill) --}}
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>ID Surat Jalan</label>
@@ -61,38 +60,32 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label>Nomor SJ (Otomatis)</label>
+                        <label>Nomor SJ</label>
                         <input type="text" id="no_sj_auto" class="form-control" readonly style="background-color: #e9ecef;">
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label>Nomor PPI (Otomatis)</label>
+                        <label>Nomor PPI</label>
                         <input type="text" id="no_ppi_auto" class="form-control" readonly style="background-color: #e9ecef;">
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label>Nomor PO (Otomatis)</label>
-                        <input type="text" id="no_po_auto" class="form-control" readonly style="background-color: #e9ecef;">
-                    </div>
-                </div>
-                {{-- --------------------------------------- --}}
             </div>
 
             <hr>
+            
+            {{-- BAGIAN 2: MASTER BARANG --}}
             <h5 class="font-weight-bold">2. Informasi Aset (Pilih Katalog)</h5>
             <div class="row">
-                {{-- DROPDOWN "OTOMATIS KE ISI" --}}
                 <div class="col-md-12">
                     <div class="form-group">
                         <label>Pilih Jenis Barang (dari Katalog)</label>
-                        {{-- INI YANG DIGANTI: $daftarMasterBarang --}}
                         <select name="master_barang_id" id="master_barang_id" class="form-control" required>
                             <option value="">-- Pilih Barang --</option>
                             @foreach ($daftarMasterBarang as $item) 
+                                {{-- Pastikan relasi kategori diload atau ambil nama kolomnya --}}
                                 <option value="{{ $item->id }}" 
-                                        data-kategori="{{ $item->kategori }}"
+                                        data-kategori="{{ $item->kategori->nama_kategori ?? $item->kategori ?? '-' }}"
                                         data-merk="{{ $item->merk }}"
                                         data-spek="{{ $item->spesifikasi }}"
                                         {{ old('master_barang_id') == $item->id ? 'selected' : '' }}>
@@ -103,59 +96,78 @@
                     </div>
                 </div>
 
-                {{-- FIELD OTOMATIS KEISI (READ-ONLY) --}}
+                {{-- Detail Barang (Auto Fill) --}}
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label>Kategori (Otomatis)</label>
+                        <label>Kategori</label>
                         <input type="text" id="kategori_auto" class="form-control" readonly style="background-color: #e9ecef;">
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label>Merk (Otomatis)</label>
+                        <label>Merk</label>
                         <input type="text" id="merk_auto" class="form-control" readonly style="background-color: #e9ecef;">
                     </div>
                 </div>
                 <div class="col-md-12">
                     <div class="form-group">
-                        <label>Spesifikasi (Otomatis)</label>
+                        <label>Spesifikasi</label>
                         <textarea id="spek_auto" class="form-control" readonly rows="2" style="background-color: #e9ecef;"></textarea>
                     </div>
                 </div>
             </div>
             
             <hr>
-            <h5 class="font-weight-bold text-primary">3. Input Fisik (Wajib Manual)</h5>
+            
+            {{-- BAGIAN 3: INPUT FISIK (UPDATE DISINI) --}}
+            <h5 class="font-weight-bold text-primary">3. Input Fisik & Kode</h5>
             <div class="row">
-                {{-- INPUT MANUAL FISIK --}}
+                
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label>Serial Number (SN)</label>
-                        <input type="text" name="serial_number" class="form-control @error('serial_number') is-invalid @enderror" value="{{ old('serial_number') }}" required>
+                        <label>Kode Aset <small class="text-danger">*Auto Generated</small></label>
+                        {{-- Input Disabled (Tidak dikirim ke controller, karena controller buat sendiri) --}}
+                        <input type="text" class="form-control" 
+                               value="[Otomatis] Sesuai Kategori Barang" 
+                               disabled 
+                               style="background-color: #e9ecef; font-style: italic; cursor: not-allowed; color: #6c757d;">
+                        <small class="text-info font-weight-bold mt-1 d-block">
+                            <i class="fas fa-info-circle"></i> Info Sistem:
+                        </small>
+                        <small class="text-muted">
+                            - Aset Tetap: Dibuatkan kode unik (Cth: <b>LPT-0001</b>).<br>
+                            - Consumable (Tinta/ATK): <b>Tidak ada kode</b>.
+                        </small>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Serial Number (SN) <small class="text-muted">(Opsional)</small></label>
+                        {{-- Hapus attribute required --}}
+                        <input type="text" name="serial_number" 
+                               class="form-control @error('serial_number') is-invalid @enderror" 
+                               value="{{ old('serial_number') }}" 
+                               placeholder="Kosongkan jika tidak ada SN">
+                        
                         @error('serial_number')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                        <small class="text-muted">Isi jika barang memiliki SN pabrik.</small>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label>Kode Aset (Tempel Stiker)</label>
-                        <input type="text" name="kode_asset" class="form-control @error('kode_asset') is-invalid @enderror" value="{{ old('kode_asset') }}" required>
-                        @error('kode_asset')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                </div>
+
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Tanggal Masuk (Aset Diterima)</label>
                         <input type="date" name="tanggal_masuk" class="form-control" value="{{ old('tanggal_masuk', date('Y-m-d')) }}" required>
                     </div>
                 </div>
+
                 <div class="col-md-6">
                      <div class="form-group">
                         <label>Keterangan (Opsional)</label>
-                        <textarea name="keterangan" class="form-control" rows="1">{{ old('keterangan') }}</textarea>
+                        <textarea name="keterangan" class="form-control" rows="1" placeholder="Cth: Barang baru, kondisi segel">{{ old('keterangan') }}</textarea>
                     </div>
                 </div>
             </div>
@@ -172,11 +184,10 @@
 @endsection
 
 @push('scripts')
-{{-- Asumsi lo pake jQuery --}}
 <script>
 $(document).ready(function() {
     
-    // --- FUNGSI UNTUK OTOMATIS KEISI ID HO, NO SJ, PPI, & PO ---
+    // --- FUNGSI AUTO FILL SURAT JALAN ---
     function fillSjData() {
         var selectedOption = $('#surat_jalan_id').find('option:selected');
         
@@ -193,7 +204,7 @@ $(document).ready(function() {
         }
     }
 
-    // --- FUNGSI UNTUK OTOMATIS KEISI KATALOG ---
+    // --- FUNGSI AUTO FILL MASTER BARANG ---
     function fillMasterData() {
         var selectedOption = $('#master_barang_id').find('option:selected');
         
@@ -208,14 +219,13 @@ $(document).ready(function() {
         }
     }
 
-    // Panggil fungsi pas dropdown-nya ganti
+    // Event Listeners
     $('#surat_jalan_id').on('change', fillSjData);
     $('#master_barang_id').on('change', fillMasterData);
 
-    // Panggil fungsi pas halaman baru di-load (buat nanganin 'old()' value)
+    // Run on Load (untuk old input)
     fillSjData();
     fillMasterData();
-
 });
 </script>
 @endpush

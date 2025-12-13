@@ -123,6 +123,18 @@
             <span>Task Report dari Team IT</span>
         </a>
     </li>
+
+    <hr class="sidebar-divider my-0">
+
+{{-- MENU SCANNER --}}
+<li class="nav-item {{ Request::routeIs('scan.index') ? 'active' : '' }}">
+    <a class="nav-link" href="{{ route('scan.index') }}">
+        <i class="fas fa-fw fa-qrcode"></i>
+        <span>Scan Aset</span>
+    </a>
+</li>
+
+
     
     {{-- =============================================== --}}
     {{-- KAVLING STAFF                                   --}}

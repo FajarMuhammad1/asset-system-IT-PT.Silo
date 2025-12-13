@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\BarangMasuk;
 use App\Models\SuratJalan;
 use App\Models\MasterBarang;
-use App\Models\User; // <-- 1. TAMBAH INI
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule; // <-- 2. TAMBAH INI
+use App\Models\User;
+use Illuminate\Http\Request; // Wajib ada untuk menangkap input form
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use Picqer\Barcode\BarcodeGeneratorHTML; // Library Barcode
 
 class BarangMasukController extends Controller
 {
@@ -16,8 +18,8 @@ class BarangMasukController extends Controller
      */
     public function index()
     {
-        // Ambil semua aset + relasinya (Biar gak boros query)
-        $barangMasuk = BarangMasuk::with('masterBarang', 'suratJalan', 'pemegang')
+        // Load relasi yang diperlukan
+        $barangMasuk = BarangMasuk::with(['masterBarang', 'suratJalan', 'pemegang'])
                                   ->latest()
                                   ->get();
 
@@ -28,13 +30,11 @@ class BarangMasukController extends Controller
     }
 
     /**
-     * Tampilkan FORM tambah aset ("Otomatis Ke Isi")
+     * Tampilkan FORM tambah aset
      */
     public function create()
     {
-        // Ambil daftar SJ
         $daftarSuratJalan = SuratJalan::all();
-        // Ambil daftar Katalog
         $daftarMasterBarang = MasterBarang::all();
 
         return view('admin.barangmasuk.create', [
@@ -45,31 +45,99 @@ class BarangMasukController extends Controller
     }
 
     /**
-     * Simpan 1 ASET FISIK baru
+     * Simpan 1 ASET FISIK baru (AUTO GENERATE CODE)
      */
     public function store(Request $request)
     {
-        // VALIDASI BARU (Fokus ke fisik)
+        // 1. VALIDASI
         $request->validate([
-            'surat_jalan_id' => 'required|exists:surat_jalan,id_sj',
+            'surat_jalan_id'   => 'required|exists:surat_jalan,id_sj',
             'master_barang_id' => 'required|exists:master_barang,id',
-            'serial_number' => 'required|string|max:255|unique:barang_masuk,serial_number',
-            'kode_asset' => 'required|string|max:255|unique:barang_masuk,kode_asset',
-            'tanggal_masuk' => 'required|date',
-            'keterangan' => 'nullable|string',
+            'tanggal_masuk'    => 'required|date',
+            'keterangan'       => 'nullable|string',
+            'serial_number'    => 'nullable|string|max:255|unique:barang_masuk,serial_number',
         ]);
-        
-        $data = $request->all();
-        
-        // Tambahin status default
-        $data['status'] = 'Stok'; // Otomatis "Stok"
-        $data['user_pemegang_id'] = null; // Otomatis "Kosong"
 
-        BarangMasuk::create($data);
+        DB::beginTransaction();
+        
+        try {
+            // 2. AMBIL DATA MASTER BARANG
+            $master = MasterBarang::findOrFail($request->master_barang_id);
+            
+            // Ambil kategori string
+            $namaKategori = $master->kategori ?? 'Umum';
 
-        // Redirect balik ke form 'create' biar bisa input SN berikutnya
-        return redirect()->route('barangmasuk.create')
-                         ->with('success', 'Aset baru (SN: ' . $request->serial_number . ') berhasil ditambahkan! Silakan input lagi.');
+            // 3. CEK APAKAH BARANG CONSUMABLE (Habis Pakai)?
+            $consumableKeywords = ['Tinta', 'Cartridge', 'Kertas', 'Kabel', 'ATK', 'Mouse', 'Keyboard', 'Spidol', 'Habis Pakai']; 
+            $isConsumable = false;
+
+            foreach ($consumableKeywords as $keyword) {
+                if (stripos($namaKategori, $keyword) !== false) {
+                    $isConsumable = true;
+                    break;
+                }
+            }
+
+            $kodeAssetFinal = null; 
+
+            // 4. GENERATE KODE UNIK (JIKA BUKAN CONSUMABLE)
+            if (!$isConsumable) {
+                
+                // Tentukan Prefix
+                $prefix = 'AST'; 
+                if (stripos($namaKategori, 'Laptop') !== false)       $prefix = 'LPT';
+                elseif (stripos($namaKategori, 'Komputer') !== false) $prefix = 'PC';
+                elseif (stripos($namaKategori, 'PC') !== false)       $prefix = 'PC';
+                elseif (stripos($namaKategori, 'Printer') !== false)  $prefix = 'PRN';
+                elseif (stripos($namaKategori, 'Server') !== false)   $prefix = 'SRV';
+                elseif (stripos($namaKategori, 'Switch') !== false)   $prefix = 'SWT';
+                elseif (stripos($namaKategori, 'Router') !== false)   $prefix = 'RTR';
+                elseif (stripos($namaKategori, 'Proyektor') !== false)$prefix = 'PRJ';
+                elseif (stripos($namaKategori, 'Scanner') !== false)  $prefix = 'SCN';
+                elseif (stripos($namaKategori, 'Monitor') !== false)  $prefix = 'MON';
+                else {
+                    $prefix = strtoupper(substr($namaKategori, 0, 3));
+                }
+
+                // Cari barang terakhir dengan prefix sama
+                $lastItem = BarangMasuk::where('kode_asset', 'like', $prefix . '-%')
+                                       ->orderBy('id', 'desc')
+                                       ->first();
+
+                if ($lastItem) {
+                    $lastNumber = intval(substr($lastItem->kode_asset, 4)); 
+                    $nextNumber = $lastNumber + 1;
+                } else {
+                    $nextNumber = 1; 
+                }
+
+                $kodeAssetFinal = $prefix . '-' . sprintf('%05d', $nextNumber);
+            }
+
+            // 5. SIMPAN KE DATABASE
+            BarangMasuk::create([
+                'kode_asset'       => $kodeAssetFinal,
+                'serial_number'    => $request->serial_number,
+                'master_barang_id' => $request->master_barang_id,
+                'surat_jalan_id'   => $request->surat_jalan_id,
+                'tanggal_masuk'    => $request->tanggal_masuk,
+                'keterangan'       => $request->keterangan,
+                'status'           => 'Stok',       
+                'user_pemegang_id' => null,         
+            ]);
+
+            DB::commit();
+
+            $pesan = $isConsumable 
+                ? 'Barang Habis Pakai berhasil ditambahkan (Tanpa Kode Aset).' 
+                : 'Aset berhasil ditambahkan! Kode: ' . $kodeAssetFinal;
+
+            return redirect()->route('barangmasuk.index')->with('success', $pesan);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal menyimpan data: ' . $e->getMessage())->withInput();
+        }
     }
 
     /**
@@ -77,7 +145,7 @@ class BarangMasukController extends Controller
      */
     public function show($id)
     {
-        $barangMasuk = BarangMasuk::with('masterBarang', 'suratJalan', 'pemegang')
+        $barangMasuk = BarangMasuk::with(['masterBarang', 'suratJalan', 'pemegang'])
                                   ->findOrFail($id);
 
         return view('admin.barangmasuk.show', [
@@ -91,20 +159,19 @@ class BarangMasukController extends Controller
      */
     public function edit($id)
     {
-        // 3. UBAH INI (Tambah 'with' biar efisien)
-        $barangMasuk = BarangMasuk::with('suratJalan', 'masterBarang', 'pemegang')
+        $barangMasuk = BarangMasuk::with(['suratJalan', 'masterBarang', 'pemegang'])
                                   ->findOrFail($id);
         
         $daftarSuratJalan = SuratJalan::all();
         $daftarMasterBarang = MasterBarang::all();
-        $users = User::all(); // 4. TAMBAH INI (Wajib buat dropdown pemegang)
+        $users = User::all(); 
 
         return view('admin.barangmasuk.edit', [
             'title' => 'Edit Aset',
-            'barangMasuk' => $barangMasuk, // Data lama
+            'barangMasuk' => $barangMasuk, 
             'daftarSuratJalan' => $daftarSuratJalan,
             'daftarMasterBarang' => $daftarMasterBarang,
-            'users' => $users // 5. TAMBAH INI
+            'users' => $users 
         ]);
     }
 
@@ -116,24 +183,20 @@ class BarangMasukController extends Controller
         $barangMasuk = BarangMasuk::findOrFail($id);
 
         $request->validate([
-            'surat_jalan_id' => 'required|exists:surat_jalan,id_sj',
+            'surat_jalan_id'   => 'required|exists:surat_jalan,id_sj',
             'master_barang_id' => 'required|exists:master_barang,id',
-            
-            // 6. UBAH VALIDASI UNIQUE BIAR GAK ERROR PAS UPDATE
             'serial_number' => [
-                'required', 'string', 'max:255',
+                'nullable', 'string', 'max:255',
                 Rule::unique('barang_masuk')->ignore($id, 'id')
             ],
             'kode_asset' => [
-                'required', 'string', 'max:255',
+                'nullable', 'string', 'max:255',
                 Rule::unique('barang_masuk')->ignore($id, 'id')
             ],
-            // -------------------------------------------------
-
-            'tanggal_masuk' => 'required|date',
-            'keterangan' => 'nullable|string',
-            'status' => 'required|string', // (Harusnya 'status' bisa di-edit di sini)
-            'user_pemegang_id' => 'nullable|exists:users,id' // 7. TAMBAH INI
+            'tanggal_masuk'    => 'required|date',
+            'keterangan'       => 'nullable|string',
+            'status'           => 'required|string', 
+            'user_pemegang_id' => 'nullable|exists:users,id' 
         ]);
 
         $barangMasuk->update($request->all());
@@ -152,5 +215,63 @@ class BarangMasukController extends Controller
 
         return redirect()->route('barangmasuk.index')
                          ->with('success', 'Data Aset berhasil dihapus!');
+    }
+
+    // ==========================================
+    //            FITUR SCAN & CETAK
+    // ==========================================
+
+    /**
+     * Halaman Utama Scanner (Kamera & USB)
+     */
+    public function scanPage()
+    {
+        // Pastikan path ini sesuai dengan lokasi file index.blade.php scanner kamu
+        return view('admin.scan.index', [ 
+            'title' => 'Scan Barcode Aset'
+        ]);
+    }
+
+    /**
+     * Proses Logic Scan (Menerima input kode dari alat scan)
+     */
+    public function processScan(Request $request)
+    {
+        $request->validate([
+            'kode_asset' => 'required'
+        ]);
+
+        // Cari aset berdasarkan kode_asset
+        $asset = BarangMasuk::where('kode_asset', $request->kode_asset)->first();
+
+        if ($asset) {
+            // Jika ketemu, redirect ke detail
+            return redirect()->route('barangmasuk.show', $asset->id)
+                             ->with('success', 'Aset ditemukan: ' . $asset->kode_asset);
+        } else {
+            // Jika gagal, kembalikan ke halaman scan dengan pesan error
+            return redirect()->route('scan.index')
+                             ->with('error', 'Aset dengan kode "' . $request->kode_asset . '" TIDAK DITEMUKAN!');
+        }
+    }
+
+    /**
+     * Cetak Label Sticker
+     */
+    public function cetakLabel($id)
+    {
+        $aset = BarangMasuk::with('masterBarang')->findOrFail($id);
+
+        // Inisialisasi Generator Barcode
+        $generator = new BarcodeGeneratorHTML();
+        
+        // Generate barcode (Format CODE 128)
+        $barcode = $generator->getBarcode($aset->kode_asset, $generator::TYPE_CODE_128, 2, 60);
+
+        return view('admin.barangmasuk.cetak_label', [
+            'aset' => $aset,
+            'barcode' => $barcode,
+            'title' => 'Cetak Label - ' . $aset->kode_asset
+        ]);
     }
 }
