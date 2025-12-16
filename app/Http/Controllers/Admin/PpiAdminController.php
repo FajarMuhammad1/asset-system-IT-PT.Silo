@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Ppi;
+use App\Exports\PpiExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PpiAdminController extends Controller
 {
@@ -45,6 +47,20 @@ class PpiAdminController extends Controller
 
         return back()->with('success', 'Status PPI berhasil diperbarui jadi ' . ucfirst($request->status));
     }
+public function exportExcel(Request $request)
+{
+    // Ambil input dari form modal
+    $bulan = $request->input('bulan');
+    $tahun = $request->input('tahun');
+    $divisi = $request->input('divisi');
+
+    // Buat nama file dinamis biar keren
+    $nama_bulan = $bulan ? date("F", mktime(0, 0, 0, $bulan, 10)) : 'SemuaBulan';
+    $nama_file = 'Laporan-PPI-' . $nama_bulan . '-' . $tahun . '.xlsx';
+    
+    // Kirim data ke Class Export
+    return Excel::download(new PpiExport($bulan, $tahun, $divisi), $nama_file);
+}
 
     
 }
