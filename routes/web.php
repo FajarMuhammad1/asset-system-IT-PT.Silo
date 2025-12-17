@@ -91,7 +91,10 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::resource('pengguna', PenggunaController::class);
     Route::resource('master-barang', MasterBarangController::class);
 
-    // Barang Masuk (Aset)
+    // --- BARANG MASUK (ASET) ---
+    // PENTING: Route Export TARUH DI ATAS Route Resource!
+    Route::get('/barangmasuk/export', [BarangMasukController::class, 'exportExcel'])->name('barangmasuk.export');
+    
     Route::resource('barangmasuk', BarangMasukController::class);
     Route::get('/barangmasuk/{id}/cetak-label', [BarangMasukController::class, 'cetakLabel'])->name('barangmasuk.cetak_label');
     
@@ -112,8 +115,7 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     // Activity Log
     Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity.log');
 
-    // --- TASK REPORT ADMIN (Updated) ---
-    // Route Export WAJIB DI ATAS Route {id} / Show
+    // --- TASK REPORT ADMIN ---
     Route::get('/task-reports/export', [TaskReportAdminController::class, 'exportExcel'])->name('admin.task_report.export');
     Route::get('/task-reports', [TaskReportAdminController::class, 'index'])->name('taskreport.index');
     Route::get('/task-reports/{id}', [TaskReportAdminController::class, 'show'])->name('taskreport.show');

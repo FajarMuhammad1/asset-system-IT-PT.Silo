@@ -17,9 +17,17 @@
 <div class="card shadow mb-4">
     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
         <h6 class="m-0 font-weight-bold text-primary">Data Barang Masuk</h6>
-        <a href="{{ route('barangmasuk.create') }}" class="btn btn-primary btn-sm">
-            <i class="fas fa-plus mr-2"></i> Input Aset Baru
-        </a>
+        
+        <div>
+            {{-- TOMBOL EXPORT EXCEL (BARU) --}}
+            <button type="button" class="btn btn-success btn-sm mr-2" data-toggle="modal" data-target="#exportModal">
+                <i class="fas fa-file-excel mr-1"></i> Export Excel
+            </button>
+
+            <a href="{{ route('barangmasuk.create') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus mr-2"></i> Input Aset Baru
+            </a>
+        </div>
     </div>
     <div class="card-body">
         <div class="table-responsive">
@@ -35,7 +43,7 @@
                         <th>Status</th>
                         <th>Pemegang</th>
                         <th>No. SJ</th>
-                        <th style="width: 12%">Aksi</th> {{-- Lebar kolom aksi sedikit ditambah --}}
+                        <th style="width: 12%">Aksi</th> 
                     </tr>
                 </thead>
                 <tbody>
@@ -69,7 +77,6 @@
                             @endif
                         </td>
 
-                        {{-- Perbaikan: Langsung panggil kategori sebagai string --}}
                         <td class="align-middle">{{ $item->masterBarang->kategori ?? '-' }}</td>
                         
                         <td class="align-middle">{{ $item->masterBarang->merk ?? '-' }}</td>
@@ -91,7 +98,7 @@
                         
                         <td class="align-middle">
                             @if($item->pemegang)
-                                <i class="fas fa-user text-muted mr-1"></i> {{ $item->pemegang->nama }}
+                                <i class="fas fa-user text-muted mr-1"></i> {{ $item->pemegang->nama ?? $item->pemegang->name }}
                             @else
                                 <small class="text-muted">Gudang IT</small>
                             @endif
@@ -104,7 +111,7 @@
                         <td class="align-middle text-center">
                             <div class="btn-group" role="group">
                                 
-                                {{-- === TOMBOL BARU: CETAK LABEL === --}}
+                                {{-- TOMBOL CETAK LABEL --}}
                                 @if($item->kode_asset)
                                     <a href="{{ route('barangmasuk.cetak_label', $item->id) }}" 
                                        target="_blank" 
@@ -145,6 +152,70 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+{{-- MODAL FILTER EXPORT (BARU) --}}
+<div class="modal fade" id="exportModal" tabindex="-1" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="exportModalLabel"><i class="fas fa-file-excel mr-2"></i>Filter Export Excel</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            
+            <form action="{{ route('barangmasuk.export') }}" method="GET">
+                <div class="modal-body">
+                    
+                    {{-- Filter Kondisi --}}
+                    <div class="form-group">
+                        <label>Status / Kondisi Aset</label>
+                        <select name="kondisi" class="form-control">
+                            <option value="semua">Semua Status</option>
+                            <option value="Stok">Tersedia (Stok)</option>
+                            <option value="Dipakai">Sedang Dipakai</option>
+                            <option value="Rusak">Rusak</option>
+                            <option value="Hilang">Hilang</option>
+                        </select>
+                    </div>
+
+                    {{-- Filter Tahun --}}
+                    <div class="form-group">
+                        <label>Tahun Masuk</label>
+                        <select name="tahun" class="form-control">
+                            <option value="">Semua Tahun</option>
+                            @for ($y = date('Y'); $y >= 2020; $y--)
+                                <option value="{{ $y }}">{{ $y }}</option>
+                            @endfor
+                        </select>
+                    </div>
+
+                    {{-- Filter Kategori --}}
+                    <div class="form-group">
+                        <label>Kategori Barang</label>
+                        <select name="jenis" class="form-control">
+                            <option value="semua">Semua Kategori</option>
+                            <option value="Laptop">Laptop</option>
+                            <option value="PC">PC / Komputer</option>
+                            <option value="Printer">Printer</option>
+                            <option value="Server">Server</option>
+                            <option value="Network">Network (Switch/Router)</option>
+                            <option value="Monitor">Monitor</option>
+                        </select>
+                        <small class="text-muted">*Pastikan nama kategori sesuai dengan Master Barang.</small>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-download mr-1"></i> Download Excel
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

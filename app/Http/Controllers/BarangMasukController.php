@@ -6,10 +6,15 @@ use App\Models\BarangMasuk;
 use App\Models\SuratJalan;
 use App\Models\MasterBarang;
 use App\Models\User;
-use Illuminate\Http\Request; // Wajib ada untuk menangkap input form
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use Picqer\Barcode\BarcodeGeneratorHTML; // Library Barcode
+
+// --- UPDATE BAGIAN INI ---
+// Pastikan nama file export sesuai dengan yang kamu buat (BarangMasukExport)
+use App\Exports\BarangMasukExport; 
+use Maatwebsite\Excel\Facades\Excel;
 
 class BarangMasukController extends Controller
 {
@@ -18,8 +23,8 @@ class BarangMasukController extends Controller
      */
     public function index()
     {
-        // Load relasi yang diperlukan
-        $barangMasuk = BarangMasuk::with(['masterBarang', 'suratJalan', 'pemegang'])
+        // Load relasi yang diperlukan (Termasuk PPI via Surat Jalan)
+        $barangMasuk = BarangMasuk::with(['masterBarang', 'suratJalan.ppi', 'pemegang'])
                                   ->latest()
                                   ->get();
 
@@ -27,6 +32,20 @@ class BarangMasukController extends Controller
             'barangMasuk' => $barangMasuk,
             'title' => 'Data Aset (Barang Masuk)'
         ]);
+    }
+
+    /**
+     * FITUR BARU: Export Excel Data Aset
+     */
+    public function exportExcel(Request $request)
+    {
+        // 1. Buat Nama File (Ada tanggal & jam biar unik)
+        $nama_file = 'Laporan-Asset-IT-' . date('d-m-Y_H-i') . '.xlsx';
+
+        // 2. Download Excel
+        // Kita kirim seluruh object $request ke Class Export
+        // Biar class Export yang menangani logic filternya
+        return Excel::download(new BarangMasukExport($request), $nama_file);
     }
 
     /**
@@ -145,7 +164,7 @@ class BarangMasukController extends Controller
      */
     public function show($id)
     {
-        $barangMasuk = BarangMasuk::with(['masterBarang', 'suratJalan', 'pemegang'])
+        $barangMasuk = BarangMasuk::with(['masterBarang', 'suratJalan.ppi', 'pemegang'])
                                   ->findOrFail($id);
 
         return view('admin.barangmasuk.show', [
@@ -226,7 +245,6 @@ class BarangMasukController extends Controller
      */
     public function scanPage()
     {
-        // Pastikan path ini sesuai dengan lokasi file index.blade.php scanner kamu
         return view('admin.scan.index', [ 
             'title' => 'Scan Barcode Aset'
         ]);
@@ -245,11 +263,9 @@ class BarangMasukController extends Controller
         $asset = BarangMasuk::where('kode_asset', $request->kode_asset)->first();
 
         if ($asset) {
-            // Jika ketemu, redirect ke detail
             return redirect()->route('barangmasuk.show', $asset->id)
                              ->with('success', 'Aset ditemukan: ' . $asset->kode_asset);
         } else {
-            // Jika gagal, kembalikan ke halaman scan dengan pesan error
             return redirect()->route('scan.index')
                              ->with('error', 'Aset dengan kode "' . $request->kode_asset . '" TIDAK DITEMUKAN!');
         }
@@ -262,10 +278,7 @@ class BarangMasukController extends Controller
     {
         $aset = BarangMasuk::with('masterBarang')->findOrFail($id);
 
-        // Inisialisasi Generator Barcode
         $generator = new BarcodeGeneratorHTML();
-        
-        // Generate barcode (Format CODE 128)
         $barcode = $generator->getBarcode($aset->kode_asset, $generator::TYPE_CODE_128, 2, 60);
 
         return view('admin.barangmasuk.cetak_label', [

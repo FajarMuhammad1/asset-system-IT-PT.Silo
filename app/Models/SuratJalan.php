@@ -11,35 +11,50 @@ class SuratJalan extends Model
 
     protected $table = 'surat_jalan';
     
-    // Pastikan Primary Key ini sesuai dengan database lo
+    // Primary Key Custom (sesuai database kamu)
     protected $primaryKey = 'id_sj'; 
 
     protected $fillable = [
         'id_suratjalan',
         'no_sj',
-        'no_ppi',
+        'no_ppi',       // Asumsi: Ini Foreign Key ke tabel PPI
         'no_po',
         'tanggal_input',
         'file',
         'jenis_surat_jalan',
-        'keterangan',       // Tambahkan ini biar keterangan bisa kesimpan
-        'is_bast_submitted' // Checkbox otomatis BAST
+        'keterangan',       
+        'is_bast_submitted' 
     ];
 
-    // --- [RELASI 1] Detail Item di Form Surat Jalan ---
+    /**
+     * RELASI 1: Detail Item (Untuk Form Surat Jalan)
+     */
     public function details()
     {
-        // Relasi ke tabel surat_jalan_details
         return $this->hasMany(SuratJalanDetail::class, 'surat_jalan_id', 'id_sj');
     }
 
-    // --- [RELASI 2] Relasi ke Stok Aset (Barang Masuk) ---
-    // INI YANG BIKIN ERROR KEMARIN, SEKARANG SUDAH ADA.
+    /**
+     * RELASI 2: Stok Aset (Barang Masuk)
+     * Digunakan untuk melihat barang apa saja yang masuk lewat SJ ini
+     */
     public function barangMasuk()
     {
-        // Relasi ke tabel barang_masuk
-        // 'surat_jalan_id' adalah nama kolom foreign key di tabel barang_masuk
-        // 'id_sj' adalah primary key di tabel surat_jalan
+        // 'surat_jalan_id' = Foreign Key di tabel barang_masuk
+        // 'id_sj' = Primary Key di tabel surat_jalan
         return $this->hasMany(BarangMasuk::class, 'surat_jalan_id', 'id_sj');
+    }
+
+    /**
+     * RELASI 3: PPI (Permintaan) - PENYEBAB ERROR KEMARIN
+     * Menghubungkan Surat Jalan ke Data PPI
+     */
+    public function ppi()
+    {
+        // Parameter 2 ('no_ppi'): Nama kolom di tabel surat_jalan yang menyimpan ID PPI
+        // Parameter 3 ('id'): Nama Primary Key di tabel ppi (biasanya 'id')
+        
+        // PENTING: Jika di database kolomnya bernama 'ppi_id', ganti 'no_ppi' jadi 'ppi_id'
+        return $this->belongsTo(Ppi::class, 'no_ppi', 'id');
     }
 }
