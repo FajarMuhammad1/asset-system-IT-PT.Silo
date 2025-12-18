@@ -210,7 +210,7 @@
 
                     <div class="area-info">
                         <div class="pt-name">PT. SILO</div>
-                        <div class="dept-name">IT & COM</div>
+                        <div class="dept-name">IT & COMM</div>
                         
                         <div class="nama-barang">
                             {{ $aset->masterBarang->nama_barang }}

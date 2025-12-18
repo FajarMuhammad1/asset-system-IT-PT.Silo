@@ -10,11 +10,10 @@
     @endif
 
     <div class="card shadow mb-4">
-        {{-- UPDATE: Header Flex --}}
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
             <h6 class="m-0 font-weight-bold text-primary">Daftar Permintaan Masuk</h6>
             
-            {{-- UPDATE: TOMBOL MEMBUKA MODAL FILTER --}}
+            {{-- TOMBOL BUKA MODAL --}}
             <button type="button" class="btn btn-success btn-sm shadow-sm" data-toggle="modal" data-target="#modalExport">
                 <i class="fas fa-file-excel"></i> Filter & Export Excel
             </button>
@@ -28,10 +27,8 @@
                             <th>No PPI</th>
                             <th>Tanggal</th>
                             <th>Pemohon</th>
-                            <th>Jabatan</th>
                             <th>Departemen</th>
-                            <th>Perusahaan</th>
-                            <th>Perangkat</th>
+                            <th>Perusahaan</th> <th>Perangkat</th>
                             <th>Status</th>
                             <th>Aksi</th>
                         </tr>
@@ -40,61 +37,48 @@
                         @foreach($dataPpi as $item)
                         <tr>
                             <td><strong>{{ $item->no_ppi }}</strong></td>
-                            {{-- Format Tanggal --}}
                             <td>{{ \Carbon\Carbon::parse($item->created_at)->format('d-m-Y') }}</td>
-                            
-                            {{-- Nama User --}}
                             <td>{{ $item->user->name ?? $item->user->nama ?? 'User Hapus' }}</td>
 
-                            {{-- DATA TAMBAHAN (Relasi User) --}}
-                            <td>{{ $item->user->jabatan ?? '-' }}</td>
-                            {{-- Ambil dari user->departemen atau user->divisi --}}
-                            <td>{{ $item->user->departemen ?? $item->user->divisi ?? '-' }}</td> 
-                            <td>{{ $item->user->perusahaan ?? '-' }}</td>
+                            {{-- Tampilkan Dept & Perusahaan --}}
+                            <td>{{ $item->user->departemen ?? '-' }}</td> 
+                            <td><span class="badge badge-info">{{ $item->user->perusahaan ?? '-' }}</span></td>
 
                             <td>{{ $item->perangkat ?? '-' }}</td>
                             
                             <td>
-                                {{-- Badge Status --}}
                                 @if($item->status == 'pending')
                                     <span class="badge badge-warning">Pending</span>
                                 @elseif($item->status == 'disetujui')
-                                    <span class="badge badge-primary">Disetujui (Proses)</span>
+                                    <span class="badge badge-primary">Disetujui</span>
                                 @elseif($item->status == 'selesai')
                                     <span class="badge badge-success">Selesai</span>
                                 @elseif($item->status == 'ditolak')
                                     <span class="badge badge-danger">Ditolak</span>
-                                @else
-                                    <span class="badge badge-secondary">{{ $item->status }}</span>
                                 @endif
                             </td>
                             <td>
                                 <div class="d-flex">
-                                    {{-- Tombol Lihat Detail --}}
-                                    <a href="{{ route('admin.ppi.show', $item->id) }}" class="btn btn-info btn-sm mr-1" title="Lihat Detail">
-                                        <i class="fas fa-eye"></i> 
+                                    <a href="{{ route('admin.ppi.show', $item->id) }}" class="btn btn-info btn-sm mr-1">
+                                        <i class="fas fa-eye"></i>
                                     </a>
-
-                                    {{-- Dropdown Aksi --}}
+                                    
+                                    {{-- Dropdown Aksi Status --}}
                                     <div class="dropdown">
-                                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
                                             <i class="fas fa-cog"></i>
                                         </button>
-                                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                        <div class="dropdown-menu">
                                             <form action="{{ route('admin.ppi.update', $item->id) }}" method="POST">
                                                 @csrf @method('PUT')
-                                                
-                                                <button name="status" value="disetujui" class="dropdown-item text-primary" onclick="return confirm('Setujui permintaan ini?')">
+                                                <button name="status" value="disetujui" class="dropdown-item text-primary" onclick="return confirm('Setujui?')">
                                                     <i class="fas fa-check"></i> Setujui
                                                 </button>
-                                                
-                                                <button name="status" value="selesai" class="dropdown-item text-success" onclick="return confirm('Tandai sebagai selesai?')">
+                                                <button name="status" value="selesai" class="dropdown-item text-success" onclick="return confirm('Selesai?')">
                                                     <i class="fas fa-check-double"></i> Selesai
                                                 </button>
-                                                
                                                 <div class="dropdown-divider"></div>
-                                                
-                                                <button name="status" value="ditolak" class="dropdown-item text-danger" onclick="return confirm('Tolak permintaan ini?')">
+                                                <button name="status" value="ditolak" class="dropdown-item text-danger" onclick="return confirm('Tolak?')">
                                                     <i class="fas fa-times"></i> Tolak
                                                 </button>
                                             </form>
@@ -112,71 +96,86 @@
 
 </div>
 
-{{-- MODAL FILTER EXPORT (Baru Ditambahkan) --}}
+{{-- MODAL FILTER EXPORT --}}
 <div class="modal fade" id="modalExport" tabindex="-1" role="dialog" aria-labelledby="modalExportLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="modalExportLabel"><i class="fas fa-filter"></i> Filter & Download Laporan</h5>
+                <h5 class="modal-title" id="modalExportLabel"><i class="fas fa-filter"></i> Filter Laporan Excel</h5>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             
-            {{-- Form mengarah ke route admin.ppi.export dengan method GET --}}
+            {{-- Form mengarah ke Controller --}}
             <form action="{{ route('admin.ppi.export') }}" method="GET">
                 <div class="modal-body">
                     
-                    {{-- 1. PILIH BULAN --}}
-                    <div class="form-group">
-                        <label class="font-weight-bold">Bulan</label>
-                        <select name="bulan" class="form-control">
-                            <option value="">-- Semua Bulan --</option>
-                            @for ($i = 1; $i <= 12; $i++)
-                                <option value="{{ $i }}" {{ date('m') == $i ? 'selected' : '' }}>
-                                    {{ date("F", mktime(0, 0, 0, $i, 10)) }}
-                                </option>
-                            @endfor
-                        </select>
+                    {{-- OPSI 1: PER HARIAN --}}
+                    <div class="alert alert-secondary p-2 mb-3">
+                        <strong>Opsi 1: Laporan Harian</strong>
+                        <div class="form-group mb-0 mt-1">
+                            <input type="date" name="tanggal" class="form-control">
+                            <small class="text-danger">*Isi ini jika ingin download per tanggal saja. (Bulan/Tahun akan diabaikan).</small>
+                        </div>
                     </div>
 
-                    {{-- 2. PILIH TAHUN --}}
-                    <div class="form-group">
-                        <label class="font-weight-bold">Tahun</label>
-                        <select name="tahun" class="form-control">
-                            @php $tahun_sekarang = date('Y'); @endphp
-                            @for ($y = $tahun_sekarang; $y >= $tahun_sekarang - 3; $y--)
-                                <option value="{{ $y }}">{{ $y }}</option>
-                            @endfor
-                        </select>
+                    <div class="text-center font-weight-bold mb-3">--- ATAU ---</div>
+
+                    {{-- OPSI 2: BULANAN --}}
+                    <div class="alert alert-secondary p-2 mb-3">
+                        <strong>Opsi 2: Laporan Bulanan</strong>
+                        <div class="row mt-2">
+                            <div class="col-6">
+                                <label>Bulan</label>
+                                <select name="bulan" class="form-control">
+                                    <option value="">-- Pilih --</option>
+                                    @for ($i = 1; $i <= 12; $i++)
+                                        <option value="{{ $i }}" {{ date('m') == $i ? 'selected' : '' }}>
+                                            {{ date("F", mktime(0, 0, 0, $i, 10)) }}
+                                        </option>
+                                    @endfor
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label>Tahun</label>
+                                <select name="tahun" class="form-control">
+                                    @php $thn = date('Y'); @endphp
+                                    @for ($y = $thn; $y >= $thn - 3; $y--)
+                                        <option value="{{ $y }}">{{ $y }}</option>
+                                    @endfor
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
-                    {{-- 3. PILIH DEPARTEMEN --}}
+                    <hr>
+
+                    {{-- FILTER PERUSAHAAN (Ganti dari Departemen) --}}
                     <div class="form-group">
-                        <label class="font-weight-bold">Departemen (Opsional)</label>
-                        <select name="divisi" class="form-control">
-                            <option value="semua">-- Semua Departemen --</option>
+                        <label class="font-weight-bold">Filter Perusahaan (Opsional)</label>
+                        <select name="perusahaan" class="form-control">
+                            <option value="semua">-- Semua Perusahaan --</option>
                             
-                            {{-- LOGIC PHP UNTUK AMBIL LIST DEPARTEMEN DARI DB --}}
+                            {{-- AMBIL LIST PERUSAHAAN DARI TABEL USERS --}}
                             @php
-                                // Mengambil daftar departemen unik dari tabel users yang tidak kosong
-                                $list_dept = \App\Models\User::select('departemen')
-                                                ->whereNotNull('departemen')
+                                $list_pt = \App\Models\User::select('perusahaan')
+                                                ->whereNotNull('perusahaan')
                                                 ->distinct()
-                                                ->orderBy('departemen', 'asc')
+                                                ->orderBy('perusahaan', 'asc')
                                                 ->get();
                             @endphp
 
-                            @foreach($list_dept as $d)
-                                <option value="{{ $d->departemen }}">{{ $d->departemen }}</option>
+                            @foreach($list_pt as $pt)
+                                <option value="{{ $pt->perusahaan }}">{{ $pt->perusahaan }}</option>
                             @endforeach
                         </select>
-                        <small class="text-muted">Pilih departemen untuk melihat siapa yang paling sering request.</small>
+                        <small class="text-muted">Pilih perusahaan untuk rekapitulasi data spesifik.</small>
                     </div>
 
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
                     <button type="submit" class="btn btn-success">
                         <i class="fas fa-download"></i> Download Excel
                     </button>

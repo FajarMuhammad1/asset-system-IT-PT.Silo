@@ -35,10 +35,10 @@
                             <th width="5%">No</th>
                             <th>Tanggal</th>
                             <th>Aset</th>
-                            <th>Penerima</th> {{-- Kolom Penerima diperlebar --}}
+                            <th>Penerima</th> 
                             <th>Petugas IT</th>
                             <th class="text-center">Status</th>
-                            <th class="text-center" width="10%">Aksi</th>
+                            <th class="text-center" width="15%">Aksi</th> {{-- Lebar kolom aksi ditambah sedikit --}}
                         </tr>
                     </thead>
                     <tbody>
@@ -53,7 +53,7 @@
                                 <small class="text-muted">{{ $log->aset->masterBarang->nama_barang ?? '-' }}</small>
                             </td>
 
-                            {{-- KOLOM PENERIMA (LENGKAP: Nama, Jabatan, Perusahaan) --}}
+                            {{-- KOLOM PENERIMA --}}
                             <td>
                                 <strong>{{ $log->pemegang->nama ?? '-' }}</strong>
                                 <br>
@@ -85,10 +85,19 @@
                                 @endif
                             </td>
 
+                            {{-- KOLOM AKSI (UPDATE DI SINI) --}}
                             <td class="text-center align-middle">
-                                <a href="{{ route('barangkeluar.show', $log->id) }}" class="btn btn-sm btn-info shadow-sm" title="Lihat Detail & PDF">
-                                    <i class="fas fa-eye"></i> Detail
-                                </a>
+                                <div class="btn-group" role="group">
+                                    {{-- Tombol Detail --}}
+                                    <a href="{{ route('barangkeluar.show', $log->id) }}" class="btn btn-sm btn-info shadow-sm" title="Lihat Detail">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+
+                                    {{-- [BARU] Tombol Cetak PDF --}}
+                                    <a href="{{ route('barangkeluar.cetak', $log->id) }}" target="_blank" class="btn btn-sm btn-danger shadow-sm ml-1" title="Cetak BAST (PDF)">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                         @empty

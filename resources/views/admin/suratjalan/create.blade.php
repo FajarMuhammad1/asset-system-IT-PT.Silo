@@ -66,7 +66,7 @@
                             <option value="">-- Pilih Nomor PPI --</option>
                             @foreach($daftarPpi as $ppi)
                                 <option value="{{ $ppi->no_ppi }}" {{ old('no_ppi') == $ppi->no_ppi ? 'selected' : '' }}>
-                                    {{ $ppi->no_ppi }} - {{ $ppi->user->name ?? 'User' }} ({{Str::limit($ppi->perangkat, 20)}})
+                                    {{ $ppi->no_ppi }} - {{ $ppi->user->nama ?? 'User' }} ({{Str::limit($ppi->perangkat, 20)}})
                                 </option>
                             @endforeach
                         </select>

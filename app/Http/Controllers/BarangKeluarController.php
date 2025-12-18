@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\BarangMasuk;
 use App\Models\User;
 use App\Models\LogSerahTerima;
-use App\Models\SuratJalan; // [BARU] Import Model Surat Jalan
+use App\Models\SuratJalan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf; // [BARU] Import Library PDF
 
 class BarangKeluarController extends Controller
 {
@@ -18,12 +19,10 @@ class BarangKeluarController extends Controller
      */
     public function create()
     {
-        // Ambil barang yang statusnya 'Stok'
         $asetStok = BarangMasuk::with('masterBarang', 'suratJalan')
             ->where('status', 'Stok')
             ->get();
 
-        // Ambil user karyawan (bukan admin)
         $users = User::where('role', '!=', 'admin')->orderBy('nama')->get();
 
         return view('admin.barangkeluar.create', [
@@ -66,40 +65,35 @@ class BarangKeluarController extends Controller
     }
 
     /**
-     * PROSES SIMPAN BAST (Hybrid: Draft atau Langsung Selesai)
+     * PROSES SIMPAN BAST
      */
     public function store(Request $request)
     {
-        // 1. Validasi Input
         $request->validate([
             'barang_masuk_id'      => 'required|exists:barang_masuk,id',
             'user_pemegang_id'     => 'required|exists:users,id',
             'tanggal_serah_terima' => 'required|date',
             'keterangan'           => 'nullable|string',
             'foto_bukti'           => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'ttd_penerima'         => 'nullable|string', // Base64
-            'ttd_petugas'          => 'nullable|string', // Base64
+            'ttd_penerima'         => 'nullable|string', 
+            'ttd_petugas'          => 'nullable|string', 
         ]);
 
         DB::beginTransaction();
         try {
             $aset = BarangMasuk::findOrFail($request->barang_masuk_id);
 
-            // Validasi Status Barang
             if ($aset->status !== 'Stok') {
                 throw new \Exception("Aset ini sudah tidak tersedia (bukan Stok).");
             }
 
-            // CEK: Apakah Tanda Tangan diisi di form?
             $isDirectHandover = $request->filled('ttd_penerima') && $request->filled('ttd_petugas');
             
-            // Upload Foto jika ada
             $fotoPath = null;
             if ($request->hasFile('foto_bukti')) {
                 $fotoPath = $request->file('foto_bukti')->store('bukti_serah_terima', 'public');
             }
 
-            // Insert ke log_serah_terima
             $log = LogSerahTerima::create([
                 'barang_masuk_id'      => $aset->id,
                 'user_pemegang_id'     => $request->user_pemegang_id,
@@ -113,7 +107,6 @@ class BarangKeluarController extends Controller
                 'status'               => $isDirectHandover ? 'selesai' : 'menunggu_ttd_user'
             ]);
 
-            // UPDATE STATUS ASET: Hanya jika langsung selesai (TTD lengkap)
             if ($isDirectHandover) {
                 $aset->update([
                     'status' => 'Dipakai',
@@ -121,7 +114,6 @@ class BarangKeluarController extends Controller
                     'lokasi_sekarang' => 'User ID: ' . $request->user_pemegang_id
                 ]);
                 
-                // [BARU] Cek Surat Jalan Otomatis
                 if ($aset->surat_jalan_id) {
                     $this->checkAndCloseSuratJalan($aset->surat_jalan_id);
                 }
@@ -132,7 +124,6 @@ class BarangKeluarController extends Controller
             }
 
             DB::commit();
-
             return redirect()->route('barangkeluar.index')->with('success', $pesan);
 
         } catch (\Exception $e) {
@@ -171,7 +162,36 @@ class BarangKeluarController extends Controller
     }
 
     /**
-     * USER TANDA TANGAN (Dipanggil dari halaman User)
+     * [BARU] CETAK PDF BAST
+     * Menghasilkan PDF profesional untuk dokumen serah terima
+     */
+    public function cetakBast($id)
+    {
+        // 1. Ambil data dengan relasi lengkap
+        $log = LogSerahTerima::with([
+            'aset.masterBarang',  // Untuk info nama barang & spek
+            'aset.suratJalan',    // Untuk info No SJ/PO
+            'pemegang',           // User Pihak Kedua
+            'admin'               // Admin Pihak Pertama
+        ])->findOrFail($id);
+
+        // 2. Siapkan data untuk view
+        $data = [
+            'title' => 'BAST - ' . $log->aset->kode_asset,
+            'log' => $log,
+            'tanggal_cetak' => now()->translatedFormat('d F Y')
+        ];
+
+        // 3. Load View PDF dan set ukuran kertas
+        $pdf = Pdf::loadView('admin.barangkeluar.pdf_bast', $data);
+        $pdf->setPaper('a4', 'portrait');
+
+        // 4. Stream (Preview di browser)
+        return $pdf->stream('BAST-' . $log->aset->kode_asset . '.pdf');
+    }
+
+    /**
+     * USER TANDA TANGAN
      */
     public function userSign(Request $request, $id)
     {
@@ -194,16 +214,13 @@ class BarangKeluarController extends Controller
     {
         $request->validate(['ttd_petugas' => 'required|string']);
 
-        // [PENTING] Load 'aset' untuk tahu surat_jalan_id
         $log = LogSerahTerima::with('aset')->findOrFail($id);
         
-        // 1. Simpan TTD Admin & Update Status BAST
         $log->update([
             'ttd_petugas' => $request->ttd_petugas, 
             'status' => 'selesai'
         ]);
 
-        // 2. Finalisasi Aset menjadi 'Dipakai'
         if ($log->aset) {
             $log->aset->update([
                 'status' => 'Dipakai',
@@ -211,44 +228,33 @@ class BarangKeluarController extends Controller
                 'lokasi_sekarang' => 'User ID: ' . $log->user_pemegang_id
             ]);
 
-            // [BARU] 3. Cek Otomatis Surat Jalan
             if ($log->aset->surat_jalan_id) {
                 $this->checkAndCloseSuratJalan($log->aset->surat_jalan_id);
             }
         }
 
-        return back()->with('success', 'TTD Admin disimpan. BAST Selesai & Status Surat Jalan diperbarui.');
+        return back()->with('success', 'TTD Admin disimpan. BAST Selesai.');
     }
 
     /**
-     * [HELPER BARU] Cek apakah semua barang di Surat Jalan sudah 'Dipakai'?
-     * Jika ya, otomatis centang 'is_bast_submitted' di tabel surat_jalan
+     * HELPER: Cek Close Surat Jalan
      */
     private function checkAndCloseSuratJalan($suratJalanId)
     {
-        // 1. Ambil Surat Jalan beserta semua barangnya
-        // Pastikan nama model SuratJalan sudah di-import di atas
         $suratJalan = SuratJalan::with('BarangMasuk')->find($suratJalanId);
 
         if (!$suratJalan) return;
 
-        // 2. Hitung total barang di SJ ini
         $totalItems = $suratJalan->barangMasuk->count();
-
-        // Jika tidak ada barang, abaikan
         if ($totalItems === 0) return;
 
-        // 3. Hitung barang yang statusnya sudah 'Dipakai' (Artinya sudah Serah Terima)
-        // Kita hitung juga yang 'Rusak' jaga-jaga jika barang rusak dianggap sudah "keluar" dari proses BAST
         $completedItems = $suratJalan->barangMasuk
             ->whereIn('status', ['Dipakai', 'Rusak']) 
             ->count();
 
-        // 4. LOGIKA: Jika Jumlah Selesai == Total Barang, maka SJ dianggap Selesai (Submitted)
         if ($completedItems === $totalItems) {
             $suratJalan->update(['is_bast_submitted' => true]);
         } else {
-            // Opsional: Jika ada barang diretur jadi Stok lagi, uncheck (biar akurat)
             $suratJalan->update(['is_bast_submitted' => false]);
         }
     }

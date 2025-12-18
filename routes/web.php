@@ -102,12 +102,16 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::get('/scan', [BarangMasukController::class, 'scanPage'])->name('scan.index');
     Route::post('/scan/cek', [BarangMasukController::class, 'processScan'])->name('scan.process');
 
-    // Barang Keluar (BAST)
+    // --- BARANG KELUAR (BAST) ---
     Route::prefix('barangkeluar')->name('barangkeluar.')->group(function () {
         Route::get('/', [BarangKeluarController::class, 'index'])->name('index');
         Route::get('/create', [BarangKeluarController::class, 'create'])->name('create');
         Route::get('/get-asset-details', [BarangKeluarController::class, 'getAssetDetails'])->name('getAssetDetails');
         Route::post('/store', [BarangKeluarController::class, 'store'])->name('store');
+        
+        // [BARU] Route Cetak PDF BAST
+        Route::get('/{id}/cetak', [BarangKeluarController::class, 'cetakBast'])->name('cetak');
+
         Route::get('/{id}', [BarangKeluarController::class, 'show'])->name('show');
         Route::post('/{id}/admin-sign', [BarangKeluarController::class, 'adminSign'])->name('adminSign');
     });

@@ -47,20 +47,41 @@ class PpiAdminController extends Controller
 
         return back()->with('success', 'Status PPI berhasil diperbarui jadi ' . ucfirst($request->status));
     }
-public function exportExcel(Request $request)
-{
-    // Ambil input dari form modal
-    $bulan = $request->input('bulan');
-    $tahun = $request->input('tahun');
-    $divisi = $request->input('divisi');
 
-    // Buat nama file dinamis biar keren
-    $nama_bulan = $bulan ? date("F", mktime(0, 0, 0, $bulan, 10)) : 'SemuaBulan';
-    $nama_file = 'Laporan-PPI-' . $nama_bulan . '-' . $tahun . '.xlsx';
-    
-    // Kirim data ke Class Export
-    return Excel::download(new PpiExport($bulan, $tahun, $divisi), $nama_file);
-}
+    // 4. EXPORT EXCEL (UPDATED)
+    public function exportExcel(Request $request)
+    {
+        // Ambil input dari form modal
+        // Pastikan name="" di view/blade sesuai dengan ini
+        $tanggal    = $request->input('tanggal');    // Filter Harian
+        $bulan      = $request->input('bulan');      // Filter Bulan
+        $tahun      = $request->input('tahun');      // Filter Tahun
+        $perusahaan = $request->input('perusahaan'); // Filter Perusahaan (Sebelumnya Divisi)
 
-    
+        // Logika Penamaan File Dinamis
+        if ($tanggal) {
+            // Jika export harian
+            $nama_file = 'Laporan-PPI-Harian-' . $tanggal . '.xlsx';
+        } elseif ($bulan && $tahun) {
+            // Jika export bulanan
+            $nama_bulan = date("F", mktime(0, 0, 0, $bulan, 10)); // Ubah angka bulan jadi nama (Januari, dll)
+            $nama_file = 'Laporan-PPI-' . $nama_bulan . '-' . $tahun . '.xlsx';
+        } elseif ($tahun) {
+            // Jika export tahunan saja
+            $nama_file = 'Laporan-PPI-Tahun-' . $tahun . '.xlsx';
+        } else {
+            // Jika tanpa filter waktu (Semua Data)
+            $nama_file = 'Laporan-PPI-Semua-Data.xlsx';
+        }
+
+        // Tambahkan suffix perusahaan jika ada filter perusahaan
+        if ($perusahaan && $perusahaan != 'semua') {
+            // Hapus .xlsx dulu, tambah nama perusahaan, baru pasang .xlsx lagi
+            $nama_file = str_replace('.xlsx', '', $nama_file) . '-' . $perusahaan . '.xlsx';
+        }
+        
+        // Kirim data ke Class Export dengan urutan parameter baru
+        // Urutan: ($tanggal, $bulan, $tahun, $perusahaan)
+        return Excel::download(new PpiExport($tanggal, $bulan, $tahun, $perusahaan), $nama_file);
+    }
 }
