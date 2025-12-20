@@ -55,13 +55,23 @@ class PpiExport implements FromCollection, WithHeadings, WithMapping, ShouldAuto
 
     public function headings(): array
     {
+        // Ambil tahun dari filter, atau tahun sekarang jika kosong
+        $tahunLaporan = $this->tahun ? $this->tahun : date('Y');
+        $judulAtas = "LAPORAN REKAPITULASI PPI - PERIODE TAHUN $tahunLaporan";
+
         return [
-            'No PPI',
-            'Tanggal Dibuat',
-            'User Request',      
-            'Perusahaan',       
-            'Deskripsi Masalah',
-            'Status',
+            // BARIS 1: JUDUL BESAR
+            [$judulAtas], 
+
+            // BARIS 2: HEADER TABEL
+            [
+                'No PPI',
+                'Tanggal Dibuat',
+                'User Request',      
+                'Perusahaan',       
+                'Deskripsi Masalah',
+                'Status',
+            ]
         ];
     }
 
@@ -81,19 +91,27 @@ class PpiExport implements FromCollection, WithHeadings, WithMapping, ShouldAuto
 
     public function styles(Worksheet $sheet)
     {
-        // Styling untuk Header Utama (Baris 1)
         return [
+            // Style Baris 1 (JUDUL BESAR)
             1 => [
+                'font' => ['bold' => true, 'size' => 14],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            ],
+
+            // Style Baris 2 (HEADER TABEL - Sebelumnya Baris 1)
+            2 => [
                 'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']], // Teks Putih
                 'fill' => [
                     'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['argb' => 'FF4B5563'], // Background Abu Gelap
                 ],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
             ],
+
             // Kolom E (Deskripsi) Wrap Text
             'E' => ['alignment' => ['wrapText' => true, 'vertical' => Alignment::VERTICAL_TOP]],
-            // Kolom A, B, F Center Alignment
+            
+            // Kolom A, B, F Center Alignment (Mulai dari baris data)
             'A' => ['alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_TOP]],
             'B' => ['alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_TOP]],
             'F' => ['alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_TOP]],
@@ -106,9 +124,17 @@ class PpiExport implements FromCollection, WithHeadings, WithMapping, ShouldAuto
             AfterSheet::class => function(AfterSheet $event) {
                 $sheet = $event->sheet;
                 $data = $this->results;
-                $lastRow = $data->count() + 1; // Baris terakhir data utama
+                
+                // Merge Cells untuk Judul (A1 sampai F1)
+                $sheet->mergeCells('A1:F1');
+                
+                // Tinggi Baris Judul biar agak lega
+                $sheet->getRowDimension(1)->setRowHeight(25);
 
-                // 1. Beri Border pada Tabel Utama
+                // Hitung baris terakhir data (Data + 2 baris header)
+                $lastRow = $data->count() + 2; 
+
+                // 1. Beri Border pada Tabel Utama (Mulai dari A2 sampai data habis)
                 $styleArray = [
                     'borders' => [
                         'allBorders' => [
@@ -117,9 +143,10 @@ class PpiExport implements FromCollection, WithHeadings, WithMapping, ShouldAuto
                         ],
                     ],
                 ];
-                $sheet->getStyle('A1:F' . $lastRow)->applyFromArray($styleArray);
+                // Terapkan border dari baris 2 (Header Tabel) ke bawah
+                $sheet->getStyle('A2:F' . $lastRow)->applyFromArray($styleArray);
 
-                // --- LOGIK STATISTIK ---
+                // --- LOGIK STATISTIK (Sama seperti sebelumnya) ---
                 $statsPerusahaan = $data->groupBy(fn($i) => $i->user->perusahaan ?? 'Tanpa Perusahaan')->map->count()->sortDesc();
                 $statsDepartemen = $data->groupBy(fn($i) => $i->user->departemen ?? 'Tanpa Departemen')->map->count()->sortDesc();
                 $statsUser = $data->groupBy(fn($i) => $i->user->nama ?? $i->user->name ?? 'Unknown')->map->count()->sortDesc();
@@ -128,30 +155,26 @@ class PpiExport implements FromCollection, WithHeadings, WithMapping, ShouldAuto
 
                 $currentRow = $sheet->getHighestRow() + 3;
 
-                // Fungsi Helper untuk Membuat Tabel Kecil yang Rapi
+                // Fungsi Helper untuk Membuat Tabel Kecil
                 $createTable = function($title, $header1, $header2, $statsData) use ($sheet, &$currentRow) {
-                    // Judul Bagian
                     $sheet->setCellValue('A' . $currentRow, $title);
                     $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true)->setSize(12);
                     $currentRow++;
 
-                    // Header Tabel Kecil
                     $startRow = $currentRow;
                     $sheet->setCellValue('A' . $currentRow, $header1);
                     $sheet->setCellValue('B' . $currentRow, $header2);
                     
-                    // Style Header: Abu Muda + Bold
                     $sheet->getStyle("A$currentRow:B$currentRow")->applyFromArray([
                         'font' => ['bold' => true],
                         'fill' => [
                             'fillType' => Fill::FILL_SOLID,
-                            'startColor' => ['argb' => 'FFD1D5DB'], // Abu Terang
+                            'startColor' => ['argb' => 'FFD1D5DB'], 
                         ],
                         'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
                     ]);
                     $currentRow++;
 
-                    // Isi Data
                     foreach ($statsData as $key => $val) {
                         $sheet->setCellValue('A' . $currentRow, $key);
                         $sheet->setCellValue('B' . $currentRow, $val);
@@ -159,7 +182,6 @@ class PpiExport implements FromCollection, WithHeadings, WithMapping, ShouldAuto
                         $currentRow++;
                     }
 
-                    // Beri Border ke Tabel Kecil ini
                     $endRow = $currentRow - 1;
                     $sheet->getStyle("A$startRow:B$endRow")->applyFromArray([
                         'borders' => [
@@ -169,15 +191,14 @@ class PpiExport implements FromCollection, WithHeadings, WithMapping, ShouldAuto
                         ],
                     ]);
                     
-                    $currentRow++; // Jarak antar tabel
+                    $currentRow++; 
                 };
 
-                // Panggil Helper untuk membuat 4 Tabel Statistik
                 $createTable('REKAPITULASI BY PERUSAHAAN', 'Nama Perusahaan', 'Total', $statsPerusahaan);
                 $createTable('REKAPITULASI BY DEPARTEMEN', 'Nama Departemen', 'Total', $statsDepartemen);
                 $createTable('REKAPITULASI BY USER (TOP REQUESTER)', 'Nama User', 'Total Request', $statsUser);
                 
-                // Manual untuk Status & Grand Total (Karena ada baris Grand Total khusus)
+                // Manual untuk Status & Grand Total
                 $sheet->setCellValue('A' . $currentRow, 'REKAPITULASI STATUS & TOTAL');
                 $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true)->setSize(12);
                 $currentRow++;
@@ -186,7 +207,6 @@ class PpiExport implements FromCollection, WithHeadings, WithMapping, ShouldAuto
                 $sheet->setCellValue('A' . $currentRow, 'Status PPI');
                 $sheet->setCellValue('B' . $currentRow, 'Jumlah');
                 
-                // Style Header
                 $sheet->getStyle("A$currentRow:B$currentRow")->applyFromArray([
                     'font' => ['bold' => true],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFD1D5DB']],
@@ -201,18 +221,15 @@ class PpiExport implements FromCollection, WithHeadings, WithMapping, ShouldAuto
                     $currentRow++;
                 }
 
-                // Baris Grand Total
                 $sheet->setCellValue('A' . $currentRow, 'GRAND TOTAL');
                 $sheet->setCellValue('B' . $currentRow, $grandTotal);
                 
-                // Style Grand Total (Kuning Muda biar highlight)
                 $sheet->getStyle("A$currentRow:B$currentRow")->applyFromArray([
                     'font' => ['bold' => true],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFFEF08A']],
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
                 ]);
 
-                // Border tabel terakhir
                 $sheet->getStyle("A$startRow:B$currentRow")->applyFromArray([
                     'borders' => [
                         'allBorders' => [

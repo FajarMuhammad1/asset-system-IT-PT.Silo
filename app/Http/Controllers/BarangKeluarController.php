@@ -10,7 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Barryvdh\DomPDF\Facade\Pdf; // [BARU] Import Library PDF
+use Barryvdh\DomPDF\Facade\Pdf; 
+use Carbon\Carbon; // Import Carbon untuk format tanggal Indonesia
 
 class BarangKeluarController extends Controller
 {
@@ -162,8 +163,8 @@ class BarangKeluarController extends Controller
     }
 
     /**
-     * [BARU] CETAK PDF BAST
-     * Menghasilkan PDF profesional untuk dokumen serah terima
+     * CETAK PDF BAST (UPDATED)
+     * Layout: BAST, Lampiran, Surat Pernyataan
      */
     public function cetakBast($id)
     {
@@ -175,19 +176,37 @@ class BarangKeluarController extends Controller
             'admin'               // Admin Pihak Pertama
         ])->findOrFail($id);
 
-        // 2. Siapkan data untuk view
+        // 2. Persiapan Logo (Convert ke Base64 agar tidak error di PDF)
+        $path = public_path('image/images.png'); 
+        $logoBase64 = null;
+        
+        if (file_exists($path)) {
+            $type = pathinfo($path, PATHINFO_EXTENSION);
+            $dataImg = file_get_contents($path);
+            $logoBase64 = 'data:image/' . $type . ';base64,' . base64_encode($dataImg);
+        }
+
+        // ==========================================================
+        // UPDATE: Hapus string '_2' dari Kode Asset untuk Judul & Filename
+        // ==========================================================
+        $kodeAssetBersih = str_replace('_2', '', $log->aset->kode_asset);
+
+        // 3. Siapkan data untuk view
         $data = [
-            'title' => 'BAST - ' . $log->aset->kode_asset,
+            'title' => 'BAST - ' . $kodeAssetBersih, // Menggunakan kode bersih
             'log' => $log,
-            'tanggal_cetak' => now()->translatedFormat('d F Y')
+            'logo' => $logoBase64,
+            'tanggal_cetak' => Carbon::parse($log->tanggal_serah_terima)->translatedFormat('d F Y'),
+            'hari_ini' => Carbon::now()->translatedFormat('d F Y')
         ];
 
-        // 3. Load View PDF dan set ukuran kertas
+        // 4. Load View PDF dan set ukuran kertas
         $pdf = Pdf::loadView('admin.barangkeluar.pdf_bast', $data);
         $pdf->setPaper('a4', 'portrait');
 
-        // 4. Stream (Preview di browser)
-        return $pdf->stream('BAST-' . $log->aset->kode_asset . '.pdf');
+        // 5. Stream (Preview di browser)
+        // Menggunakan kode bersih untuk nama file download
+        return $pdf->stream('BAST-' . $kodeAssetBersih . '.pdf');
     }
 
     /**
