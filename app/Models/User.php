@@ -7,10 +7,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
+use App\Models\TaskReport; // <--- Tambahkan ini agar Model TaskReport dikenali
 
 class User extends Authenticatable
 {
-    
     use HasFactory, Notifiable;
 
     /**
@@ -18,17 +18,17 @@ class User extends Authenticatable
      *
      * @var array<int, string>
      */
-  protected $fillable = [
-    'nik',
-    'nama',
-    'email',
-    'jabatan',
-    'departemen',  // tambahkan
-    'perusahaan',  // tambahkan
-    'role',
-    'status',
-    'password',
-];
+    protected $fillable = [
+        'nik',
+        'nama', // <--- Kolom di DB kamu 'nama', bukan 'name'
+        'email',
+        'jabatan',
+        'departemen',  
+        'perusahaan',  
+        'role',
+        'status',
+        'password',
+    ];
 
 
     /**
@@ -52,5 +52,14 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    // ==========================================
+    // TAMBAHAN RELASI (WAJIB ADA)
+    // ==========================================
+    public function taskReports()
+    {
+        // Parameter kedua 'staff_id' wajib ada karena di tabel task_reports namanya staff_id
+        return $this->hasMany(TaskReport::class, 'staff_id');
     }
 }

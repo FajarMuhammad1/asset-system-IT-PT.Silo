@@ -86,7 +86,7 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::put('/team/update/{id}', [TeamController::class, 'update'])->name('team.update');
     Route::delete('/team/destroy/{id}', [TeamController::class, 'destroy'])->name('team.destroy');
     
-    // Resource Controllers
+    // Resource surat jalan, pengguna, master barang
     Route::resource('surat-jalan', SuratJalanController::class);
     Route::resource('pengguna', PenggunaController::class);
     Route::resource('master-barang', MasterBarangController::class);

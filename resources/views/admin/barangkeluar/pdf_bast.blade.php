@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     {{-- UPDATE: Menghapus string '_2' dari judul jika ada --}}
-    <title>{{ str_replace('_2', '', $title) }}</title>
+    <title>{{ str_replace('_3', '', $title) }}</title>
     <style>
         /* Reset & Base Styles */
         body { font-family: 'Times New Roman', Times, serif; font-size: 11pt; line-height: 1.3; color: #000; margin: 0; padding: 0; }
@@ -186,31 +186,58 @@
                 <th width="10%">TANDA TANGAN STAF IT</th>
             </tr>
         </thead>
-        <tbody>
-            <tr>
-                <td>PC DESKTOP<br>{{ $log->aset->masterBarang->merk ?? 'LENOVO' }}</td>
-                <td>{{ $log->aset->serial_number }}</td>
-                <td>WINDOWS 10</td>
-                <td>OEM</td>
-                <td>7CVN4-PH79Q-<br>T6CX2-72TPK-<br>MG9TR</td>
-                <td></td>
-                <td></td>
-            </tr>
-            <tr>
-                <td>PC DESKTOP<br>{{ $log->aset->masterBarang->merk ?? 'LENOVO' }}</td>
-                <td>{{ $log->aset->serial_number }}</td>
-                <td>HOME & BUSINESS 2021</td>
-                <td>OEM</td>
-                <td>(Terlampir di Akun)</td>
-                <td></td>
-                <td></td>
-            </tr>
-            @for($i=0; $i<3; $i++)
-            <tr>
-                <td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td>
-            </tr>
-            @endfor
-        </tbody>
+       <tbody>
+        {{-- BARIS 1: WINDOWS (TANDA TANGAN DIMASUKKAN DI SINI PAKE ROWSPAN) --}}
+        <tr>
+            <td>PC DESKTOP<br>{{ $log->aset->masterBarang->merk ?? 'LENOVO' }}</td>
+            <td>{{ $log->aset->serial_number }}</td>
+            <td>WINDOWS 10</td>
+            <td>OEM</td>
+            <td>7CVN4-PH79Q-<br>T6CX2-72TPK-<br>MG9TR</td>
+            
+            {{-- KOLOM TANDA TANGAN USER (PENERIMA) --}}
+            {{-- rowspan="5" artinya kolom ini menggabungkan 5 baris ke bawah --}}
+            <td rowspan="5" class="text-center align-middle" style="vertical-align: middle;">
+                @if(!empty($log->ttd_penerima))
+                    <img src="{{ $log->ttd_penerima }}" style="height: 60px; width: auto;" alt="TTD User">
+                @else
+                    <br><small class="text-muted" style="font-size: 8pt;">(Belum TTD)</small>
+                @endif
+            </td>
+
+            {{-- KOLOM TANDA TANGAN STAFF IT (PETUGAS) --}}
+            {{-- Pastikan nama kolom di DB kamu benar, biasanya 'ttd_petugas' atau 'ttd_admin' --}}
+            <td rowspan="5" class="text-center align-middle" style="vertical-align: middle;">
+                @if(!empty($log->ttd_petugas))
+                    <img src="{{ $log->ttd_petugas }}" style="height: 60px; width: auto;" alt="TTD Staff">
+                @else
+                    <br><small class="text-muted" style="font-size: 8pt;">(Belum TTD)</small>
+                @endif
+            </td>
+        </tr>
+
+        {{-- BARIS 2: OFFICE --}}
+        {{-- PERHATIAN: Di baris ini JANGAN buat <td> untuk TTD lagi, karena sudah dicover rowspan di atas --}}
+        <tr>
+            <td>PC DESKTOP<br>{{ $log->aset->masterBarang->merk ?? 'LENOVO' }}</td>
+            <td>{{ $log->aset->serial_number }}</td>
+            <td>HOME & BUSINESS 2021</td>
+            <td>OEM</td>
+            <td>(Terlampir di Akun)</td>
+        </tr>
+
+        {{-- BARIS LOOP KOSONG --}}
+        {{-- Di sini juga JANGAN buat <td> TTD --}}
+        @for($i=0; $i<3; $i++)
+        <tr>
+            <td>&nbsp;</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        @endfor
+    </tbody>
     </table>
 
     <div class="page-break"></div>

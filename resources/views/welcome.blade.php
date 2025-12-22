@@ -15,22 +15,23 @@
         :root {
             --primary-blue: #4e73df; 
             --primary-dark: #224abe;
+            --bg-dark: #1a1a2e;
         }
 
         body {
             font-family: 'Nunito', sans-serif;
-            height: 100vh;
             overflow-x: hidden;
-            background-color: #1a1a2e; 
+            background-color: var(--bg-dark); 
         }
 
-        /* === BACKGROUND === */
+        /* === BACKGROUND PARALLAX === */
         .bg-container {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
         }
         .bg-mining-image {
             position: absolute; width: 100%; height: 100%;
+            /* Pastikan file background.jpg ada di public/image/ */
             background: url("{{ asset('image/background.jpg') }}") no-repeat center center/cover;
             opacity: 50%; 
         }
@@ -43,6 +44,7 @@
         /* Navbar & Logo */
         .navbar {
             padding-top: 25px;
+            z-index: 100;
         }
         .navbar-brand {
             font-weight: 800;
@@ -51,23 +53,22 @@
             letter-spacing: 1px;
             font-size: 1.5rem;
             display: flex;
-            align-items: center; /* Biar logo dan teks sejajar tengah */
+            align-items: center; 
         }
-        
-        /* Style untuk Logo Gambar */
         .navbar-brand img {
-            height: 80px; /* Atur tinggi logo biar pas */
-            width: 80px;  /* Atur lebar logo biar pas */
-            margin-right: 15px; /* Jarak antara logo dan teks */
+            height: 50px; /* Disesuaikan agar tidak terlalu besar di mobile */
+            width: auto;
+            margin-right: 15px;
         }
         
         /* Hero Section */
         .hero-container {
-            min-height: 90vh;
+            min-height: 100vh; /* Full screen */
             display: flex;
             align-items: center;
             color: white;
-            padding-top: 50px;
+            padding-top: 80px;
+            padding-bottom: 50px;
         }
         
         .hero-title {
@@ -143,6 +144,7 @@
             font-weight: 600;
             border-radius: 50px;
             padding: 10px 25px;
+            text-decoration: none;
         }
         
         .btn-outline-custom:hover {
@@ -151,15 +153,80 @@
             border-color: white;
         }
 
-        /* Footer */
+        /* === NEW SECTION STYLES (ABOUT US) === */
+        .content-section {
+            position: relative;
+            background-color: var(--bg-dark); /* Solid background agar tulisan terbaca */
+            z-index: 10;
+            padding: 100px 0;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5); /* Shadow pemisah */
+        }
+
+        .section-title {
+            font-weight: 800;
+            font-size: 2.5rem;
+            color: white;
+            margin-bottom: 20px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 4px;
+            background: var(--primary-blue);
+            margin-top: 10px;
+            border-radius: 2px;
+        }
+
+        .company-desc {
+            color: rgba(255,255,255,0.8);
+            font-size: 1.1rem;
+            line-height: 1.8;
+            text-align: justify;
+        }
+
+        /* Department Cards Style */
+        .dept-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+
+        .dept-card:hover {
+            background: rgba(78, 115, 223, 0.2);
+            border-color: var(--primary-blue);
+            transform: translateY(-10px);
+        }
+
+        .dept-icon {
+            font-size: 2.5rem;
+            color: var(--primary-blue);
+            margin-bottom: 15px;
+        }
+
+        .dept-name {
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        /* Footer - Updated to be Relative */
         .footer-strip {
-            position: absolute;
-            bottom: 0;
+            position: relative; /* Ubah ke relative agar ada di bawah konten scroll */
             width: 100%;
-            background: rgba(0,0,0,0.3);
+            background: #151525;
             color: rgba(255,255,255,0.7);
-            padding: 15px 0;
+            padding: 20px 0;
             font-size: 0.85rem;
+            z-index: 20;
         }
     </style>
 </head>
@@ -202,7 +269,7 @@
                 </h1>
                 <p class="hero-subtitle">
                     Sistem Manajemen Inventaris & Pemeliharaan Perangkat Tambang.<br>
-                    Terintegrasi, Realtime, dan Akurat.
+                    Terintegrasi, Realtime, dan Akurat untuk <strong>PT. SILO</strong>.
                 </p>
                 
                 <div class="d-flex gap-3">
@@ -214,8 +281,8 @@
                         <a href="{{ route('login') }}" class="btn btn-light-custom">
                             <i class="fas fa-rocket me-2"></i> Akses Portal
                         </a>
-                        <a href="#features" class="btn btn-outline-custom">
-                            <i class="fas fa-search me-2"></i> Cek Status
+                        <a href="#about-section" class="btn btn-outline-custom">
+                            <i class="fas fa-info-circle me-2"></i> Tentang Kami
                         </a>
                     @endauth
                 </div>
@@ -270,9 +337,96 @@
         </div>
     </div>
 
+    <section class="content-section" id="about-section">
+        <div class="container">
+            
+            <div class="row align-items-center mb-5 pb-4">
+                <div class="col-lg-5 mb-4 mb-lg-0">
+                    <img src="{{ asset('image/photo.jpg') }}" 
+                         alt="Mining Activity" 
+                         class="img-fluid rounded-4 shadow-lg border border-secondary"
+                         style="opacity: 0.9;">
+                </div>
+                <div class="col-lg-7 ps-lg-5">
+                    <h2 class="section-title">TENTANG KAMI</h2>
+                    <h4 class="text-white fw-bold mb-3">PT. SEBUKU IRON LATERITIC ORES (SILO)</h4>
+                    
+                    <p class="company-desc">
+                        
+                        <strong>PT. Sebuku Iron Lateritic Ores</strong> adalah perusahaan pertambangan bijih besi terkemuka yang beroperasi di Pulau Sebuku, Kalimantan Selatan. 
+                        Kami berkomitmen untuk menjalankan operasi penambangan yang efisien, bertanggung jawab, dan mengutamakan Keselamatan dan Kesehatan Kerja (K3).
+                    </p>
+                    <p class="company-desc">
+                        Dalam era digitalisasi industri 4.0, PT. SILO terus berinovasi. Sistem Informasi Resource & Asset ini dibangun untuk memastikan seluruh infrastruktur teknologi, komunikasi, dan aset pendukung operasional tambang dapat terpantau secara <em>real-time</em>, meminimalkan <em>downtime</em>, dan meningkatkan produktivitas antar departemen.
+                    </p>
+                </div>
+            </div>
+
+            <hr class="border-secondary my-5">
+
+            <div class="row justify-content-center text-center mb-5">
+                <div class="col-lg-8">
+                    <h2 class="section-title text-center mx-auto" style="font-size: 2rem;">DEPARTEMEN TERINTEGRASI</h2>
+                    <p class="text-white-50">Sinergi antar departemen untuk operasional tambang yang unggul.</p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-4 col-sm-6">
+                    <div class="dept-card">
+                        <div class="dept-icon"><i class="fas fa-network-wired"></i></div>
+                        <div class="dept-name">IT & Network</div>
+                        <p class="small text-white-50">Infrastruktur Jaringan, Server, CCTV, & Perangkat Digital.</p>
+                    </div>
+                </div>
+
+                <div class="col-md-4 col-sm-6">
+                    <div class="dept-card">
+                        <div class="dept-icon"><i class="fas fa-drafting-compass"></i></div>
+                        <div class="dept-name">Engineering & Planning</div>
+                        <p class="small text-white-50">Perencanaan Tambang, Survey, & Geologi.</p>
+                    </div>
+                </div>
+
+                <div class="col-md-4 col-sm-6">
+                    <div class="dept-card">
+                        <div class="dept-icon"><i class="fas fa-truck-monster"></i></div>
+                        <div class="dept-name">Mining Production</div>
+                        <p class="small text-white-50">Operasional Penambangan & Hauling.</p>
+                    </div>
+                </div>
+
+                <div class="col-md-4 col-sm-6">
+                    <div class="dept-card">
+                        <div class="dept-icon"><i class="fas fa-cogs"></i></div>
+                        <div class="dept-name">Plant & Maintenance</div>
+                        <p class="small text-white-50">Perawatan Alat Berat (HE) & Sarana Pendukung.</p>
+                    </div>
+                </div>
+
+                <div class="col-md-4 col-sm-6">
+                    <div class="dept-card">
+                        <div class="dept-icon"><i class="fas fa-hard-hat"></i></div>
+                        <div class="dept-name">HSE / Safety</div>
+                        <p class="small text-white-50">K3 (Kesehatan & Keselamatan Kerja) & Lingkungan.</p>
+                    </div>
+                </div>
+
+                <div class="col-md-4 col-sm-6">
+                    <div class="dept-card">
+                        <div class="dept-icon"><i class="fas fa-users-cog"></i></div>
+                        <div class="dept-name">HRGA & Logistics</div>
+                        <p class="small text-white-50">Manajemen SDM, Fasilitas Camp, & Logistik.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
     <div class="footer-strip text-center">
         <div class="container">
-            <span>&copy; {{ date('Y') }} <strong>IT DEPARTMENT</strong> - Resource Asset Management System</span>
+            <span>&copy; {{ date('Y') }} <strong>IT DEPARTMENT - PT. SILO</strong> | Resource Asset Management System</span>
         </div>
     </div>
 

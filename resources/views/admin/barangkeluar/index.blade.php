@@ -38,7 +38,7 @@
                             <th>Penerima</th> 
                             <th>Petugas IT</th>
                             <th class="text-center">Status</th>
-                            <th class="text-center" width="15%">Aksi</th> {{-- Lebar kolom aksi ditambah sedikit --}}
+                            <th class="text-center" width="15%">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -85,7 +85,7 @@
                                 @endif
                             </td>
 
-                            {{-- KOLOM AKSI (UPDATE DI SINI) --}}
+                            {{-- KOLOM AKSI --}}
                             <td class="text-center align-middle">
                                 <div class="btn-group" role="group">
                                     {{-- Tombol Detail --}}
@@ -93,10 +93,23 @@
                                         <i class="fas fa-eye"></i>
                                     </a>
 
-                                    {{-- [BARU] Tombol Cetak PDF --}}
-                                    <a href="{{ route('barangkeluar.cetak', $log->id) }}" target="_blank" class="btn btn-sm btn-danger shadow-sm ml-1" title="Cetak BAST (PDF)">
+                                    {{-- Tombol Cetak PDF (Memicu Modal) --}}
+                                    @php
+                                        // Bersihkan _3, _2 dari kode aset untuk default value di inputan
+                                        $cleanCode = preg_replace('/_\d+$/', '', $log->aset->kode_asset ?? 'BAST');
+                                        if(!str_starts_with($cleanCode, 'BAST')) $cleanCode = 'BAST-' . $cleanCode;
+                                    @endphp
+                                    
+                                    <button type="button" 
+                                            class="btn btn-sm btn-danger shadow-sm ml-1 btn-cetak-modal" 
+                                            data-toggle="modal" 
+                                            data-target="#modalCetak"
+                                            data-default-name="{{ $cleanCode }}"
+                                            {{-- PERBAIKAN: Kita taruh URL route asli Laravel di sini --}}
+                                            data-url="{{ route('barangkeluar.cetak', $log->id) }}"
+                                            title="Cetak BAST (PDF)">
                                         <i class="fas fa-file-pdf"></i>
-                                    </a>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -114,6 +127,45 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalCetak" tabindex="-1" role="dialog" aria-labelledby="modalCetakLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalCetakLabel"><i class="fas fa-print mr-2"></i> Cetak Dokumen BAST</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formCetak" onsubmit="return false;">
+                    <div class="form-group">
+                        <label for="customFilename" class="font-weight-bold">Judul File PDF:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="customFilename" placeholder="Contoh: BAST-Laptop-Andi">
+                            <div class="input-group-append">
+                                <span class="input-group-text">.pdf</span>
+                            </div>
+                        </div>
+                        <small class="form-text text-muted">
+                            Sesuaikan nama file agar mudah dicari nanti.
+                        </small>
+                    </div>
+                    
+                    {{-- Input Hidden untuk menyimpan URL Route yang benar --}}
+                    <input type="hidden" id="urlCetakAsli"> 
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-danger" onclick="prosesCetak()">
+                    <i class="fas fa-file-pdf mr-1"></i> Cetak Sekarang
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
@@ -121,7 +173,7 @@
 <script>
     $(document).ready(function() {
         $('#dataTable').DataTable({
-            "order": [[ 0, "desc" ]], // Urutkan dari yang terbaru
+            "order": [[ 0, "desc" ]],
             "language": {
                 "emptyTable": "Tidak ada data tersedia",
                 "search": "Cari Data:",
@@ -135,6 +187,54 @@
                 }
             }
         });
+    });
+
+    // ==========================================
+    // SCRIPT MODAL CETAK (FIXED 404)
+    // ==========================================
+    
+    // 1. Saat tombol PDF di tabel diklik
+    $(document).on('click', '.btn-cetak-modal', function () {
+        var defaultName = $(this).data('default-name'); // Ambil Nama Default
+        var urlRoute = $(this).data('url');             // Ambil URL Asli dari Laravel
+
+        $('#customFilename').val(defaultName);  // Isi textbox nama
+        $('#urlCetakAsli').val(urlRoute);       // Simpan URL ke hidden input
+    });
+
+    // 2. Saat tombol "Cetak Sekarang" diklik
+    function prosesCetak() {
+        // Ambil URL yang sudah benar tadi dari hidden input
+        var url = $('#urlCetakAsli').val(); 
+        var filename = $('#customFilename').val();
+        
+        // Cek jika URL kosong (jaga-jaga error)
+        if(!url) {
+            alert("Terjadi kesalahan URL. Silakan refresh halaman.");
+            return;
+        }
+
+        // Tambahkan parameter custom_filename ke URL tersebut
+        // Menggunakan tanda tanya (?) atau ampersand (&) tergantung apakah sudah ada query param
+        if (url.indexOf('?') > -1) {
+            url += "&custom_filename=" + encodeURIComponent(filename);
+        } else {
+            url += "?custom_filename=" + encodeURIComponent(filename);
+        }
+
+        // Buka di tab baru
+        window.open(url, '_blank');
+
+        // Tutup modal
+        $('#modalCetak').modal('hide');
+    }
+
+    // Tambahan: Agar bisa tekan Enter langsung cetak
+    $('#customFilename').keypress(function (e) {
+        if (e.which == 13) {
+            prosesCetak();
+            return false;
+        }
     });
 </script>
 @endpush
