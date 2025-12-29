@@ -5,10 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ config('app.name', 'Mining IT Asset') }}</title>
 
+    {{-- Fonts --}}
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     
+    {{-- Bootstrap 5 CSS --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
+    {{-- Font Awesome --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -16,407 +19,405 @@
             --primary-blue: #4e73df; 
             --primary-dark: #224abe;
             --bg-dark: #1a1a2e;
+            --accent-cyan: #36b9cc;
         }
 
         body {
             font-family: 'Nunito', sans-serif;
             overflow-x: hidden;
             background-color: var(--bg-dark); 
+            color: #fff;
         }
 
-        /* === BACKGROUND PARALLAX === */
+        /* === BACKGROUND === */
         .bg-container {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
         }
         .bg-mining-image {
             position: absolute; width: 100%; height: 100%;
-            /* Pastikan file background.jpg ada di public/image/ */
+            /* Pastikan gambar ada di folder public/image/ */
             background: url("{{ asset('image/background.jpg') }}") no-repeat center center/cover;
-            opacity: 50%; 
+            opacity: 0.4; 
         }
         .bg-overlay-blue {
             position: absolute; width: 100%; height: 100%;
-            background: linear-gradient(180deg, rgba(78, 115, 223, 0.7) 10%, rgba(34, 74, 190, 0.9) 100%);
+            background: linear-gradient(180deg, rgba(26, 26, 46, 0.85) 0%, rgba(34, 74, 190, 0.85) 100%);
         }
-        /* ================== */
 
-        /* Navbar & Logo */
+        /* === NAVBAR === */
         .navbar {
-            padding-top: 25px;
-            z-index: 100;
+            padding: 15px 0;
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
+        
         .navbar-brand {
             font-weight: 800;
             color: white !important;
             text-transform: uppercase;
             letter-spacing: 1px;
-            font-size: 1.5rem;
+            font-size: 1.1rem;
             display: flex;
             align-items: center; 
         }
+        
         .navbar-brand img {
-            height: 50px; /* Disesuaikan agar tidak terlalu besar di mobile */
+            height: 35px;
             width: auto;
-            margin-right: 15px;
+            margin-right: 10px;
+        }
+
+        /* === BURGER MENU CUSTOM (FIXED) === */
+        .navbar-toggler {
+            border: none; /* Hilangkan kotak border */
+            padding: 0;
+            outline: none;
+            box-shadow: none !important; /* Hilangkan glow biru */
         }
         
-        /* Hero Section */
-        .hero-container {
-            min-height: 100vh; /* Full screen */
+        .navbar-toggler-icon {
+            width: 1.5em;
+            height: 1.5em;
+            /* Icon garis tiga warna putih tebal */
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='3' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* === HERO SECTION === */
+        .hero-section {
+            padding-top: 130px;
+            padding-bottom: 80px;
+            min-height: 100vh;
             display: flex;
             align-items: center;
-            color: white;
-            padding-top: 80px;
-            padding-bottom: 50px;
         }
         
         .hero-title {
-            font-size: 3.5rem;
+            font-size: 2.5rem; /* Ukuran Mobile */
             font-weight: 800;
-            line-height: 1.1;
+            line-height: 1.2;
             margin-bottom: 20px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            text-shadow: 0 2px 15px rgba(0,0,0,0.5);
+        }
+
+        @media (min-width: 992px) {
+            .hero-title {
+                font-size: 3.8rem; /* Ukuran Desktop */
+            }
         }
 
         .hero-subtitle {
-            font-size: 1.1rem;
-            font-weight: 400;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 40px;
-            border-left: 5px solid white;
-            padding-left: 20px;
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 30px;
+            border-left: 4px solid var(--accent-cyan);
+            padding-left: 15px;
         }
 
-        /* Cards */
+        /* === GLASS CARDS === */
         .glass-card {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
             transition: transform 0.3s ease;
-            color: white;
             height: 100%;
         }
-
         .glass-card:hover {
             transform: translateY(-5px);
-            background: rgba(255, 255, 255, 0.2);
-            cursor: pointer;
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-cyan);
         }
-
         .icon-box {
-            font-size: 2rem;
-            margin-bottom: 15px;
-            color: white;
+            font-size: 1.8rem;
+            margin-bottom: 12px;
+            color: var(--accent-cyan);
         }
-
-        .card-title {
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 1rem;
-            letter-spacing: 0.5px;
-            margin-bottom: 10px;
-        }
-
-        /* Buttons */
-        .btn-light-custom {
-            background-color: white;
-            color: var(--primary-blue);
-            font-weight: 700;
-            border-radius: 50px;
-            padding: 12px 30px;
-            border: none;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
-        .btn-light-custom:hover {
-            background-color: #f8f9fa;
-            transform: scale(1.05);
-            color: var(--primary-dark);
-        }
-
-        .btn-outline-custom {
-            border: 2px solid rgba(255,255,255,0.7);
-            color: white;
-            font-weight: 600;
-            border-radius: 50px;
-            padding: 10px 25px;
-            text-decoration: none;
-        }
-        
-        .btn-outline-custom:hover {
-            background: white;
-            color: var(--primary-blue);
-            border-color: white;
-        }
-
-        /* === NEW SECTION STYLES (ABOUT US) === */
-        .content-section {
-            position: relative;
-            background-color: var(--bg-dark); /* Solid background agar tulisan terbaca */
-            z-index: 10;
-            padding: 100px 0;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.5); /* Shadow pemisah */
-        }
-
-        .section-title {
-            font-weight: 800;
-            font-size: 2.5rem;
-            color: white;
-            margin-bottom: 20px;
-            position: relative;
-            display: inline-block;
-        }
-
-        .section-title::after {
-            content: '';
-            display: block;
-            width: 60px;
-            height: 4px;
-            background: var(--primary-blue);
-            margin-top: 10px;
-            border-radius: 2px;
-        }
-
-        .company-desc {
-            color: rgba(255,255,255,0.8);
-            font-size: 1.1rem;
-            line-height: 1.8;
-            text-align: justify;
-        }
-
-        /* Department Cards Style */
-        .dept-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 25px;
-            text-align: center;
-            transition: all 0.3s ease;
-            height: 100%;
-        }
-
-        .dept-card:hover {
-            background: rgba(78, 115, 223, 0.2);
-            border-color: var(--primary-blue);
-            transform: translateY(-10px);
-        }
-
-        .dept-icon {
-            font-size: 2.5rem;
-            color: var(--primary-blue);
-            margin-bottom: 15px;
-        }
-
-        .dept-name {
-            color: white;
+        .card-title-custom {
             font-weight: 700;
             font-size: 1.1rem;
             margin-bottom: 5px;
         }
 
-        /* Footer - Updated to be Relative */
-        .footer-strip {
-            position: relative; /* Ubah ke relative agar ada di bawah konten scroll */
-            width: 100%;
-            background: #151525;
-            color: rgba(255,255,255,0.7);
-            padding: 20px 0;
+        /* === BUTTONS === */
+        .btn-custom-primary {
+            background-color: var(--primary-blue);
+            color: white;
+            font-weight: 700;
+            border-radius: 50px;
+            padding: 10px 30px;
+            border: none;
+            transition: all 0.3s;
+        }
+        .btn-custom-primary:hover {
+            background-color: var(--primary-dark);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(78, 115, 223, 0.4);
+        }
+
+        .btn-custom-outline {
+            background: transparent;
+            border: 2px solid rgba(255,255,255,0.6);
+            color: white;
+            font-weight: 600;
+            border-radius: 50px;
+            padding: 8px 25px;
+            transition: all 0.3s;
+        }
+        .btn-custom-outline:hover {
+            background: white;
+            color: var(--bg-dark);
+            border-color: white;
+        }
+
+        /* === CONTENT SECTION === */
+        .content-section {
+            background-color: var(--bg-dark);
+            padding: 80px 0;
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 -20px 50px rgba(0,0,0,0.5);
+        }
+
+        .section-heading {
+            font-weight: 800;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+        }
+        .section-heading::after {
+            content: '';
+            display: block;
+            width: 50%;
+            height: 4px;
+            background: var(--primary-blue);
+            margin-top: 5px;
+            border-radius: 2px;
+        }
+
+        /* Dept Cards */
+        .dept-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            height: 100%;
+            transition: 0.3s;
+        }
+        .dept-card:hover {
+            background: rgba(78, 115, 223, 0.15);
+            border-color: var(--primary-blue);
+        }
+        .dept-icon {
+            font-size: 1.8rem;
+            color: var(--primary-blue);
+            margin-bottom: 10px;
+        }
+        .dept-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 0;
+        }
+
+        /* Footer */
+        footer {
+            background: #0f0f1a;
+            padding: 30px 0;
             font-size: 0.85rem;
+            color: rgba(255,255,255,0.5);
+            position: relative;
             z-index: 20;
         }
     </style>
 </head>
 <body>
 
+    {{-- Background Parallax --}}
     <div class="bg-container">
         <div class="bg-mining-image"></div>
         <div class="bg-overlay-blue"></div>
     </div>
 
-    <nav class="navbar navbar-expand-lg">
-        <div class="container">
+    {{-- Navbar Responsive Fixed --}}
+    <nav class="navbar navbar-expand-lg fixed-top shadow-sm">
+        {{-- Gunakan d-flex justify-content-between agar logo kiri & burger kanan mentok --}}
+        <div class="container d-flex justify-content-between align-items-center">
+            
+            {{-- LOGO (KIRI) --}}
             <a class="navbar-brand" href="#">
-                <img src="{{ asset('image/images.png') }}" alt="Logo System">
-                RESOURCE SYSTEM
+                <img src="{{ asset('image/images.png') }}" alt="Logo">
+                <span>Resource Asset System</span>
             </a>
-            <div class="ms-auto">
-                @if (Route::has('login'))
-                    <div class="">
-                        @auth
-                            <a href="{{ url('/dashboard') }}" class="btn btn-outline-custom btn-sm">Dashboard</a>
-                        @else
-                            <a href="{{ route('login') }}" class="btn btn-light-custom btn-sm">
-                                <i class="fas fa-sign-in-alt me-2"></i> Login 
-                            </a>
-                        @endauth
-                    </div>
-                @endif
+            
+            {{-- TOMBOL BURGER (KANAN) --}}
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            {{-- MENU ITEM --}}
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-lg-center text-center pt-4 pt-lg-0">
+                    <li class="nav-item mb-3 mb-lg-0">
+                        <a class="nav-link text-white me-lg-4" href="#about-section">Tentang Kami</a>
+                    </li>
+                    <li class="nav-item">
+                        @if (Route::has('login'))
+                            @auth
+                                <a href="{{ url('/dashboard') }}" class="btn btn-custom-primary w-100 w-lg-auto px-4">
+                                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                                </a>
+                            @else
+                                <a href="{{ route('login') }}" class="btn btn-custom-outline w-100 w-lg-auto px-4">
+                                    <i class="fas fa-sign-in-alt me-2"></i> Login Staff
+                                </a>
+                            @endauth
+                        @endif
+                    </li>
+                </ul>
             </div>
+            
         </div>
     </nav>
 
-    <div class="container hero-container">
-        <div class="row align-items-center w-100">
-            
-            <div class="col-lg-6 mb-5 mb-lg-0">
-                <h1 class="hero-title">
-                    IT ASSET &<br>
-                    RESOURCE CONTROL
-                </h1>
-                <p class="hero-subtitle">
-                    Sistem Manajemen Inventaris & Pemeliharaan Perangkat Tambang.<br>
-                    Terintegrasi, Realtime, dan Akurat untuk <strong>PT. SILO</strong>.
-                </p>
+    {{-- Hero Section --}}
+    <div class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
                 
-                <div class="d-flex gap-3">
-                    @auth
-                        <a href="{{ url('/Pengguna/ppi/create') }}" class="btn btn-light-custom">
-                            <i class="fas fa-plus-circle me-2"></i> Buat Tiket
-                        </a>
-                    @else
-                        <a href="{{ route('login') }}" class="btn btn-light-custom">
-                            <i class="fas fa-rocket me-2"></i> Akses Portal
-                        </a>
-                        <a href="#about-section" class="btn btn-outline-custom">
-                            <i class="fas fa-info-circle me-2"></i> Tentang Kami
-                        </a>
-                    @endauth
-                </div>
-            </div>
-
-            <div class="col-lg-6">
-                <div class="row g-3">
+                {{-- Text Content --}}
+                <div class="col-lg-6 mb-5 mb-lg-0 text-center text-lg-start">
+                    <h1 class="hero-title">
+                        Resource Asset &<br>Monitoring Helpdesk
+                    </h1>
+                    <p class="hero-subtitle mx-auto mx-lg-0" style="max-width: 500px;">
+                        Sistem terintegrasi untuk manajemen aset tambang, pemeliharaan perangkat, dan pelaporan kendala (Helpdesk) di lingkungan <strong>PT. SILO</strong>.
+                    </p>
                     
-                    <div class="col-md-6">
-                        <div class="glass-card">
-                            <div class="icon-box">
-                                <i class="fas fa-laptop-medical"></i>
-                            </div>
-                            <div class="card-title">Inventory & Stock</div>
-                            <p class="small text-white-50">Monitoring stok Laptop, PC, dan Consumable (Sparepart) IT.</p>
-                        </div>
+                    <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center justify-content-lg-start mt-4">
+                        @auth
+                            <a href="{{ url('/Pengguna/ppi/create') }}" class="btn btn-custom-primary btn-lg">
+                                <i class="fas fa-plus-circle me-2"></i> Buat Tiket
+                            </a>
+                        @else
+                            <a href="{{ route('login') }}" class="btn btn-custom-primary btn-lg">
+                                Akses Portal <i class="fas fa-arrow-right ms-2"></i>
+                            </a>
+                        @endauth
+                        <a href="#departments" class="btn btn-custom-outline btn-lg">
+                            Departemen
+                        </a>
                     </div>
-
-                    <div class="col-md-6">
-                        <div class="glass-card">
-                            <div class="icon-box">
-                                <i class="fas fa-satellite-dish"></i>
-                            </div>
-                            <div class="card-title">Radio Comm</div>
-                            <p class="small text-white-50">Manajemen aset komunikasi (HT/Rig) dan infrastruktur jaringan.</p>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <div class="glass-card">
-                            <div class="icon-box">
-                                <i class="fas fa-tools"></i>
-                            </div>
-                            <div class="card-title">Maintenance</div>
-                            <p class="small text-white-50">Jadwal service berkala dan riwayat perbaikan perangkat.</p>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <div class="glass-card">
-                            <div class="icon-box">
-                                <i class="fas fa-clipboard-check"></i>
-                            </div>
-                            <div class="card-title">Audit & BAST</div>
-                            <p class="small text-white-50">Pencatatan serah terima aset (BAST) dan laporan audit.</p>
-                        </div>
-                    </div>
-
                 </div>
-            </div>
 
+                {{-- Hero Cards Grid --}}
+                <div class="col-lg-6">
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-6">
+                            <div class="glass-card">
+                                <div class="icon-box"><i class="fas fa-laptop-code"></i></div>
+                                <div class="card-title-custom">Inventory IT</div>
+                                <p class="small text-white-50 m-0">Tracking Laptop, PC, & Stok Sparepart.</p>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <div class="glass-card">
+                                <div class="icon-box"><i class="fas fa-broadcast-tower"></i></div>
+                                <div class="card-title-custom">Radio Comm</div>
+                                <p class="small text-white-50 m-0">Manajemen HT, Rig, & Repeater.</p>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <div class="glass-card">
+                                <div class="icon-box"><i class="fas fa-tools"></i></div>
+                                <div class="card-title-custom">Maintenance</div>
+                                <p class="small text-white-50 m-0">Jadwal service berkala & histori.</p>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <div class="glass-card">
+                                <div class="icon-box"><i class="fas fa-file-signature"></i></div>
+                                <div class="card-title-custom">E-Report</div>
+                                <p class="small text-white-50 m-0">Digital BAST & Laporan Audit.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 
+    {{-- Content Section (About & Dept) --}}
     <section class="content-section" id="about-section">
         <div class="container">
             
-            <div class="row align-items-center mb-5 pb-4">
+            {{-- About --}}
+            <div class="row align-items-center mb-5">
                 <div class="col-lg-5 mb-4 mb-lg-0">
                     <img src="{{ asset('image/photo.jpg') }}" 
                          alt="Mining Activity" 
-                         class="img-fluid rounded-4 shadow-lg border border-secondary"
-                         style="opacity: 0.9;">
+                         class="img-fluid rounded-4 shadow-lg border border-secondary w-100">
                 </div>
                 <div class="col-lg-7 ps-lg-5">
-                    <h2 class="section-title">TENTANG KAMI</h2>
-                    <h4 class="text-white fw-bold mb-3">PT. SEBUKU IRON LATERITIC ORES (SILO)</h4>
-                    
-                    <p class="company-desc">
-                        
-                        <strong>PT. Sebuku Iron Lateritic Ores</strong> adalah perusahaan pertambangan bijih besi terkemuka yang beroperasi di Pulau Sebuku, Kalimantan Selatan. 
-                        Kami berkomitmen untuk menjalankan operasi penambangan yang efisien, bertanggung jawab, dan mengutamakan Keselamatan dan Kesehatan Kerja (K3).
-                    </p>
-                    <p class="company-desc">
-                        Dalam era digitalisasi industri 4.0, PT. SILO terus berinovasi. Sistem Informasi Resource & Asset ini dibangun untuk memastikan seluruh infrastruktur teknologi, komunikasi, dan aset pendukung operasional tambang dapat terpantau secara <em>real-time</em>, meminimalkan <em>downtime</em>, dan meningkatkan produktivitas antar departemen.
+                    <h2 class="section-heading">TENTANG PT. SILO</h2>
+                    <p class="text-white-50" style="line-height: 1.8; text-align: justify;">
+                        <strong>PT. Sebuku Iron Lateritic Ores (SILO)</strong> berkomitmen pada efisiensi operasional tambang melalui digitalisasi. Sistem ini dirancang untuk memastikan ketersediaan alat kerja, respon cepat terhadap kendala teknis, dan transparansi data aset antar departemen.
                     </p>
                 </div>
             </div>
 
-            <hr class="border-secondary my-5">
+            <hr class="border-secondary opacity-25 my-5">
 
-            <div class="row justify-content-center text-center mb-5">
-                <div class="col-lg-8">
-                    <h2 class="section-title text-center mx-auto" style="font-size: 2rem;">DEPARTEMEN TERINTEGRASI</h2>
-                    <p class="text-white-50">Sinergi antar departemen untuk operasional tambang yang unggul.</p>
+            {{-- Departments Grid --}}
+            <div id="departments">
+                <div class="text-center mb-5">
+                    <h2 class="section-heading fs-3">DEPARTEMEN TERKAIT</h2>
+                    <p class="text-white-50">Sinergi operasional untuk produktivitas maksimal.</p>
                 </div>
-            </div>
 
-            <div class="row g-4">
-                <div class="col-md-4 col-sm-6">
-                    <div class="dept-card">
-                        <div class="dept-icon"><i class="fas fa-network-wired"></i></div>
-                        <div class="dept-name">IT & Network</div>
-                        <p class="small text-white-50">Infrastruktur Jaringan, Server, CCTV, & Perangkat Digital.</p>
+                {{-- Mobile: 2 Kolom (col-6), Desktop: 6 Kolom (col-lg-2) --}}
+                <div class="row g-3">
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="dept-card">
+                            <div class="dept-icon"><i class="fas fa-network-wired"></i></div>
+                            <div class="dept-name">IT & Network</div>
+                        </div>
                     </div>
-                </div>
-
-                <div class="col-md-4 col-sm-6">
-                    <div class="dept-card">
-                        <div class="dept-icon"><i class="fas fa-drafting-compass"></i></div>
-                        <div class="dept-name">Engineering & Planning</div>
-                        <p class="small text-white-50">Perencanaan Tambang, Survey, & Geologi.</p>
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="dept-card">
+                            <div class="dept-icon"><i class="fas fa-drafting-compass"></i></div>
+                            <div class="dept-name">Engineering</div>
+                        </div>
                     </div>
-                </div>
-
-                <div class="col-md-4 col-sm-6">
-                    <div class="dept-card">
-                        <div class="dept-icon"><i class="fas fa-truck-monster"></i></div>
-                        <div class="dept-name">Mining Production</div>
-                        <p class="small text-white-50">Operasional Penambangan & Hauling.</p>
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="dept-card">
+                            <div class="dept-icon"><i class="fas fa-truck-moving"></i></div>
+                            <div class="dept-name">Production</div>
+                        </div>
                     </div>
-                </div>
-
-                <div class="col-md-4 col-sm-6">
-                    <div class="dept-card">
-                        <div class="dept-icon"><i class="fas fa-cogs"></i></div>
-                        <div class="dept-name">Plant & Maintenance</div>
-                        <p class="small text-white-50">Perawatan Alat Berat (HE) & Sarana Pendukung.</p>
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="dept-card">
+                            <div class="dept-icon"><i class="fas fa-cogs"></i></div>
+                            <div class="dept-name">Maintenance</div>
+                        </div>
                     </div>
-                </div>
-
-                <div class="col-md-4 col-sm-6">
-                    <div class="dept-card">
-                        <div class="dept-icon"><i class="fas fa-hard-hat"></i></div>
-                        <div class="dept-name">HSE / Safety</div>
-                        <p class="small text-white-50">K3 (Kesehatan & Keselamatan Kerja) & Lingkungan.</p>
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="dept-card">
+                            <div class="dept-icon"><i class="fas fa-hard-hat"></i></div>
+                            <div class="dept-name">HSE / Safety</div>
+                        </div>
                     </div>
-                </div>
-
-                <div class="col-md-4 col-sm-6">
-                    <div class="dept-card">
-                        <div class="dept-icon"><i class="fas fa-users-cog"></i></div>
-                        <div class="dept-name">HRGA & Logistics</div>
-                        <p class="small text-white-50">Manajemen SDM, Fasilitas Camp, & Logistik.</p>
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="dept-card">
+                            <div class="dept-icon"><i class="fas fa-users"></i></div>
+                            <div class="dept-name">HRGA</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -424,11 +425,30 @@
         </div>
     </section>
 
-    <div class="footer-strip text-center">
-        <div class="container">
-            <span>&copy; {{ date('Y') }} <strong>IT DEPARTMENT - PT. SILO</strong> | Resource Asset Management System</span>
+    <footer>
+        <div class="container text-center">
+            <p class="mb-0">
+                &copy; {{ date('Y') }} <strong>PT. SILO IT DEPT</strong>. Resource Management System.<br>
+                <span class="small opacity-50">Developed by Muhammad Fajar Hermawan</span>
+            </p>
         </div>
-    </div>
+    </footer>
 
+    {{-- Bootstrap Bundle with Popper --}}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Navbar change background on scroll
+        window.addEventListener('scroll', function() {
+            var navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('shadow');
+                navbar.style.background = 'rgba(26, 26, 46, 1)';
+            } else {
+                navbar.classList.remove('shadow');
+                navbar.style.background = 'rgba(26, 26, 46, 0.95)';
+            }
+        });
+    </script>
 </body>
 </html>

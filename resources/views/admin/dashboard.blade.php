@@ -405,8 +405,8 @@
 
     // 2. PIE CHART (DEPT)
     var ctxPie = document.getElementById("myPieChart");
-    var pieLabels = @json($deptLabels ?? []);
-    var pieData = @json($deptData ?? []);
+    var pieLabels = {!! json_encode($deptLabels ?? []) !!};
+    var pieData = {!! json_encode($deptData ?? []) !!};
 
     if(ctxPie && pieLabels.length > 0) {
         new Chart(ctxPie, {

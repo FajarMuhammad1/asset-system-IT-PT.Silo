@@ -1,122 +1,159 @@
 @extends('layouts.app') 
 
 @section('content')
-<div class="container py-4">
+<div class="container py-3">
+
+    {{-- JUDUL HALAMAN (BEDA DESKTOP & MOBILE) --}}
+    <div class="d-none d-md-block mb-4">
+        <h1 class="h3 text-gray-800">Konfirmasi Penerimaan Aset</h1>
+    </div>
+    <div class="d-md-none mb-3">
+        <h1 class="h4 text-gray-800">Tanda Tangan BAST</h1>
+    </div>
+
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-lg-8 col-md-10 col-12">
             <div class="card shadow-lg">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-file-contract mr-2"></i> Konfirmasi Penerimaan Aset</h5>
+                
+                {{-- HEADER CARD --}}
+                <div class="card-header bg-primary text-white d-flex align-items-center">
+                    <i class="fas fa-file-contract mr-3 fa-lg"></i> 
+                    <h6 class="m-0 font-weight-bold">Formulir Digital Serah Terima</h6>
                 </div>
+
                 <div class="card-body">
                     
-                    {{-- INFO ASET --}}
-                    <div class="alert alert-info">
-                        <strong>Barang yang diterima:</strong><br>
-                        {{ $bast->aset->masterBarang->nama_barang ?? '-' }} <br>
-                        <small>SN: {{ $bast->aset->serial_number }} | Kode: {{ $bast->aset->kode_asset }}</small>
+                    {{-- =============================================== --}}
+                    {{-- 1. INFO BARANG (DESKTOP VIEW) - Tabel Rapi --}}
+                    {{-- =============================================== --}}
+                    <div class="d-none d-md-block">
+                        <div class="alert alert-secondary p-4">
+                            <h5 class="alert-heading font-weight-bold mb-3"><i class="fas fa-box"></i> Detail Aset yang Diterima:</h5>
+                            <table class="table table-borderless table-sm mb-0">
+                                <tr>
+                                    <td width="20%" class="text-muted">Nama Barang</td>
+                                    <td class="font-weight-bold text-dark">: {{ $bast->aset->masterBarang->nama_barang ?? '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Kode Aset</td>
+                                    <td class="font-weight-bold">: <span class="badge badge-primary">{{ $bast->aset->kode_asset }}</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Serial Number</td>
+                                    <td class="font-weight-bold">: {{ $bast->aset->serial_number }}</td>
+                                </tr>
+                            </table>
+                        </div>
                     </div>
 
+                    {{-- =============================================== --}}
+                    {{-- 1. INFO BARANG (MOBILE VIEW) - Card Compact --}}
+                    {{-- =============================================== --}}
+                    <div class="d-md-none mb-4">
+                        <div class="bg-light p-3 rounded border-left-primary shadow-sm">
+                            <label class="small text-muted mb-0">Barang yang diterima:</label>
+                            <div class="h5 font-weight-bold text-primary mb-2">
+                                {{ $bast->aset->masterBarang->nama_barang ?? '-' }}
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <small class="text-muted d-block">Kode Aset:</small>
+                                    <span class="font-weight-bold text-dark">{{ $bast->aset->kode_asset }}</span>
+                                </div>
+                                <div class="text-right">
+                                    <small class="text-muted d-block">SN:</small>
+                                    <span class="font-weight-bold text-dark">{{ $bast->aset->serial_number }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- FORM START --}}
                     <form action="{{ route('pengguna.userbast.submit', $bast->id) }}" method="POST" id="form-sign">
                         @csrf
 
-                        {{-- AREA SYARAT & KETENTUAN (WAJIB SCROLL) --}}
+                        {{-- =============================================== --}}
+                        {{-- 2. SYARAT & KETENTUAN (RESPONSIVE BOX) --}}
+                        {{-- =============================================== --}}
                         <div class="form-group">
-                            <label class="font-weight-bold">Syarat & Ketentuan (Harap baca sampai selesai)</label>
+                            <label class="font-weight-bold text-danger">
+                                <i class="fas fa-exclamation-circle"></i> Syarat & Ketentuan
+                            </label>
+                            <p class="small text-muted mb-2">Silakan baca dan scroll kotak di bawah ini sampai habis untuk mengaktifkan persetujuan.</p>
                             
-                            <div id="sk-box" class="border rounded p-3 bg-light" style="height: 250px; overflow-y: scroll; text-align: justify;">
+                            {{-- Tinggi Box: Desktop 250px, HP 200px (biar gak menuhin layar) --}}
+                            <div id="sk-box" class="border rounded p-3 bg-white" 
+                                 style="height: 200px; overflow-y: scroll; text-align: justify; border: 2px solid #e3e6f0;">
                                 
                                 @php
-                                    // 1. Coba ambil dari relasi kategori->nama_kategori
-                                    // 2. Kalau null, coba ambil langsung kolom kategori
-                                    // 3. Default '-'
                                     $kategoriRaw = $bast->aset->masterBarang->kategori->nama_kategori 
                                                    ?? $bast->aset->masterBarang->kategori 
                                                    ?? '-';
-                                    
-                                    // Bersihkan spasi depan/belakang agar pembacaan akurat
                                     $kategori = trim($kategoriRaw);
                                 @endphp
 
-                                {{-- DEBUGGING: Tampilkan kategori yang terbaca sistem --}}
-                                <div class="alert alert-warning py-2 mb-3">
-                                    <small>
-                                        <i class="fas fa-tag mr-1"></i> Sistem Membaca Kategori: <strong>"{{ $kategori }}"</strong>
-                                    </small>
-                                </div>
-
-                                {{-- === LOGIKA S&K (MENGGUNAKAN 'STRIPOS' AGAR TIDAK PEDULI HURUF BESAR/KECIL) === --}}
-                                
-                                {{-- Cek jika mengandung kata "Radio" --}}
+                                {{-- Isi S&K (Sama seperti sebelumnya) --}}
                                 @if (stripos($kategori, 'Radio') !== false || stripos($kategori, 'Rig') !== false)
-                                    <h6 class="font-weight-bold">Khusus Perangkat Komunikasi (Radio Rig/HT):</h6>
-                                    <ul>
-                                        <li>Pemegang wajib menjaga alat dan menggunakannya sesuai SOP komunikasi perusahaan.</li>
-                                        <li>Tidak boleh memodifikasi frekuensi tanpa izin IT.</li>
-                                        <li>Bertanggung jawab penuh atas kehilangan atau kerusakan unit.</li>
-                                        <li>Wajib melaporkan jika terjadi gangguan sinyal atau kerusakan fisik.</li>
+                                    <h6 class="font-weight-bold text-dark">Aturan Penggunaan Radio Komunikasi:</h6>
+                                    <ul class="pl-3 small text-dark">
+                                        <li>Wajib menjaga alat dan menggunakan sesuai SOP.</li>
+                                        <li>Dilarang memodifikasi frekuensi tanpa izin IT.</li>
+                                        <li>Bertanggung jawab penuh atas kerusakan fisik.</li>
                                     </ul>
-
-                                {{-- Cek jika mengandung kata "Laptop", "Komputer", atau "PC" --}}
-                                @elseif (stripos($kategori, 'Laptop') !== false || stripos($kategori, 'Komputer') !== false || stripos($kategori, 'PC') !== false)
-                                    <h6 class="font-weight-bold">Khusus Perangkat Komputer/Laptop:</h6>
-                                    <ul>
-                                        <li>Pemegang wajib menjaga kerahasiaan data perusahaan yang tersimpan di dalam perangkat.</li>
-                                        <li>Dilarang menginstall software ilegal (bajakan) atau aplikasi yang membahayakan keamanan jaringan.</li>
-                                        <li>Dilarang meminjamkan perangkat kepada pihak luar tanpa izin tertulis.</li>
-                                        <li>Wajib melakukan update antivirus dan menjaga kebersihan fisik perangkat.</li>
+                                @elseif (stripos($kategori, 'Laptop') !== false || stripos($kategori, 'PC') !== false)
+                                    <h6 class="font-weight-bold text-dark">Aturan Penggunaan Komputer/Laptop:</h6>
+                                    <ul class="pl-3 small text-dark">
+                                        <li>Dilarang install software bajakan/ilegal.</li>
+                                        <li>Wajib menjaga kerahasiaan data perusahaan.</li>
+                                        <li>Tidak boleh meminjamkan ke pihak luar.</li>
                                     </ul>
-
                                 @else
-                                    {{-- DEFAULT S&K --}}
-                                    <h6 class="font-weight-bold">Syarat & Ketentuan Umum:</h6>
-                                    <p><strong>1. Tanggung Jawab Penggunaan</strong><br>
-                                    Karyawan bertanggung jawab penuh atas keamanan dan kondisi aset yang diserahkan. Kerusakan akibat kelalaian (human error) akan menjadi tanggung jawab pemegang aset.</p>
-                                    
-                                    <p><strong>2. Pengembalian Aset</strong><br>
-                                    Apabila karyawan mengundurkan diri atau dimutasi, aset wajib dikembalikan dalam kondisi lengkap dan baik kepada departemen IT.</p>
-
-                                    <p><strong>3. Pelaporan Kerusakan</strong><br>
-                                    Segala bentuk kerusakan hardware atau software wajib dilaporkan ke IT Support maksimal 1x24 jam setelah kejadian.</p>
+                                    <h6 class="font-weight-bold text-dark">Ketentuan Umum:</h6>
+                                    <p class="small text-dark">
+                                        1. <strong>Tanggung Jawab:</strong> Karyawan bertanggung jawab penuh atas keamanan aset.<br>
+                                        2. <strong>Kerusakan:</strong> Kerusakan akibat kelalaian (human error) ditanggung pemegang aset.<br>
+                                        3. <strong>Pengembalian:</strong> Aset wajib dikembalikan saat mutasi/resign.
+                                    </p>
                                 @endif
-                                {{-- ====================================== --}}
                                 
                                 <br>
-                                <p class="text-center text-muted"><em>--- Akhir dari Syarat & Ketentuan ---</em></p>
+                                <p class="text-center text-muted small"><em>--- Akhir Dokumen ---</em></p>
                             </div>
+                        </div>
+
+                        {{-- CHECKBOX --}}
+                        <div class="custom-control custom-checkbox mb-4">
+                            <input type="checkbox" class="custom-control-input" id="agree-check" name="agree" disabled>
+                            <label class="custom-control-label font-weight-bold text-dark" for="agree-check">
+                                Saya menyetujui Syarat & Ketentuan di atas.
+                            </label>
+                        </div>
+
+                        {{-- =============================================== --}}
+                        {{-- 3. AREA TANDA TANGAN (FULL WIDTH DI HP) --}}
+                        {{-- =============================================== --}}
+                        <div id="signature-area" style="display: none;">
+                            <label class="font-weight-bold">Tanda Tangan Digital:</label>
                             
-                            {{-- Notifikasi kecil --}}
-                            <small id="sk-warning" class="text-danger">* Silakan scroll S&K sampai mentok bawah untuk menyetujui.</small>
-                        </div>
-
-                        {{-- CHECKBOX PERSETUJUAN --}}
-                        <div class="form-group mt-3">
-                            <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="agree-check" name="agree" disabled>
-                                <label class="custom-control-label" for="agree-check">
-                                    Saya telah membaca, memahami, dan menyetujui Syarat & Ketentuan di atas.
-                                </label>
+                            {{-- Container ini penting untuk menghitung lebar canvas di HP --}}
+                            <div id="canvas-container" class="border border-dark rounded mb-2" style="width: 100%; height: 200px; background: #fff; touch-action: none;">
+                                <canvas id="ttd-pad" style="width: 100%; height: 100%;"></canvas>
                             </div>
-                        </div>
 
-                        {{-- AREA TANDA TANGAN (MUNCUL SETELAH CENTANG) --}}
-                        <div id="signature-area" style="display: none; margin-top: 20px;">
-                            <label class="font-weight-bold">Tanda Tangan Digital Penerima</label>
-                            <div class="border rounded d-inline-block shadow-sm" style="background: #fff;">
-                                <canvas id="ttd-pad" width="400" height="200"></canvas>
-                            </div>
-                            <br>
-                            <button type="button" class="btn btn-sm btn-secondary mt-2" id="clear-btn">
-                                <i class="fas fa-eraser"></i> Hapus / Ulangi
+                            <button type="button" class="btn btn-sm btn-outline-danger mb-3" id="clear-btn">
+                                <i class="fas fa-eraser"></i> Hapus Tanda Tangan
                             </button>
+                            
                             <input type="hidden" name="ttd_penerima" id="ttd_penerima_input">
+
+                            <hr>
+                            
+                            {{-- Tombol Submit Besar di HP --}}
+                            <button type="submit" class="btn btn-success btn-lg btn-block shadow-sm" id="submit-btn" disabled>
+                                <i class="fas fa-check-circle mr-2"></i> Konfirmasi Terima Aset
+                            </button>
                         </div>
 
-                        <hr>
-
-                        <button type="submit" class="btn btn-success btn-lg btn-block" id="submit-btn" disabled>
-                            <i class="fas fa-check-circle"></i> Terima Aset & Simpan
-                        </button>
                     </form>
                 </div>
             </div>
@@ -124,83 +161,95 @@
     </div>
 </div>
 
-{{-- SCRIPT PENTING --}}
+{{-- SCRIPT --}}
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     
-    // --- 1. LOGIKA SCROLL S&K ---
+    // --- VARIABEL ---
     const skBox = document.getElementById('sk-box');
     const agreeCheck = document.getElementById('agree-check');
-    const skWarning = document.getElementById('sk-warning');
-
-    // Reset state saat reload
-    agreeCheck.checked = false;
-    agreeCheck.disabled = true;
-
-    skBox.addEventListener('scroll', function() {
-        // Cek apakah sudah scroll sampai bawah (dengan toleransi 5px)
-        if (skBox.scrollHeight - skBox.scrollTop <= skBox.clientHeight + 5) {
-            agreeCheck.disabled = false; // Aktifkan checkbox
-            skWarning.style.display = 'none'; // Sembunyikan peringatan
-            skBox.classList.remove('border-danger');
-            skBox.classList.add('border-success');
-        }
-    });
-
-    // --- 2. LOGIKA CHECKBOX ---
     const signatureArea = document.getElementById('signature-area');
     const submitBtn = document.getElementById('submit-btn');
-
-    agreeCheck.addEventListener('change', function() {
-        if (this.checked) {
-            signatureArea.style.display = 'block'; // Tampilkan Canvas
-            resizeCanvas(); // Refresh ukuran canvas
-        } else {
-            signatureArea.style.display = 'none';
-            submitBtn.disabled = true;
-        }
-    });
-
-    // --- 3. LOGIKA CANVAS TANDA TANGAN ---
     const canvas = document.getElementById('ttd-pad');
-    const signaturePad = new SignaturePad(canvas, { backgroundColor: 'rgb(255, 255, 255)' });
+    const container = document.getElementById('canvas-container'); // Container pembungkus
     const clearBtn = document.getElementById('clear-btn');
     const ttdInput = document.getElementById('ttd_penerima_input');
     const form = document.getElementById('form-sign');
 
-    function resizeCanvas() {
-        const ratio = Math.max(window.devicePixelRatio || 1, 1);
-        canvas.width = canvas.offsetWidth * ratio;
-        canvas.height = canvas.offsetHeight * ratio;
-        canvas.getContext("2d").scale(ratio, ratio);
-        signaturePad.clear(); // Reset saat resize agar tidak pecah
-    }
-    window.addEventListener("resize", resizeCanvas);
-
-    clearBtn.addEventListener('click', function() {
-        signaturePad.clear();
+    // Inisialisasi SignaturePad
+    const signaturePad = new SignaturePad(canvas, { 
+        backgroundColor: 'rgb(255, 255, 255)',
+        penColor: 'rgb(0, 0, 0)'
     });
 
-    // Saat user mulai tanda tangan, aktifkan tombol submit
+    // --- 1. LOGIKA SCROLL S&K ---
+    agreeCheck.checked = false;
+    agreeCheck.disabled = true;
+
+    skBox.addEventListener('scroll', function() {
+        if (skBox.scrollHeight - skBox.scrollTop <= skBox.clientHeight + 10) {
+            agreeCheck.disabled = false;
+            skBox.style.borderColor = '#1cc88a'; // Jadi hijau kalau sudah mentok
+        }
+    });
+
+    // --- 2. TAMPILKAN AREA TANDA TANGAN ---
+    agreeCheck.addEventListener('change', function() {
+        if (this.checked) {
+            signatureArea.style.display = 'block';
+            resizeCanvas(); // PENTING: Resize saat area muncul agar tidak gepeng
+        } else {
+            signatureArea.style.display = 'none';
+        }
+    });
+
+    // --- 3. LOGIKA RESIZE CANVAS (PENTING BUAT HP) ---
+    // Fungsi ini memastikan canvas selalu selebar layar HP
+    function resizeCanvas() {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        
+        // Ambil lebar container, bukan lebar layar window
+        canvas.width = container.offsetWidth * ratio;
+        canvas.height = container.offsetHeight * ratio;
+        
+        // Scale context agar tinta tidak pecah
+        canvas.getContext("2d").scale(ratio, ratio);
+        
+        // Bersihkan ulang (karena resize menghapus isi canvas)
+        // Kita simpan data lama jika perlu, tapi untuk simpel kita clear saja
+        signaturePad.clear(); 
+    }
+
+    // Panggil resize saat layar diputar atau diubah ukurannya
+    window.addEventListener("resize", resizeCanvas);
+
+    // --- 4. TOMBOL CLEAR ---
+    clearBtn.addEventListener('click', function() {
+        signaturePad.clear();
+        submitBtn.disabled = true; // Matikan tombol submit lagi
+    });
+
+    // --- 5. AKTIFKAN TOMBOL SUBMIT SAAT TTD ---
     signaturePad.addEventListener("endStroke", () => {
         if (!signaturePad.isEmpty()) {
             submitBtn.disabled = false;
         }
     });
 
-    // --- 4. SUBMIT FORM ---
+    // --- 6. SUBMIT FORM ---
     form.addEventListener('submit', function(e) {
         if (signaturePad.isEmpty()) {
             e.preventDefault();
-            alert("Harap tanda tangan terlebih dahulu!");
+            alert("Mohon tanda tangan terlebih dahulu pada kotak yang tersedia.");
+            // Scroll ke canvas otomatis
+            container.scrollIntoView({behavior: "smooth"});
         } else {
-            // Masukkan data gambar base64 ke input hidden
+            // Masukkan data gambar ke input hidden
             ttdInput.value = signaturePad.toDataURL('image/png');
         }
     });
-
 });
 </script>
 @endsection

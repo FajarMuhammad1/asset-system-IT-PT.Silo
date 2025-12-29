@@ -172,7 +172,7 @@
                             <option value="">-- Tidak Ada (Gudang) --</option>
                             @foreach($users as $user)
                                 <option value="{{ $user->id }}" {{ $barangMasuk->user_pemegang_id == $user->id ? 'selected' : '' }}>
-                                    {{ $user->name }}
+                                    {{ $user->nama }}
                                 </option>
                             @endforeach
                         </select>

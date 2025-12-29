@@ -27,7 +27,7 @@
         
         /* Logo diperbesar */
         .logo-img { 
-            height: 100px; 
+            height: 200px; 
             width: auto; 
             margin-bottom: 10px; 
         }
