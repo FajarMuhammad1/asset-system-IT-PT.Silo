@@ -10,17 +10,23 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
+// --- EXPORT & PDF ---
+use App\Exports\SuratJalanExport;       
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+
 class SuratJalanController extends Controller
 {
     /**
-     * Tampilkan SEMUA surat jalan
+     * Tampilkan SEMUA surat jalan (Halaman Index)
      */
     public function index()
     {
         $suratJalan = SuratJalan::withCount('details')->latest()->get(); 
         
         return view('admin.suratjalan.index', compact('suratJalan'))
-                            ->with('title', 'Surat Jalan');
+                    ->with('title', 'Surat Jalan');
     }
 
     /**
@@ -42,7 +48,7 @@ class SuratJalanController extends Controller
     }
 
     /**
-     * Simpan data BARU (Header + Details)
+     * Simpan data BARU
      */
     public function store(Request $request)
     {
@@ -66,7 +72,6 @@ class SuratJalanController extends Controller
                 'no_sj', 'id_suratjalan', 'no_ppi', 'no_po', 'tanggal_input', 'jenis_surat_jalan', 'keterangan'
             ]);
             
-            // [MODIFIKASI] Default FALSE. Status ini akan otomatis TRUE jika semua barang sudah di-BAST-kan.
             $dataHeader['is_bast_submitted'] = false; 
 
             if ($request->hasFile('file')) {
@@ -98,18 +103,18 @@ class SuratJalanController extends Controller
     }
 
     /**
-     * Tampilkan detail (Read-only)
+     * Tampilkan detail
      */
     public function show(string $id_sj)
     {
         $suratJalan = SuratJalan::with('details.masterBarang')->findOrFail($id_sj);
         
         return view('admin.suratjalan.show', compact('suratJalan'))
-                            ->with('title', 'Detail Surat Jalan');
+                    ->with('title', 'Detail Surat Jalan');
     }
 
     /**
-     * Tampilkan form EDIT
+     * Edit Form
      */
     public function edit(string $id_sj)
     {
@@ -129,7 +134,7 @@ class SuratJalanController extends Controller
     }
 
     /**
-     * Update data
+     * Update Data
      */
     public function update(Request $request, string $id_sj)
     {
@@ -149,9 +154,6 @@ class SuratJalanController extends Controller
             'no_sj', 'id_suratjalan', 'no_ppi', 'no_po', 'tanggal_input', 'jenis_surat_jalan', 'keterangan'
         ]);
         
-        // [MODIFIKASI] HAPUS logic update manual is_bast_submitted
-        // $dataHeader['is_bast_submitted'] = $request->has('is_bast_submitted'); <--- Dihapus agar tidak konflik
-
         if ($request->hasFile('file')) {
             if ($suratJalan->file) {
                 Storage::disk('public')->delete($suratJalan->file);
@@ -166,7 +168,7 @@ class SuratJalanController extends Controller
     }
 
     /**
-     * Hapus SJ
+     * Hapus Data
      */
     public function destroy(string $id_sj)
     {
@@ -180,5 +182,115 @@ class SuratJalanController extends Controller
 
         return redirect()->route('surat-jalan.index')
                          ->with('success', 'Surat Jalan berhasil dihapus.');
+    }
+
+    // =================================================================
+    //  CETAK DOKUMEN (SATUAN) - Untuk tombol "Print" di halaman Detail
+    // =================================================================
+
+    public function exportPdf(string $id_sj)
+    {
+        $suratJalan = SuratJalan::with(['details.masterBarang.kategori'])->findOrFail($id_sj);
+        $cleanNoSj = str_replace(['/', '\\'], '-', $suratJalan->no_sj);
+        $fileName = 'SJ_Print_' . $cleanNoSj . '.pdf';
+
+        $pdf = Pdf::loadView('exports.surat-jalan-pdf', ['sj' => $suratJalan]);
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->stream($fileName);
+    }
+
+
+    // =================================================================
+    //  HELPER: LOGIKA FILTERING (PRIVATE)
+    //  Di sini letak perbaikan Carbon Error
+    // =================================================================
+
+    private function getFilteredQueryAndLabel(Request $request)
+    {
+        // Query awal, eager load details
+        $query = SuratJalan::with('details.masterBarang');
+        $label = "Semua Data";
+
+        // 1. Filter Harian (Jika user isi tanggal)
+        if ($request->filled('tanggal')) {
+            $query->whereDate('tanggal_input', $request->tanggal);
+            $label = "Harian Tgl " . Carbon::parse($request->tanggal)->format('d-m-Y');
+        } 
+        // 2. Filter Bulanan (Jika user pilih Bulan & Tahun)
+        elseif ($request->filled('bulan') && $request->filled('tahun')) {
+            $query->whereMonth('tanggal_input', $request->bulan)
+                  ->whereYear('tanggal_input', $request->tahun);
+            
+            // --- FIX ERROR CARBON ---
+            // Gunakan (int) casting dan set tanggal ke 1 untuk menghindari overflow (tgl 31)
+            $dateObj = Carbon::createFromDate((int)$request->tahun, (int)$request->bulan, 1);
+            $namaBulan = $dateObj->format('F'); // Full month name (January, etc.)
+            
+            $label = "Bulanan " . $namaBulan . " " . $request->tahun;
+        }
+
+        // 3. Filter Status BAST
+        if ($request->filled('status_bast')) {
+            if ($request->status_bast == 'sudah') {
+                $query->where('is_bast_submitted', 1);
+                $label .= " (Sudah BAST)";
+            } elseif ($request->status_bast == 'belum') {
+                $query->where('is_bast_submitted', 0);
+                $label .= " (Belum BAST)";
+            }
+        }
+
+        $query->orderBy('tanggal_input', 'desc');
+
+        return ['query' => $query, 'label' => $label];
+    }
+
+    // =================================================================
+    //  EXPORT LAPORAN EXCEL (FILTERING MODAL)
+    // =================================================================
+
+    public function exportExcelFiltered(Request $request)
+    {
+        // Panggil helper filter
+        $result = $this->getFilteredQueryAndLabel($request);
+        
+        $data = $result['query']->get();
+        $label = $result['label'];
+        
+        // Nama file
+        $cleanLabel = str_replace([' ', '(', ')'], '_', $label);
+        $fileName = 'Rekap_SJ_' . $cleanLabel . '_' . date('His') . '.xlsx';
+        
+        return Excel::download(new SuratJalanExport($data), $fileName);
+    }
+
+    // =================================================================
+    //  EXPORT LAPORAN PDF (FILTERING MODAL) - REKAP
+    // =================================================================
+
+    public function exportPdfFiltered(Request $request)
+    {
+        // Panggil helper filter yang sama
+        $result = $this->getFilteredQueryAndLabel($request);
+
+        $data = $result['query']->get();
+        $label = $result['label'];
+
+        // Nama file
+        $cleanLabel = str_replace([' ', '(', ')'], '_', $label);
+        $fileName = 'Rekap_SJ_' . $cleanLabel . '_' . date('His') . '.pdf';
+
+        // Load View PDF Rekap
+        $pdf = Pdf::loadView('admin.suratjalan.surat-jalan-rekap-pdf', [
+            'data' => $data,
+            'label' => $label,
+            'title' => 'Laporan Rekapitulasi Surat Jalan'
+        ]);
+        
+        // Gunakan Landscape karena tabel rekap biasanya lebar
+        $pdf->setPaper('a4', 'landscape');
+        
+        return $pdf->stream($fileName);
     }
 }

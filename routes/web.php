@@ -86,6 +86,17 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::put('/team/update/{id}', [TeamController::class, 'update'])->name('team.update');
     Route::delete('/team/destroy/{id}', [TeamController::class, 'destroy'])->name('team.destroy');
     
+    // --- [UPDATE PENTING: SURAT JALAN] ---
+    
+    // 1. Export Excel (Filter Modal)
+    Route::get('surat-jalan/export/excel', [SuratJalanController::class, 'exportExcelFiltered'])->name('surat-jalan.export-excel');
+
+    // 2. Export PDF (Filter Modal - REKAPITULASI) -> INI YANG DITAMBAHKAN
+    Route::get('surat-jalan/export/pdf', [SuratJalanController::class, 'exportPdfFiltered'])->name('surat-jalan.export-pdf');
+
+    // 3. Cetak Satuan (Tombol Printer Kecil di Tabel)
+    Route::get('surat-jalan/{id}/cetak', [SuratJalanController::class, 'exportPdf'])->name('surat-jalan.cetak-pdf');
+
     // Resource surat jalan, pengguna, master barang
     Route::resource('surat-jalan', SuratJalanController::class);
     Route::resource('pengguna', PenggunaController::class);
@@ -109,7 +120,7 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
         Route::get('/get-asset-details', [BarangKeluarController::class, 'getAssetDetails'])->name('getAssetDetails');
         Route::post('/store', [BarangKeluarController::class, 'store'])->name('store');
         
-        // [BARU] Route Cetak PDF BAST
+        // Route Cetak PDF BAST
         Route::get('/{id}/cetak', [BarangKeluarController::class, 'cetakBast'])->name('cetak');
 
         Route::get('/{id}', [BarangKeluarController::class, 'show'])->name('show');
