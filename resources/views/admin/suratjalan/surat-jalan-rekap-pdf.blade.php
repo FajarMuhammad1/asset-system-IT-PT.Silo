@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <title>Rekapitulasi Surat Jalan</title>
@@ -7,10 +8,11 @@
         /* CSS STANDAR LAPORAN CETAK (DOMPDF) */
         body {
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 10pt; /* Ukuran font standar dokumen */
+            font-size: 10pt;
+            /* Ukuran font standar dokumen */
             color: #333;
         }
-        
+
         /* HEADER HALAMAN */
         .header {
             width: 100%;
@@ -18,17 +20,20 @@
             padding-bottom: 10px;
             margin-bottom: 20px;
         }
+
         .header h1 {
             margin: 0;
             font-size: 16pt;
             text-align: center;
             text-transform: uppercase;
         }
+
         .header p {
             margin: 2px 0 0 0;
             font-size: 9pt;
             text-align: center;
         }
+
         .meta-info {
             font-size: 8pt;
             text-align: right;
@@ -42,15 +47,18 @@
             border-collapse: collapse;
             margin-bottom: 20px;
         }
-        
-        th, td {
-            border: 1px solid #000; /* Garis hitam tegas */
+
+        th,
+        td {
+            border: 1px solid #000;
+            /* Garis hitam tegas */
             padding: 6px 8px;
             vertical-align: middle;
         }
 
         th {
-            background-color: #2C3E50; /* Header Gelap Sesuai Excel */
+            background-color: #2C3E50;
+            /* Header Gelap Sesuai Excel */
             color: #ffffff;
             font-weight: bold;
             text-transform: uppercase;
@@ -63,22 +71,40 @@
         }
 
         /* UTILITY CLASSES */
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-        .text-uppercase { text-transform: uppercase; }
-        .font-bold { font-weight: bold; }
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-uppercase {
+            text-transform: uppercase;
+        }
+
+        .font-bold {
+            font-weight: bold;
+        }
 
         /* STATUS BADGE SIMULATION FOR PDF */
-        .status-ok { color: green; font-weight: bold; }
-        .status-pending { color: red; font-weight: bold; }
+        .status-ok {
+            color: green;
+            font-weight: bold;
+        }
+
+        .status-pending {
+            color: red;
+            font-weight: bold;
+        }
 
         /* FOOTER */
         .footer {
-            position: fixed; 
-            bottom: -30px; 
-            left: 0px; 
+            position: fixed;
+            bottom: -30px;
+            left: 0px;
             right: 0px;
-            height: 50px; 
+            height: 50px;
             font-size: 8pt;
             text-align: right;
             color: #555;
@@ -87,15 +113,18 @@
         }
 
         /* ZEBRA STRIPING (Opsional agar mudah dibaca) */
-        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
     </style>
 </head>
+
 <body>
 
     {{-- HEADER --}}
     <div class="header">
         <h1>Laporan Rekapitulasi Surat Jalan</h1>
-        <p>INTERNAL DOCUMENT &bull; DEPARTMENT LOGISTIK</p>
+        <p>INTERNAL DOCUMENT &bull; DEPARTMENT IT & COMM SYS</p>
         <div class="meta-info">
             Dicetak pada: {{ \Carbon\Carbon::now()->format('d F Y H:i:s') }}
         </div>
@@ -126,15 +155,15 @@
                 <td class="text-center">{{ \Carbon\Carbon::parse($item->tanggal_input)->format('d/m/Y') }}</td>
                 <td class="text-center text-uppercase">{{ $item->jenis_surat_jalan }}</td>
                 <td class="text-center">{{ $item->details_count }}</td>
-                
+
                 <td class="text-center">
                     @if($item->is_bast_submitted)
-                        <span class="status-ok">SUDAH</span>
+                    <span class="status-ok">SUDAH</span>
                     @else
-                        <span class="status-pending">BELUM</span>
+                    <span class="status-pending">BELUM</span>
                     @endif
                 </td>
-                
+
                 <td>{{ $item->keterangan ?? '-' }}</td>
             </tr>
             @endforeach
@@ -153,4 +182,5 @@
     </footer>
 
 </body>
+
 </html>

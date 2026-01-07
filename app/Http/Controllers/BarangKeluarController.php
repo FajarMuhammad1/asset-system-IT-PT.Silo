@@ -136,7 +136,7 @@ class BarangKeluarController extends Controller
     }
 
     /**
-     * DAFTAR BAST (INI YANG TADI HILANG/KOSONG)
+     * DAFTAR BAST 
      */
     public function index()
     {
