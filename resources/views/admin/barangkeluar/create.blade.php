@@ -1,4 +1,4 @@
-@extends('layouts.app') 
+@extends('layouts.app')
 
 @section('title', 'Buat Serah Terima Aset (BAST)')
 
@@ -9,7 +9,7 @@
         <i class="fas fa-handshake mr-2"></i> Form Serah Terima Aset
     </h1>
 
-    {{-- Tampilkan Error Validasi Global --}}
+    {{-- Tampilkan Error Validasi --}}
     @if ($errors->any())
         <div class="alert alert-danger">
             <ul class="mb-0">
@@ -44,7 +44,7 @@
                             </select>
                         </div>
 
-                        {{-- AREA DETAIL ASET (MUNCUL OTOMATIS) --}}
+                        {{-- AREA DETAIL ASET --}}
                         <div id="loading-asset" class="text-center py-3" style="display: none;">
                             <div class="spinner-border text-primary" role="status">
                                 <span class="sr-only">Loading...</span>
@@ -118,33 +118,33 @@
 
                         <hr>
 
-                        {{-- FITUR TANDA TANGAN LANGSUNG --}}
-                        <h6 class="font-weight-bold text-dark">Tanda Tangan Langsung (Opsional)</h6>
+                        {{-- FITUR TANDA TANGAN --}}
+                        <h6 class="font-weight-bold text-dark">Tanda Tangan Digital</h6>
                         <div class="alert alert-warning py-2" style="font-size: 0.85rem;">
                             <i class="fas fa-info-circle"></i> 
-                            Jika User ada ditempat, silakan tanda tangan disini agar status langsung <strong>SELESAI</strong>. 
-                            <br>Jika dikosongkan, status akan menjadi <strong>DRAFT</strong> (User tanda tangan via login).
+                            Silakan tanda tangan pada kotak di bawah ini.
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6 text-center">
+                            <div class="col-md-6 text-center mb-3">
                                 <label class="small font-weight-bold mb-1">Penerima (User)</label>
-                                <div class="border rounded" style="background: #f8f9fc;">
-                                    <canvas id="pad-penerima" width="230" height="120" style="touch-action: none; cursor: crosshair;"></canvas>
+                                {{-- PERBAIKAN: Style height wajib ada agar canvas muncul --}}
+                                <div class="border rounded" style="background: #f8f9fc; height: 200px; width: 100%;">
+                                    <canvas id="pad-penerima" style="width: 100%; height: 200px; display: block;"></canvas>
                                 </div>
                                 <button type="button" class="btn btn-sm btn-danger mt-1 btn-block" onclick="clearPenerima()">
-                                    <i class="fas fa-eraser"></i> Hapus
+                                    <i class="fas fa-eraser"></i> Hapus / Ulangi
                                 </button>
                                 <input type="hidden" name="ttd_penerima" id="inp-penerima">
                             </div>
 
-                            <div class="col-md-6 text-center">
+                            <div class="col-md-6 text-center mb-3">
                                 <label class="small font-weight-bold mb-1">Penyerah (Admin)</label>
-                                <div class="border rounded" style="background: #f8f9fc;">
-                                    <canvas id="pad-petugas" width="230" height="120" style="touch-action: none; cursor: crosshair;"></canvas>
+                                <div class="border rounded" style="background: #f8f9fc; height: 200px; width: 100%;">
+                                    <canvas id="pad-petugas" style="width: 100%; height: 200px; display: block;"></canvas>
                                 </div>
                                 <button type="button" class="btn btn-sm btn-danger mt-1 btn-block" onclick="clearPetugas()">
-                                    <i class="fas fa-eraser"></i> Hapus
+                                    <i class="fas fa-eraser"></i> Hapus / Ulangi
                                 </button>
                                 <input type="hidden" name="ttd_petugas" id="inp-petugas">
                             </div>
@@ -164,92 +164,84 @@
 @endsection
 
 @push('scripts')
-{{-- Load Library Select2 & SignaturePad --}}
+{{-- Load Library --}}
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 
 <script>
-    // Variabel Global untuk Signature Pad
-    let padPenerima, padPetugas;
+    var padPenerima, padPetugas;
 
     $(document).ready(function() {
-        // 1. Inisialisasi Select2 (Pencarian)
-        $('.select2').select2({
-            theme: "classic",
-            width: '100%'
-        });
+        
+        // 1. SELECT2
+        $('.select2').select2({ theme: "classic", width: '100%' });
 
-        // 2. Inisialisasi Signature Pad
-        // Perlu resize canvas agar resolusi bagus di layar retina/HP
+        // 2. SETUP SIGNATURE PAD (FIXED)
+        var canvas1 = document.getElementById('pad-penerima');
+        var canvas2 = document.getElementById('pad-petugas');
+
         function resizeCanvas(canvas) {
-            var ratio =  Math.max(window.devicePixelRatio || 1, 1);
+            // Mengatasi masalah resolusi pada layar retina/HP
+            var ratio = Math.max(window.devicePixelRatio || 1, 1);
+            
+            // Set ukuran internal canvas sesuai ukuran elemen CSS yang tampil
             canvas.width = canvas.offsetWidth * ratio;
             canvas.height = canvas.offsetHeight * ratio;
             canvas.getContext("2d").scale(ratio, ratio);
         }
 
-        var canvas1 = document.getElementById('pad-penerima');
-        var canvas2 = document.getElementById('pad-petugas');
-        
-        // Panggil resize saat awal load
+        // Panggil resize
         resizeCanvas(canvas1);
         resizeCanvas(canvas2);
 
-        padPenerima = new SignaturePad(canvas1, { backgroundColor: 'rgb(255, 255, 255)' });
-        padPetugas = new SignaturePad(canvas2, { backgroundColor: 'rgb(255, 255, 255)' });
+        // Inisialisasi Pad
+        padPenerima = new SignaturePad(canvas1, { backgroundColor: 'rgba(255, 255, 255, 0)' });
+        padPetugas = new SignaturePad(canvas2, { backgroundColor: 'rgba(255, 255, 255, 0)' });
 
-        // 3. AJAX: Ambil Detail Aset saat Dropdown Berubah
+        // Responsif saat layar diubah
+        window.onresize = function() {
+            resizeCanvas(canvas1);
+            resizeCanvas(canvas2);
+        };
+
+        // 3. AJAX AMBIL DATA
         $('#aset_select').change(function() {
             let asetId = $(this).val();
-            
-            // Reset Tampilan
             $('#detail-aset').hide();
-            
             if (!asetId) return;
 
             $('#loading-asset').show();
-
             $.ajax({
-                url: "{{ route('barangkeluar.getAssetDetails') }}", // Pastikan route ini ada di web.php
+                url: "{{ route('barangkeluar.getAssetDetails') }}",
                 type: "GET",
                 data: { id: asetId },
                 success: function(response) {
                     $('#loading-asset').hide();
-                    
-                    // Isi Data ke Tabel
                     $('#d_merk_model').text((response.merk || '-') + ' ' + (response.model || ''));
                     $('#d_sn').text(response.serial_number);
                     $('#d_spek').text(response.spesifikasi || '-');
                     $('#d_dokumen').text((response.no_sj || '-') + ' / ' + (response.no_po || '-'));
-
-                    // Munculkan Tabel
                     $('#detail-aset').fadeIn();
                 },
-                error: function(xhr) {
+                error: function() {
                     $('#loading-asset').hide();
-                    console.log(xhr); // Log error ke console browser
-                    alert("Gagal mengambil data aset! " + (xhr.responseJSON ? xhr.responseJSON.error : 'Terjadi Kesalahan Server'));
+                    alert("Gagal mengambil data aset.");
                 }
             });
         });
 
-        // 4. Submit Form: Masukkan TTD ke Input Hidden
+        // 4. SUBMIT FORM
         $('#bast-form').submit(function(e) {
-            // Cek apakah ada coretan? Kalau ada, simpan ke input hidden.
             if (!padPenerima.isEmpty()) {
                 $('#inp-penerima').val(padPenerima.toDataURL());
             }
             if (!padPetugas.isEmpty()) {
                 $('#inp-petugas').val(padPetugas.toDataURL());
             }
-            
-            // Lanjut submit...
-            return true;
         });
     });
 
-    // Fungsi Tombol Hapus TTD
     function clearPenerima() {
         padPenerima.clear();
         $('#inp-penerima').val('');
