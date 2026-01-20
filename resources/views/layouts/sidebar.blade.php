@@ -1,6 +1,5 @@
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
-    <!-- Sidebar - Brand -->
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
         <div class="sidebar-brand-icon rotate-n-0">
             <i class="fas fa-cogs"></i>
@@ -8,7 +7,6 @@
         <div class="sidebar-brand-text mx-3"> Asset System </div>
     </a>
 
-    <!-- Divider -->
     <hr class="sidebar-divider my-0">
 
     {{-- =============================================== --}}
@@ -46,17 +44,36 @@
 
     
     {{-- =============================================== --}}
-    {{-- KAVLING SUPER ADMIN & ADMIN                     --}}
+    {{-- KAVLING 1: KHUSUS SUPER ADMIN (HEAD IT)         --}}
     {{-- =============================================== --}}
-    @if (in_array($role, ['super admin', 'superadmin', 'admin']))
+    @if(in_array($role, ['super admin', 'superadmin']))
         
-        <!-- Divider -->
+        <hr class="sidebar-divider">
+        
+        <div class="sidebar-heading">
+            Persetujuan (Approval)
+        </div>
+
+        <li class="nav-item {{ Request::routeIs('superadmin.approval.*') ? 'active' : '' }}">
+            <a class="nav-link text-warning font-weight-bold" href="{{ route('superadmin.approval.index') }}">
+                <i class="fas fa-fw fa-signature text-warning"></i>
+                <span>Approval PPI</span>
+            </a>
+        </li>
+
+
+    {{-- =============================================== --}}
+    {{-- KAVLING 2: KHUSUS ADMIN (IT SUPPORT / OPS)      --}}
+    {{-- =============================================== --}}
+    @elseif($role == 'admin')
+
         <hr class="sidebar-divider">
         
         <div class="sidebar-heading">
             Administration
         </div>
 
+        {{-- MENU MONITORING --}}
         <li class="nav-item {{ Request::routeIs('admin.ppi.*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('admin.ppi.index') }}">
                 <i class="fas fa-fw fa-clipboard"></i>
@@ -102,46 +119,42 @@
             </a>
         </li>
     
-        <!-- Divider -->
         <hr class="sidebar-divider">
 
         <div class="sidebar-heading">
             Task/Heldesk
         </div>
 
-       <li class="nav-item">
-    <a class="nav-link" href="{{ route('admin.helpdesk.index') }}">
-        <i class="fas fa-fw fa-desktop"></i>
-        <span>Helpdesk Monitoring</span>
-    </a>
-</li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('admin.helpdesk.index') }}">
+                <i class="fas fa-fw fa-desktop"></i>
+                <span>Helpdesk Monitoring</span>
+            </a>
+        </li>
 
-        
-         <li class="nav-item {{ request()->routeIs('admin.taskreport.*') ? 'active' : '' }}">
-        <a class="nav-link" href="{{ route('taskreport.index') }}">
-            <i class="fas fa-fw fa-tasks"></i>
-            <span>Task Report dari Team IT</span>
-        </a>
-    </li>
+        <li class="nav-item {{ request()->routeIs('admin.taskreport.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('taskreport.index') }}">
+                <i class="fas fa-fw fa-tasks"></i>
+                <span>Task Report dari Team IT</span>
+            </a>
+        </li>
 
-    <hr class="sidebar-divider my-0">
+        <hr class="sidebar-divider my-0">
 
-{{-- MENU SCANNER --}}
-<li class="nav-item {{ Request::routeIs('scan.index') ? 'active' : '' }}">
-    <a class="nav-link" href="{{ route('scan.index') }}">
-        <i class="fas fa-fw fa-qrcode"></i>
-        <span>Scan Aset</span>
-    </a>
-</li>
+        {{-- MENU SCANNER --}}
+        <li class="nav-item {{ Request::routeIs('scan.index') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('scan.index') }}">
+                <i class="fas fa-fw fa-qrcode"></i>
+                <span>Scan Aset</span>
+            </a>
+        </li>
 
 
-    
     {{-- =============================================== --}}
-    {{-- KAVLING STAFF                                   --}}
+    {{-- KAVLING 3: STAFF                                --}}
     {{-- =============================================== --}}
     @elseif ($role == 'staff')
 
-        <!-- Divider -->
         <hr class="sidebar-divider">
 
         <div class="sidebar-heading">
@@ -156,18 +169,17 @@
         </li>
 
         <li class="nav-item {{ Request::routeIs('staff.reports.*') ? 'active' : '' }}">
-        <a class="nav-link" href="{{ route('staff.reports.index') }}">
-            <i class="fas fa-fw fa-file-contract"></i>
-            <span>Task Report</span>
-        </a>
-    </li>
+            <a class="nav-link" href="{{ route('staff.reports.index') }}">
+                <i class="fas fa-fw fa-file-contract"></i>
+                <span>Task Report</span>
+            </a>
+        </li>
 
     {{-- =============================================== --}}
-    {{-- KAVLING PENGGUNA                                --}}
+    {{-- KAVLING 4: PENGGUNA                             --}}
     {{-- =============================================== --}}
     @elseif ($role == 'pengguna')
 
-        <!-- Divider -->
         <hr class="sidebar-divider">
         
         <div class="sidebar-heading">
@@ -188,18 +200,18 @@
             </a>
         </li>
 
-          <li class="nav-item {{ Request::routeIs('pengguna.helpdesk.*') ? 'active' : '' }}">
-        <a class="nav-link" href="{{ route('pengguna.helpdesk.index') }}">
-            <i class="fas fa-fw fa-headset"></i>
-            <span>Lapor Kerusakan</span>
-        </a>
-    </li>
-       <li class="nav-item">
-        <a class="nav-link" href="{{ route('pengguna.userbast.index') }}">
-            <i class="fas fa-info-circle"></i>
-            <span>Informasi Barang</span>
-        </a>
-    </li>
+        <li class="nav-item {{ Request::routeIs('pengguna.helpdesk.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('pengguna.helpdesk.index') }}">
+                <i class="fas fa-fw fa-headset"></i>
+                <span>Lapor Kerusakan</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('pengguna.userbast.index') }}">
+                <i class="fas fa-info-circle"></i>
+                <span>Informasi Barang</span>
+            </a>
+        </li>
     
     @endif
     {{-- =============================================== --}}
@@ -207,7 +219,6 @@
     {{-- =============================================== --}}
 
 
-    <!-- Sidebar Toggler (Sidebar) -->
     <hr class="sidebar-divider d-none d-md-block">
     <div class="text-center d-none d-md-inline">
         <button class="rounded-circle border-0" id="sidebarToggle"></button>

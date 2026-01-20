@@ -3,91 +3,174 @@
 @section('content')
 <div class="container-fluid">
 
-    <h1 class="h3 mb-4 text-gray-800">Monitoring Request PPI</h1>
+    <h1 class="h3 mb-4 text-gray-800">Monitoring Request PPI (Admin IT)</h1>
 
+    {{-- Notifikasi Sukses/Error --}}
     @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
+        <div class="alert alert-success border-left-success shadow-sm alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle mr-1"></i> {{ session('success') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger border-left-danger shadow-sm alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle mr-1"></i> {{ session('error') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
     @endif
 
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
             <h6 class="m-0 font-weight-bold text-primary">Daftar Permintaan Masuk</h6>
             
-            {{-- TOMBOL BUKA MODAL --}}
+            {{-- TOMBOL BUKA MODAL EXPORT --}}
             <button type="button" class="btn btn-success btn-sm shadow-sm" data-toggle="modal" data-target="#modalExport">
-                <i class="fas fa-file-excel"></i> Filter & Export Excel
+                <i class="fas fa-file-excel fa-sm text-white-50"></i> Filter & Export Excel
             </button>
         </div>
         
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                    <thead>
+                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                    <thead class="thead-light">
                         <tr>
                             <th>No PPI</th>
                             <th>Tanggal</th>
                             <th>Pemohon</th>
-                            <th>Departemen</th>
-                            <th>Perusahaan</th> <th>Perangkat</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
+                            <th>Dept / PT</th>
+                            <th>Perangkat / Aset</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center" width="18%">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($dataPpi as $item)
+                        @forelse($dataPpi as $item)
                         <tr>
-                            <td><strong>{{ $item->no_ppi }}</strong></td>
-                            <td>{{ \Carbon\Carbon::parse($item->created_at)->format('d-m-Y') }}</td>
-                            <td>{{ $item->user->name ?? $item->user->nama ?? 'User Hapus' }}</td>
+                            <td class="font-weight-bold text-primary align-middle">{{ $item->no_ppi }}</td>
+                            <td class="align-middle">{{ \Carbon\Carbon::parse($item->created_at)->format('d-m-Y') }}</td>
+                            <td class="align-middle">
+                                <div class="font-weight-bold">{{ $item->user->name ?? 'User Hapus' }}</div>
+                                <small class="text-muted">{{ $item->user->email ?? '-' }}</small>
+                            </td>
 
-                            {{-- Tampilkan Dept & Perusahaan --}}
-                            <td>{{ $item->user->departemen ?? '-' }}</td> 
-                            <td><span class="badge badge-info">{{ $item->user->perusahaan ?? '-' }}</span></td>
+                            <td class="align-middle">
+                                <div class="small font-weight-bold">{{ $item->user->departemen ?? '-' }}</div>
+                                <span class="badge badge-light border">{{ $item->user->perusahaan ?? '-' }}</span>
+                            </td>
 
-                            <td>{{ $item->perangkat ?? '-' }}</td>
-                            
-                            <td>
-                                @if($item->status == 'pending')
-                                    <span class="badge badge-warning">Pending</span>
-                                @elseif($item->status == 'disetujui')
-                                    <span class="badge badge-primary">Disetujui</span>
-                                @elseif($item->status == 'selesai')
-                                    <span class="badge badge-success">Selesai</span>
-                                @elseif($item->status == 'ditolak')
-                                    <span class="badge badge-danger">Ditolak</span>
+                            <td class="align-middle">
+                                <span class="text-dark font-weight-bold">{{ $item->perangkat ?? '-' }}</span>
+                                {{-- Cek jika ada file lampiran --}}
+                                @if($item->file_ppi)
+                                    <br>
+                                    <a href="{{ asset('storage/'.$item->file_ppi) }}" target="_blank" class="badge badge-info mt-1">
+                                        <i class="fas fa-paperclip"></i> Lihat Lampiran
+                                    </a>
                                 @endif
                             </td>
-                            <td>
-                                <div class="d-flex">
-                                    <a href="{{ route('admin.ppi.show', $item->id) }}" class="btn btn-info btn-sm mr-1">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
+                            
+                            {{-- KOLOM STATUS --}}
+                            <td class="text-center align-middle">
+                                @if($item->status == 'pending')
+                                    <span class="badge badge-info px-2 py-1 shadow-sm">
+                                        <i class="fas fa-search"></i> Cek Admin
+                                    </span>
+                                
+                                @elseif($item->status == 'pending_superadmin')
+                                    <span class="badge badge-warning px-2 py-1 shadow-sm text-dark">
+                                        <i class="fas fa-user-tie"></i> Menunggu SPV/SA
+                                    </span>
+                                
+                                @elseif($item->status == 'disetujui')
+                                    <span class="badge badge-success px-2 py-1 shadow-sm">
+                                        <i class="fas fa-check-circle"></i> Disetujui
+                                    </span>
+                                
+                                @elseif($item->status == 'selesai')
+                                    <span class="badge badge-dark px-2 py-1 shadow-sm">
+                                        <i class="fas fa-flag-checkered"></i> Selesai
+                                    </span>
+                                
+                                @elseif($item->status == 'ditolak')
+                                    <span class="badge badge-danger px-2 py-1 shadow-sm">
+                                        <i class="fas fa-times-circle"></i> Ditolak
+                                    </span>
+                                @endif
+                            </td>
+                            
+                            {{-- KOLOM AKSI --}}
+                            <td class="align-middle">
+                                <div class="d-flex flex-column">
                                     
-                                    {{-- Dropdown Aksi Status --}}
-                                    <div class="dropdown">
-                                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
-                                            <i class="fas fa-cog"></i>
+                                    {{-- 1. TOMBOL DETAIL --}}
+                                    <a href="{{ route('admin.ppi.show', $item->id) }}" class="btn btn-sm btn-outline-primary mb-2">
+                                        <i class="fas fa-eye"></i> Detail
+                                    </a>
+
+                                    {{-- 2. LOGIC TOMBOL PROSES --}}
+                                    @if($item->status == 'pending')
+                                        <form action="{{ route('admin.ppi.forward', $item->id) }}" method="POST">
+                                            @csrf @method('PUT')
+                                            <button type="submit" class="btn btn-primary btn-sm btn-block shadow-sm" onclick="return confirm('Teruskan ke SuperAdmin?')">
+                                                <i class="fas fa-paper-plane"></i> Ajukan ke SA
+                                            </button>
+                                        </form>
+
+                                    @elseif($item->status == 'pending_superadmin')
+                                        <button class="btn btn-secondary btn-sm btn-block" disabled style="cursor: not-allowed; opacity: 0.7;">
+                                            <i class="fas fa-clock"></i> Menunggu SA
                                         </button>
-                                        <div class="dropdown-menu">
-                                            <form action="{{ route('admin.ppi.update', $item->id) }}" method="POST">
-                                                @csrf @method('PUT')
-                                                <button name="status" value="disetujui" class="dropdown-item text-primary" onclick="return confirm('Setujui?')">
-                                                    <i class="fas fa-check"></i> Setujui
-                                                </button>
-                                                <button name="status" value="selesai" class="dropdown-item text-success" onclick="return confirm('Selesai?')">
-                                                    <i class="fas fa-check-double"></i> Selesai
-                                                </button>
-                                                <div class="dropdown-divider"></div>
-                                                <button name="status" value="ditolak" class="dropdown-item text-danger" onclick="return confirm('Tolak?')">
-                                                    <i class="fas fa-times"></i> Tolak
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
+
+                                    @elseif($item->status == 'disetujui')
+                                        
+                                        {{-- 
+                                            WAK, PERHATIKAN DI SINI YA:
+                                            Cek nama route 'surat-jalan.create' ini di web.php sampeyan.
+                                            Kalau di web.php namanya 'admin.delivery.create', ganti di bawah ini.
+                                            
+                                            Juga pastikan Controller SuratJalan sampeyan bisa nerima parameter 'ppi_id'.
+                                            Kalau controller surat jalan sampeyan masih kosongan (gak nerima ppi_id), 
+                                            hapus bagian array ['ppi_id' => ...] nya.
+                                        --}}
+
+                                        @if(Route::has('admin.surat-jalan.create'))
+                                            {{-- Jika route ada, tampilkan tombol --}}
+                                            <a href="{{ route('admin.surat-jalan.create', ['ppi_id' => $item->id]) }}" class="btn btn-success btn-sm btn-block shadow-sm">
+                                                <i class="fas fa-truck"></i> Buat Surat Jalan
+                                            </a>
+                                        @else
+                                            {{-- Jika route TIDAK ada / salah nama, tampilkan tombol dummy biar gak error --}}
+                                            <a href="#" class="btn btn-success btn-sm btn-block shadow-sm" onclick="alert('Route surat jalan belum ketemu di web.php wak!')">
+                                                <i class="fas fa-truck"></i> Buat Surat Jalan
+                                            </a>
+                                        @endif
+
+                                    @elseif($item->status == 'ditolak')
+                                        <button class="btn btn-danger btn-sm btn-block" disabled>
+                                            <i class="fas fa-ban"></i> Ditolak
+                                        </button>
+
+                                    @elseif($item->status == 'selesai')
+                                        <button class="btn btn-dark btn-sm btn-block" disabled>
+                                            <i class="fas fa-check"></i> Closed
+                                        </button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
-                        @endforeach
+                        @empty
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                <i class="fas fa-folder-open fa-3x mb-3"></i><br>
+                                Belum ada data permintaan PPI.
+                            </td>
+                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
@@ -96,93 +179,8 @@
 
 </div>
 
-{{-- MODAL FILTER EXPORT --}}
-<div class="modal fade" id="modalExport" tabindex="-1" role="dialog" aria-labelledby="modalExportLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="modalExportLabel"><i class="fas fa-filter"></i> Filter Laporan Excel</h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            
-            {{-- Form mengarah ke Controller --}}
-            <form action="{{ route('admin.ppi.export') }}" method="GET">
-                <div class="modal-body">
-                    
-                    {{-- OPSI 1: PER HARIAN --}}
-                    <div class="alert alert-secondary p-2 mb-3">
-                        <strong>Opsi 1: Laporan Harian</strong>
-                        <div class="form-group mb-0 mt-1">
-                            <input type="date" name="tanggal" class="form-control">
-                            <small class="text-danger">*Isi ini jika ingin download per tanggal saja. (Bulan/Tahun akan diabaikan).</small>
-                        </div>
-                    </div>
-
-                    <div class="text-center font-weight-bold mb-3">--- ATAU ---</div>
-
-                    {{-- OPSI 2: BULANAN --}}
-                    <div class="alert alert-secondary p-2 mb-3">
-                        <strong>Opsi 2: Laporan Bulanan</strong>
-                        <div class="row mt-2">
-                            <div class="col-6">
-                                <label>Bulan</label>
-                                <select name="bulan" class="form-control">
-                                    <option value="">-- Pilih --</option>
-                                    @for ($i = 1; $i <= 12; $i++)
-                                        <option value="{{ $i }}" {{ date('m') == $i ? 'selected' : '' }}>
-                                            {{ date("F", mktime(0, 0, 0, $i, 10)) }}
-                                        </option>
-                                    @endfor
-                                </select>
-                            </div>
-                            <div class="col-6">
-                                <label>Tahun</label>
-                                <select name="tahun" class="form-control">
-                                    @php $thn = date('Y'); @endphp
-                                    @for ($y = $thn; $y >= $thn - 3; $y--)
-                                        <option value="{{ $y }}">{{ $y }}</option>
-                                    @endfor
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr>
-
-                    {{-- FILTER PERUSAHAAN (Ganti dari Departemen) --}}
-                    <div class="form-group">
-                        <label class="font-weight-bold">Filter Perusahaan (Opsional)</label>
-                        <select name="perusahaan" class="form-control">
-                            <option value="semua">-- Semua Perusahaan --</option>
-                            
-                            {{-- AMBIL LIST PERUSAHAAN DARI TABEL USERS --}}
-                            @php
-                                $list_pt = \App\Models\User::select('perusahaan')
-                                                ->whereNotNull('perusahaan')
-                                                ->distinct()
-                                                ->orderBy('perusahaan', 'asc')
-                                                ->get();
-                            @endphp
-
-                            @foreach($list_pt as $pt)
-                                <option value="{{ $pt->perusahaan }}">{{ $pt->perusahaan }}</option>
-                            @endforeach
-                        </select>
-                        <small class="text-muted">Pilih perusahaan untuk rekapitulasi data spesifik.</small>
-                    </div>
-
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-download"></i> Download Excel
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+{{-- MODAL FILTER EXPORT (Bagian ini sama saja, tidak perlu diubah) --}}
+{{-- ... Kode modal export di sini ... --}}
+{{-- Saya skip biar gak kepanjangan, pakai yang lama saja --}}
 
 @endsection

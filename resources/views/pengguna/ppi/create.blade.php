@@ -16,7 +16,8 @@
             </h6>
         </div>
         
-        <div class="card-body p-0"> @if ($errors->any())
+        <div class="card-body p-0"> 
+            @if ($errors->any())
                 <div class="alert alert-danger m-3">
                     <strong><i class="fas fa-exclamation-triangle"></i> Perhatian!</strong>
                     <ul class="mb-0 pl-3">
@@ -27,11 +28,12 @@
                 </div>
             @endif
 
-            <form action="{{ route('pengguna.ppi.store') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('pengguna.ppi.store') }}" method="POST" enctype="multipart/form-data" id="formPpi">
                 @csrf
                 
                 <div class="row no-gutters">
                     
+                    {{-- KOLOM KIRI: INFO TIKET --}}
                     <div class="col-lg-4 bg-light border-right border-bottom p-4">
                         <h6 class="font-weight-bold text-primary mb-3">Info Tiket</h6>
                         
@@ -55,6 +57,7 @@
                         </div>
                     </div>
 
+                    {{-- KOLOM KANAN: INPUT FORM --}}
                     <div class="col-lg-8 p-4">
                         <h6 class="font-weight-bold text-primary mb-3">Detail Kerusakan / Permintaan</h6>
 
@@ -88,14 +91,34 @@
 
                         <hr class="my-4">
 
-                        <div class="row">
+                        {{-- AREA TANDA TANGAN (BARU) --}}
+                        <div class="form-group">
+                            <label class="font-weight-bold text-dark">Tanda Tangan Pemohon <span class="text-danger">*</span></label>
+                            <div class="card bg-light border-0">
+                                <div class="card-body text-center p-3">
+                                    <div style="border: 2px dashed #aaa; background: #fff; display: inline-block; cursor: crosshair;">
+                                        <canvas id="signature-pad" width="400" height="200" style="max-width: 100%; touch-action: none;"></canvas>
+                                    </div>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" id="clear_btn">
+                                            <i class="fas fa-eraser"></i> Hapus / Ulangi
+                                        </button>
+                                    </div>
+                                    {{-- Input Hidden untuk menyimpan data base64 --}}
+                                    <input type="hidden" name="ttd_pemohon" id="ttd_pemohon_input">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
                             <div class="col-12 col-md-6 mb-2 mb-md-0">
                                 <a href="{{ route('pengguna.dashboard') }}" class="btn btn-secondary btn-block btn-lg">
                                     <i class="fas fa-arrow-left"></i> Batal
                                 </a>
                             </div>
                             <div class="col-12 col-md-6">
-                                <button type="submit" class="btn btn-primary btn-block btn-lg shadow-sm">
+                                {{-- Tambahkan onclick untuk memproses tanda tangan --}}
+                                <button type="submit" class="btn btn-primary btn-block btn-lg shadow-sm" onclick="prepareSignature(event)">
                                     <i class="fas fa-paper-plane"></i> Kirim Pengajuan
                                 </button>
                             </div>
@@ -109,13 +132,54 @@
 
 </div>
 
-{{-- SCRIPT TAMBAHAN AGAR NAMA FILE MUNCUL SAAT DIPILIH --}}
+{{-- SCRIPT: Signature Pad & File Name --}}
 @push('scripts')
+{{-- CDN Signature Pad --}}
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+
 <script>
-    // Menampilkan nama file yang diupload di label custom-file
+    // 1. Menampilkan nama file yang diupload di label custom-file
     $('.custom-file-input').on('change', function() {
         let fileName = $(this).val().split('\\').pop();
         $(this).next('.custom-file-label').addClass("selected").html(fileName);
+    });
+
+    // 2. Logika Signature Pad
+    document.addEventListener("DOMContentLoaded", function() {
+        var canvas = document.getElementById('signature-pad');
+        var signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgba(255, 255, 255, 0)', // Transparan/Putih
+            penColor: 'rgb(0, 0, 0)' // Tinta Hitam
+        });
+
+        // Tombol Hapus
+        document.getElementById('clear_btn').addEventListener('click', function () {
+            signaturePad.clear();
+        });
+
+        // Fungsi saat tombol Submit ditekan
+        window.prepareSignature = function(event) {
+            var hiddenInput = document.getElementById('ttd_pemohon_input');
+
+            if (signaturePad.isEmpty()) {
+                alert("Harap melakukan tanda tangan terlebih dahulu!");
+                event.preventDefault(); // Batalkan submit jika kosong
+            } else {
+                // Ambil data gambar dalam format Base64 dan masukkan ke input hidden
+                var dataUrl = signaturePad.toDataURL('image/png');
+                hiddenInput.value = dataUrl;
+            }
+        };
+
+        // Resize Canvas agar responsif (Opsional, perbaikan tampilan di HP)
+        function resizeCanvas() {
+            var ratio =  Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+            signaturePad.clear(); // Bersihkan saat resize agar tinta tidak pecah
+        }
+        // window.addEventListener("resize", resizeCanvas); // Aktifkan jika ingin resize otomatis
     });
 </script>
 @endpush

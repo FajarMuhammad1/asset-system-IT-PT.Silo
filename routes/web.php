@@ -20,6 +20,9 @@ use App\Http\Controllers\Admin\HelpdeskController;
 use App\Http\Controllers\Admin\TaskReportAdminController;
 use App\Http\Controllers\Admin\PpiAdminController;
 
+// KONTROLER SUPER ADMIN (BARU)
+use App\Http\Controllers\SuperAdminPpiController;
+
 // KONTROLER STAFF
 use App\Http\Controllers\Staff\StaffHelpdeskController;
 use App\Http\Controllers\Staff\StaffReportController;
@@ -55,7 +58,7 @@ Route::middleware(['auth'])->group(function () {
 
 
 // ====================================================
-// KAVLING 1: SUPER ADMIN & ADMIN
+// KAVLING 1: SUPER ADMIN & ADMIN (SHARED)
 // ====================================================
 Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     
@@ -64,11 +67,14 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     // --- GROUP KHUSUS URL "/admin/..." ---
     Route::prefix('admin')->name('admin.')->group(function() {
 
-        // 1. MONITORING PPI
+        // 1. MONITORING PPI (ADMIN)
         Route::get('/ppi-monitoring/export', [PpiAdminController::class, 'exportExcel'])->name('ppi.export'); 
         Route::get('/ppi-monitoring', [PpiAdminController::class, 'index'])->name('ppi.index');
         Route::get('/ppi-monitoring/{id}', [PpiAdminController::class, 'show'])->name('ppi.show');
         Route::put('/ppi-monitoring/{id}/update', [PpiAdminController::class, 'updateStatus'])->name('ppi.update');
+        
+        // [BARU] Route untuk Admin meneruskan ke SuperAdmin
+        Route::put('/ppi-monitoring/{id}/forward', [PpiAdminController::class, 'forwardToSuperAdmin'])->name('ppi.forward');
 
         // 2. HELPDESK ADMIN
         Route::get('/helpdesk', [HelpdeskController::class, 'index'])->name('helpdesk.index');
@@ -86,30 +92,22 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::put('/team/update/{id}', [TeamController::class, 'update'])->name('team.update');
     Route::delete('/team/destroy/{id}', [TeamController::class, 'destroy'])->name('team.destroy');
     
-    // --- [UPDATE PENTING: SURAT JALAN] ---
-    
-    // 1. Export Excel (Filter Modal)
+    // --- [SURAT JALAN] ---
     Route::get('surat-jalan/export/excel', [SuratJalanController::class, 'exportExcelFiltered'])->name('surat-jalan.export-excel');
-
-    // 2. Export PDF (Filter Modal - REKAPITULASI) -> INI YANG DITAMBAHKAN
     Route::get('surat-jalan/export/pdf', [SuratJalanController::class, 'exportPdfFiltered'])->name('surat-jalan.export-pdf');
-
-    // 3. Cetak Satuan (Tombol Printer Kecil di Tabel)
     Route::get('surat-jalan/{id}/cetak', [SuratJalanController::class, 'exportPdf'])->name('surat-jalan.cetak-pdf');
 
-    // Resource surat jalan, pengguna, master barang
+    // Resource
     Route::resource('surat-jalan', SuratJalanController::class);
     Route::resource('pengguna', PenggunaController::class);
     Route::resource('master-barang', MasterBarangController::class);
 
     // --- BARANG MASUK (ASET) ---
-    // PENTING: Route Export TARUH DI ATAS Route Resource!
     Route::get('/barangmasuk/export', [BarangMasukController::class, 'exportExcel'])->name('barangmasuk.export');
-    
     Route::resource('barangmasuk', BarangMasukController::class);
     Route::get('/barangmasuk/{id}/cetak-label', [BarangMasukController::class, 'cetakLabel'])->name('barangmasuk.cetak_label');
     
-    // Fitur Scan Barcode Barang Masuk
+    // Fitur Scan Barcode
     Route::get('/scan', [BarangMasukController::class, 'scanPage'])->name('scan.index');
     Route::post('/scan/cek', [BarangMasukController::class, 'processScan'])->name('scan.process');
 
@@ -119,10 +117,7 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
         Route::get('/create', [BarangKeluarController::class, 'create'])->name('create');
         Route::get('/get-asset-details', [BarangKeluarController::class, 'getAssetDetails'])->name('getAssetDetails');
         Route::post('/store', [BarangKeluarController::class, 'store'])->name('store');
-        
-        // Route Cetak PDF BAST
         Route::get('/{id}/cetak', [BarangKeluarController::class, 'cetakBast'])->name('cetak');
-
         Route::get('/{id}', [BarangKeluarController::class, 'show'])->name('show');
         Route::post('/{id}/admin-sign', [BarangKeluarController::class, 'adminSign'])->name('adminSign');
     });
@@ -134,6 +129,26 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::get('/task-reports/export', [TaskReportAdminController::class, 'exportExcel'])->name('admin.task_report.export');
     Route::get('/task-reports', [TaskReportAdminController::class, 'index'])->name('taskreport.index');
     Route::get('/task-reports/{id}', [TaskReportAdminController::class, 'show'])->name('taskreport.show');
+
+});
+
+
+// ====================================================
+// KAVLING 1.5: KHUSUS SUPER ADMIN (APPROVAL PPI)
+// ====================================================
+Route::middleware(['checkLogin:SuperAdmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+    
+    // Dashboard Approval List
+    Route::get('/approval', [SuperAdminPpiController::class, 'index'])->name('approval.index');
+    
+    // Halaman Review & Tanda Tangan
+    Route::get('/approval/{id}/review', [SuperAdminPpiController::class, 'showReview'])->name('approval.review');
+    
+    // Aksi Approve (Setuju)
+    Route::put('/approval/{id}/approve', [SuperAdminPpiController::class, 'approve'])->name('approval.approve');
+    
+    // Aksi Reject (Tolak)
+    Route::put('/approval/{id}/reject', [SuperAdminPpiController::class, 'reject'])->name('approval.reject');
 
 });
 

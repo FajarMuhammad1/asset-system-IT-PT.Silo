@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Ppi;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\File; // Tambahan untuk cek folder
 
 class PpiController extends Controller
 {
@@ -14,7 +15,9 @@ class PpiController extends Controller
     {
         return view('pengguna.ppi.create', [
             'title' => 'Buat Pengajuan PPI',
-            'menuPPI' => 'active'
+            'menuPPI' => 'active',
+            // Kirim nomor sementara/kosong, nanti di-generate real-nya saat store
+            'nomor_otomatis' => '(Otomatis setelah Simpan)' 
         ]);
     }
 
@@ -23,15 +26,18 @@ class PpiController extends Controller
         // 1. Validasi Input
         $request->validate([
             'perangkat'    => 'required|string|max:255',
-            'ba_kerusakan' => 'required|string',
+            'ba_kerusakan' => 'required|string', // Pastikan di form name-nya deskripsi atau ba_kerusakan disesuaikan
             'keterangan'   => 'nullable|string',
             'file_ppi'     => 'nullable|mimes:pdf,jpg,jpeg,png|max:2048',
+            'ttd_pemohon'  => 'required', // Wajib Tanda Tangan
         ]);
 
         // Ambil user
         $user = Auth::user();
 
-        // 2. Tanggal & Bulan ke Romawi
+        // ==========================================================
+        // 2. LOGIKA GENERATE NOMOR (KODE PERUSAHAAN + ROMAWI)
+        // ==========================================================
         $now = Carbon::now();
         $tahun = $now->format('Y');
         $bulanAngka = $now->format('n');
@@ -42,38 +48,22 @@ class PpiController extends Controller
         ];
         $bulanRoman = $romanMonths[$bulanAngka];
 
-        // 3. LOGIKA PERUSAHAAN OTOMATIS (PT atau tanpa PT)
+        // Logika Nama Perusahaan
         $raw = strtoupper(trim($user->perusahaan ?? ''));
-
         if (str_contains($raw, 'PT')) {
-
-            // Pisahkan berdasarkan spasi dan titik
             $parts = preg_split('/[ .]+/', $raw);
-
-            // Buang PT
             $cleanParts = array_filter($parts, fn($p) => $p !== 'PT');
-
-            // Gabungkan kembali jadi nama perusahaan
             $kodePerusahaan = implode(' ', $cleanParts);
-
         } else {
-            // Jika tidak ada PT, ambil apa adanya
             $kodePerusahaan = $raw;
         }
+        if (!$kodePerusahaan) { $kodePerusahaan = "CORP"; }
 
-        // Jika masih kosong, default
-        if (!$kodePerusahaan) {
-            $kodePerusahaan = "CORP";
-        }
-
-        // 4. Pola generate nomor
+        // Pola generate nomor
         $pattern = ".PPI-{$kodePerusahaan}.{$bulanRoman}.{$tahun}";
 
-        // 5. Ambil nomor terakhir berdasarkan pattern
-        $lastData = Ppi::where('no_ppi', 'like', "%{$pattern}")
-                       ->latest('id')
-                       ->first();
-
+        // Ambil nomor terakhir
+        $lastData = Ppi::where('no_ppi', 'like', "%{$pattern}")->latest('id')->first();
         $urut = 1;
 
         if ($lastData) {
@@ -83,29 +73,60 @@ class PpiController extends Controller
         }
 
         $nomorUrut = str_pad($urut, 4, '0', STR_PAD_LEFT);
-
-        // 6. Gabungkan menjadi nomor final
         $nomerOtomatis = $nomorUrut . $pattern;
 
-        // 7. Upload file jika ada
+        // ==========================================================
+        // 3. LOGIKA SIMPAN TANDA TANGAN (BASE64 -> IMAGE)
+        // ==========================================================
+        $ttdPath = null;
+        if ($request->ttd_pemohon) {
+            // Decode Base64
+            $image_parts = explode(";base64,", $request->ttd_pemohon);
+            // Cek validitas base64
+            if (count($image_parts) == 2) {
+                $image_base64 = base64_decode($image_parts[1]);
+                
+                // Nama File Unik
+                $fileName = 'ttd_ppi_' . uniqid() . '.png';
+                $folderPath = public_path('uploads/signatures/');
+                
+                // Buat folder jika belum ada
+                if (!File::exists($folderPath)) {
+                    File::makeDirectory($folderPath, 0777, true, true);
+                }
+
+                // Simpan File
+                file_put_contents($folderPath . $fileName, $image_base64);
+                
+                // Set path untuk database
+                $ttdPath = 'uploads/signatures/' . $fileName;
+            }
+        }
+
+        // ==========================================================
+        // 4. UPLOAD FILE PENDUKUNG (JIKA ADA)
+        // ==========================================================
         $filePath = null;
         if ($request->hasFile('file_ppi')) {
             $filePath = $request->file('file_ppi')->store('ppi_uploads', 'public');
         }
 
-        // 8. Simpan ke database
+        // ==========================================================
+        // 5. SIMPAN KE DATABASE
+        // ==========================================================
         Ppi::create([
             'no_ppi'       => $nomerOtomatis,
             'tanggal'      => Carbon::now(),
             'user_id'      => Auth::id(),
             'perangkat'    => $request->perangkat,
-            'ba_kerusakan' => $request->ba_kerusakan,
+            'ba_kerusakan' => $request->ba_kerusakan, // atau 'deskripsi' sesuaikan dengan kolom DB
             'keterangan'   => $request->keterangan,
             'file_ppi'     => $filePath,
-            'status'       => 'pending'
+            'ttd_pemohon'  => $ttdPath, // Simpan path TTD
+            'status'       => 'pending' // Masuk pending (menunggu Admin Cek)
         ]);
 
-        return redirect()->route('pengguna.dashboard')
+        return redirect()->route('pengguna.ppi.index')
             ->with('success', 'PPI Berhasil dibuat! No Tiket: ' . $nomerOtomatis);
     }
 
