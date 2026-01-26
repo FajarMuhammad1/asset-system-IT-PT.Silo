@@ -29,6 +29,7 @@
             <h6 class="m-0 font-weight-bold text-primary">Daftar Permintaan Masuk</h6>
             
             {{-- TOMBOL BUKA MODAL EXPORT --}}
+            {{-- Pastikan data-target="#modalExport" SAMA dengan id modal di paling bawah --}}
             <button type="button" class="btn btn-success btn-sm shadow-sm" data-toggle="modal" data-target="#modalExport">
                 <i class="fas fa-file-excel fa-sm text-white-50"></i> Filter & Export Excel
             </button>
@@ -65,7 +66,6 @@
 
                             <td class="align-middle">
                                 <span class="text-dark font-weight-bold">{{ $item->perangkat ?? '-' }}</span>
-                                {{-- Cek jika ada file lampiran --}}
                                 @if($item->file_ppi)
                                     <br>
                                     <a href="{{ asset('storage/'.$item->file_ppi) }}" target="_blank" class="badge badge-info mt-1">
@@ -77,42 +77,25 @@
                             {{-- KOLOM STATUS --}}
                             <td class="text-center align-middle">
                                 @if($item->status == 'pending')
-                                    <span class="badge badge-info px-2 py-1 shadow-sm">
-                                        <i class="fas fa-search"></i> Cek Admin
-                                    </span>
-                                
+                                    <span class="badge badge-info px-2 py-1 shadow-sm"><i class="fas fa-search"></i> Cek Admin</span>
                                 @elseif($item->status == 'pending_superadmin')
-                                    <span class="badge badge-warning px-2 py-1 shadow-sm text-dark">
-                                        <i class="fas fa-user-tie"></i> Menunggu SPV/SA
-                                    </span>
-                                
+                                    <span class="badge badge-warning px-2 py-1 shadow-sm text-dark"><i class="fas fa-user-tie"></i> Menunggu SPV/SA</span>
                                 @elseif($item->status == 'disetujui')
-                                    <span class="badge badge-success px-2 py-1 shadow-sm">
-                                        <i class="fas fa-check-circle"></i> Disetujui
-                                    </span>
-                                
+                                    <span class="badge badge-success px-2 py-1 shadow-sm"><i class="fas fa-check-circle"></i> Disetujui</span>
                                 @elseif($item->status == 'selesai')
-                                    <span class="badge badge-dark px-2 py-1 shadow-sm">
-                                        <i class="fas fa-flag-checkered"></i> Selesai
-                                    </span>
-                                
+                                    <span class="badge badge-dark px-2 py-1 shadow-sm"><i class="fas fa-flag-checkered"></i> Selesai</span>
                                 @elseif($item->status == 'ditolak')
-                                    <span class="badge badge-danger px-2 py-1 shadow-sm">
-                                        <i class="fas fa-times-circle"></i> Ditolak
-                                    </span>
+                                    <span class="badge badge-danger px-2 py-1 shadow-sm"><i class="fas fa-times-circle"></i> Ditolak</span>
                                 @endif
                             </td>
                             
                             {{-- KOLOM AKSI --}}
                             <td class="align-middle">
                                 <div class="d-flex flex-column">
-                                    
-                                    {{-- 1. TOMBOL DETAIL --}}
                                     <a href="{{ route('admin.ppi.show', $item->id) }}" class="btn btn-sm btn-outline-primary mb-2">
                                         <i class="fas fa-eye"></i> Detail
                                     </a>
 
-                                    {{-- 2. LOGIC TOMBOL PROSES --}}
                                     @if($item->status == 'pending')
                                         <form action="{{ route('admin.ppi.forward', $item->id) }}" method="POST">
                                             @csrf @method('PUT')
@@ -122,43 +105,26 @@
                                         </form>
 
                                     @elseif($item->status == 'pending_superadmin')
-                                        <button class="btn btn-secondary btn-sm btn-block" disabled style="cursor: not-allowed; opacity: 0.7;">
+                                        <button class="btn btn-secondary btn-sm btn-block" disabled style="opacity: 0.7;">
                                             <i class="fas fa-clock"></i> Menunggu SA
                                         </button>
 
                                     @elseif($item->status == 'disetujui')
-                                        
-                                        {{-- 
-                                            WAK, PERHATIKAN DI SINI YA:
-                                            Cek nama route 'surat-jalan.create' ini di web.php sampeyan.
-                                            Kalau di web.php namanya 'admin.delivery.create', ganti di bawah ini.
-                                            
-                                            Juga pastikan Controller SuratJalan sampeyan bisa nerima parameter 'ppi_id'.
-                                            Kalau controller surat jalan sampeyan masih kosongan (gak nerima ppi_id), 
-                                            hapus bagian array ['ppi_id' => ...] nya.
-                                        --}}
-
                                         @if(Route::has('admin.surat-jalan.create'))
-                                            {{-- Jika route ada, tampilkan tombol --}}
                                             <a href="{{ route('admin.surat-jalan.create', ['ppi_id' => $item->id]) }}" class="btn btn-success btn-sm btn-block shadow-sm">
                                                 <i class="fas fa-truck"></i> Buat Surat Jalan
                                             </a>
                                         @else
-                                            {{-- Jika route TIDAK ada / salah nama, tampilkan tombol dummy biar gak error --}}
-                                            <a href="#" class="btn btn-success btn-sm btn-block shadow-sm" onclick="alert('Route surat jalan belum ketemu di web.php wak!')">
+                                            <a href="#" class="btn btn-success btn-sm btn-block shadow-sm" onclick="alert('Route surat jalan belum dibuat!')">
                                                 <i class="fas fa-truck"></i> Buat Surat Jalan
                                             </a>
                                         @endif
 
                                     @elseif($item->status == 'ditolak')
-                                        <button class="btn btn-danger btn-sm btn-block" disabled>
-                                            <i class="fas fa-ban"></i> Ditolak
-                                        </button>
+                                        <button class="btn btn-danger btn-sm btn-block" disabled><i class="fas fa-ban"></i> Ditolak</button>
 
                                     @elseif($item->status == 'selesai')
-                                        <button class="btn btn-dark btn-sm btn-block" disabled>
-                                            <i class="fas fa-check"></i> Closed
-                                        </button>
+                                        <button class="btn btn-dark btn-sm btn-block" disabled><i class="fas fa-check"></i> Closed</button>
                                     @endif
                                 </div>
                             </td>
@@ -166,8 +132,7 @@
                         @empty
                         <tr>
                             <td colspan="7" class="text-center text-muted py-4">
-                                <i class="fas fa-folder-open fa-3x mb-3"></i><br>
-                                Belum ada data permintaan PPI.
+                                <i class="fas fa-folder-open fa-3x mb-3"></i><br>Belum ada data permintaan PPI.
                             </td>
                         </tr>
                         @endforelse
@@ -176,11 +141,75 @@
             </div>
         </div>
     </div>
-
 </div>
 
-{{-- MODAL FILTER EXPORT (Bagian ini sama saja, tidak perlu diubah) --}}
-{{-- ... Kode modal export di sini ... --}}
-{{-- Saya skip biar gak kepanjangan, pakai yang lama saja --}}
+<div class="modal fade" id="modalExport" tabindex="-1" role="dialog" aria-labelledby="modalExportLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalExportLabel"><i class="fas fa-file-excel"></i> Filter & Export PPI</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            
+            {{-- Pastikan action mengarah ke route export di controller --}}
+            <form action="{{ route('admin.ppi.export') }}" method="GET">
+                <div class="modal-body">
+                    
+                    {{-- Opsi 1: Per Tanggal --}}
+                    <div class="form-group">
+                        <label class="font-weight-bold">Filter Harian (Tanggal):</label>
+                        <input type="date" name="tanggal" class="form-control">
+                        <small class="text-muted">Isi ini jika ingin download data 1 hari spesifik.</small>
+                    </div>
+
+                    <hr>
+
+                    {{-- Opsi 2: Per Bulan & Tahun --}}
+                    <div class="form-group">
+                        <label class="font-weight-bold">Atau Filter Bulanan:</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <select name="bulan" class="form-control">
+                                    <option value="">-- Pilih Bulan --</option>
+                                    @for($m=1; $m<=12; $m++)
+                                        <option value="{{ $m }}">{{ date('F', mktime(0, 0, 0, $m, 1)) }}</option>
+                                    @endfor
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <select name="tahun" class="form-control">
+                                    <option value="">-- Pilih Tahun --</option>
+                                    @for($y=date('Y'); $y>=2020; $y--)
+                                        <option value="{{ $y }}">{{ $y }}</option>
+                                    @endfor
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    {{-- Opsi 3: Per Perusahaan --}}
+                    <div class="form-group">
+                        <label class="font-weight-bold">Filter Perusahaan (Opsional):</label>
+                        <select name="perusahaan" class="form-control">
+                            <option value="">Semua Perusahaan</option>
+                            <option value="PT. A">PT. A</option>
+                            <option value="PT. B">PT. B</option>
+                            <option value="PT. C">PT. C</option>
+                        </select>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success"><i class="fas fa-download"></i> Download Excel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 @endsection
