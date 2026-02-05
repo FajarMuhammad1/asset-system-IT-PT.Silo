@@ -20,8 +20,9 @@ use App\Http\Controllers\Admin\HelpdeskController;
 use App\Http\Controllers\Admin\TaskReportAdminController;
 use App\Http\Controllers\Admin\PpiAdminController;
 
-// KONTROLER SUPER ADMIN (BARU)
+// KONTROLER SUPER ADMIN
 use App\Http\Controllers\SuperAdminPpiController;
+use App\Http\Controllers\SuperAdmin\SuperAdminController;
 
 // KONTROLER STAFF
 use App\Http\Controllers\Staff\StaffHelpdeskController;
@@ -58,8 +59,9 @@ Route::middleware(['auth'])->group(function () {
 
 
 // ====================================================
-// KAVLING 1: SUPER ADMIN & ADMIN (SHARED)
+// KAVLING 1: SHARED (SUPER ADMIN & ADMIN BISA AKSES)
 // ====================================================
+// Berisi: Dashboard, Monitoring, Master Data, User Management, Laporan
 Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
@@ -67,24 +69,21 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     // --- GROUP KHUSUS URL "/admin/..." ---
     Route::prefix('admin')->name('admin.')->group(function() {
 
-        // 1. MONITORING PPI (ADMIN)
+        // 1. MONITORING PPI (Bisa lihat list, tapi approve di menu superadmin sendiri)
         Route::get('/ppi-monitoring/export', [PpiAdminController::class, 'exportExcel'])->name('ppi.export'); 
         Route::get('/ppi-monitoring', [PpiAdminController::class, 'index'])->name('ppi.index');
         Route::get('/ppi-monitoring/{id}', [PpiAdminController::class, 'show'])->name('ppi.show');
         Route::put('/ppi-monitoring/{id}/update', [PpiAdminController::class, 'updateStatus'])->name('ppi.update');
-        
-        // [BARU] Route untuk Admin meneruskan ke SuperAdmin
         Route::put('/ppi-monitoring/{id}/forward', [PpiAdminController::class, 'forwardToSuperAdmin'])->name('ppi.forward');
 
-        // 2. HELPDESK ADMIN
+        // 2. HELPDESK (Monitoring Tiket)
         Route::get('/helpdesk', [HelpdeskController::class, 'index'])->name('helpdesk.index');
         Route::get('/helpdesk/{id}', [HelpdeskController::class, 'show'])->name('helpdesk.show');
         Route::post('/helpdesk/{id}/assign', [HelpdeskController::class, 'assignTeknisi'])->name('helpdesk.assign');
     });
 
-    // --- MASTER DATA & RESOURCE ---
-    
-    // Team
+    // --- MASTER DATA (REFERENSI) ---
+    // Team IT
     Route::get('team', [TeamController::class, 'index'])->name('team');
     Route::get('/team/create', [TeamController::class, 'create'])->name('team.create');
     Route::post('/team/store', [TeamController::class, 'store'])->name('team.store');
@@ -92,17 +91,33 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::put('/team/update/{id}', [TeamController::class, 'update'])->name('team.update');
     Route::delete('/team/destroy/{id}', [TeamController::class, 'destroy'])->name('team.destroy');
     
+    // User Management & Master Barang (Data Mentah)
+    Route::resource('pengguna', PenggunaController::class);
+    Route::resource('master-barang', MasterBarangController::class);
+
+    // Activity Log & Task Report (Monitoring Kinerja)
+    Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity.log');
+    Route::get('/task-reports/export', [TaskReportAdminController::class, 'exportExcel'])->name('admin.task_report.export');
+    Route::get('/task-reports', [TaskReportAdminController::class, 'index'])->name('taskreport.index');
+    Route::get('/task-reports/{id}', [TaskReportAdminController::class, 'show'])->name('taskreport.show');
+
+});
+
+
+// ====================================================
+// KAVLING 2: OPERASIONAL KHUSUS ADMIN (SUPER ADMIN DIBLOKIR)
+// ====================================================
+// Berisi: Surat Jalan, Barang Masuk, Barang Keluar, Scan
+Route::middleware(['checkLogin:Admin'])->group(function () {
+
     // --- [SURAT JALAN] ---
     Route::get('surat-jalan/export/excel', [SuratJalanController::class, 'exportExcelFiltered'])->name('surat-jalan.export-excel');
     Route::get('surat-jalan/export/pdf', [SuratJalanController::class, 'exportPdfFiltered'])->name('surat-jalan.export-pdf');
     Route::get('surat-jalan/{id}/cetak', [SuratJalanController::class, 'exportPdf'])->name('surat-jalan.cetak-pdf');
-
-    // Resource
     Route::resource('surat-jalan', SuratJalanController::class);
-    Route::resource('pengguna', PenggunaController::class);
-    Route::resource('master-barang', MasterBarangController::class);
 
-    // --- BARANG MASUK (ASET) ---
+    // --- BARANG MASUK (ASET IN) ---
+    // Gw masukin sini juga biar Super Admin gak ngacak2 stok masuk
     Route::get('/barangmasuk/export', [BarangMasukController::class, 'exportExcel'])->name('barangmasuk.export');
     Route::resource('barangmasuk', BarangMasukController::class);
     Route::get('/barangmasuk/{id}/cetak-label', [BarangMasukController::class, 'cetakLabel'])->name('barangmasuk.cetak_label');
@@ -122,19 +137,11 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
         Route::post('/{id}/admin-sign', [BarangKeluarController::class, 'adminSign'])->name('adminSign');
     });
 
-    // Activity Log
-    Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity.log');
-
-    // --- TASK REPORT ADMIN ---
-    Route::get('/task-reports/export', [TaskReportAdminController::class, 'exportExcel'])->name('admin.task_report.export');
-    Route::get('/task-reports', [TaskReportAdminController::class, 'index'])->name('taskreport.index');
-    Route::get('/task-reports/{id}', [TaskReportAdminController::class, 'show'])->name('taskreport.show');
-
 });
 
 
 // ====================================================
-// KAVLING 1.5: KHUSUS SUPER ADMIN (APPROVAL PPI)
+// KAVLING 3: KHUSUS SUPER ADMIN (APPROVAL)
 // ====================================================
 Route::middleware(['checkLogin:SuperAdmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
     
@@ -154,7 +161,7 @@ Route::middleware(['checkLogin:SuperAdmin'])->prefix('superadmin')->name('supera
 
 
 // ====================================================
-// KAVLING 2: PENGGUNA
+// KAVLING 4: PENGGUNA
 // ====================================================
 Route::middleware(['checkLogin:Pengguna'])->prefix('Pengguna')->name('pengguna.')->group(function () {
     
@@ -182,7 +189,7 @@ Route::middleware(['checkLogin:Pengguna'])->prefix('Pengguna')->name('pengguna.'
 
 
 // ====================================================
-// KAVLING 3: STAFF
+// KAVLING 5: STAFF
 // ====================================================
 Route::middleware(['checkLogin:Staff'])->prefix('Staff')->name('staff.')->group(function () {
     

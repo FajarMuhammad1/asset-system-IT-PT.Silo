@@ -55,7 +55,7 @@
                             <td class="font-weight-bold text-primary align-middle">{{ $item->no_ppi }}</td>
                             <td class="align-middle">{{ \Carbon\Carbon::parse($item->created_at)->format('d-m-Y') }}</td>
                             <td class="align-middle">
-                                <div class="font-weight-bold">{{ $item->user->name ?? 'User Hapus' }}</div>
+                                <div class="font-weight-bold">{{ $item->user->nama ?? 'User Hapus' }}</div>
                                 <small class="text-muted">{{ $item->user->email ?? '-' }}</small>
                             </td>
 
@@ -109,16 +109,7 @@
                                             <i class="fas fa-clock"></i> Menunggu SA
                                         </button>
 
-                                    @elseif($item->status == 'disetujui')
-                                        @if(Route::has('admin.surat-jalan.create'))
-                                            <a href="{{ route('admin.surat-jalan.create', ['ppi_id' => $item->id]) }}" class="btn btn-success btn-sm btn-block shadow-sm">
-                                                <i class="fas fa-truck"></i> Buat Surat Jalan
-                                            </a>
-                                        @else
-                                            <a href="#" class="btn btn-success btn-sm btn-block shadow-sm" onclick="alert('Route surat jalan belum dibuat!')">
-                                                <i class="fas fa-truck"></i> Buat Surat Jalan
-                                            </a>
-                                        @endif
+
 
                                     @elseif($item->status == 'ditolak')
                                         <button class="btn btn-danger btn-sm btn-block" disabled><i class="fas fa-ban"></i> Ditolak</button>
@@ -143,6 +134,7 @@
     </div>
 </div>
 
+
 <div class="modal fade" id="modalExport" tabindex="-1" role="dialog" aria-labelledby="modalExportLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -153,7 +145,6 @@
                 </button>
             </div>
             
-            {{-- Pastikan action mengarah ke route export di controller --}}
             <form action="{{ route('admin.ppi.export') }}" method="GET">
                 <div class="modal-body">
                     
@@ -191,16 +182,34 @@
 
                     <hr>
 
-                    {{-- Opsi 3: Per Perusahaan --}}
+                    {{-- Opsi 3: PERUSAHAAN (DINAMIS DARI DATABASE) --}}
                     <div class="form-group">
-                        <label class="font-weight-bold">Filter Perusahaan (Opsional):</label>
+                        <label class="font-weight-bold">Filter Perusahaan:</label>
                         <select name="perusahaan" class="form-control">
                             <option value="">Semua Perusahaan</option>
-                            <option value="PT. A">PT. A</option>
-                            <option value="PT. B">PT. B</option>
-                            <option value="PT. C">PT. C</option>
+                            @php
+                                // Kita ambil nama perusahaan unik dari data PPI yang sedang ditampilkan
+                                $daftarPerusahaan = $dataPpi->map(function($item) {
+                                    return $item->user->perusahaan ?? null;
+                                })->filter()->unique()->sort();
+                            @endphp
+
+                            @foreach($daftarPerusahaan as $pt)
+                                <option value="{{ $pt }}">{{ $pt }}</option>
+                            @endforeach
                         </select>
+                        <small class="text-muted">Daftar ini muncul berdasarkan data pemohon yang tersedia.</small>
                     </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success"><i class="fas fa-download"></i> Download Excel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
                 </div>
                 <div class="modal-footer">

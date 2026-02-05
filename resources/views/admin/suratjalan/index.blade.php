@@ -84,10 +84,7 @@
                             {{-- Aksi --}}
                             <td class="align-middle text-center">
                                 <div class="d-flex justify-content-center">
-                                    {{-- Cetak Satuan (Tetap route lama) --}}
-                                    <a href="{{ route('surat-jalan.cetak-pdf', $item->id_sj) }}" target="_blank" class="btn btn-secondary btn-sm mr-1" title="Print Satuan">
-                                        <i class="fas fa-print"></i>
-                                    </a>
+
 
                                     <a href="{{ route('surat-jalan.show', $item->id_sj) }}" class="btn btn-info btn-sm mr-1" title="Detail">
                                         <i class="fas fa-eye"></i>

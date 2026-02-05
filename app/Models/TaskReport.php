@@ -27,8 +27,8 @@ class TaskReport extends Model
     {
         return $this->belongsTo(User::class, 'staff_id');
     }
-
-    // Relasi ke Tiket (Opsional)
+    
+    // Relasi ke Tiket (Opsional)   
     public function ticket()
     {
         return $this->belongsTo(Ticket::class, 'ticket_id');

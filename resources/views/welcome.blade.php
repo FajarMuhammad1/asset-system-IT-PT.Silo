@@ -274,7 +274,7 @@
                                 </a>
                             @else
                                 <a href="{{ route('login') }}" class="btn btn-custom-outline w-100 w-lg-auto px-4">
-                                    <i class="fas fa-sign-in-alt me-2"></i> Login Staff
+                                    <i class="fas fa-sign-in-alt me-2"></i> Login dulu,copy kah
                                 </a>
                             @endauth
                         @endif

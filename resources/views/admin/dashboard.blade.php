@@ -31,21 +31,27 @@
         <small class="text-muted"><i class="far fa-calendar-alt mr-1"></i> Data per {{ \Carbon\Carbon::now()->isoFormat('D MMMM Y') }}</small>
     </div>
     
-    {{-- Tombol Pintas --}}
-    <div class="d-none d-sm-inline-block">
-        <a href="{{ route('surat-jalan.create') }}" class="btn btn-sm btn-primary shadow-sm mr-2">
-            <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> Surat Jalan
-        </a>
-        <a href="{{ route('barangkeluar.create') }}" class="btn btn-sm btn-success shadow-sm">
-            <i class="fas fa-handshake fa-sm text-white-50 mr-1"></i> Serah Terima (BAST)
-        </a>
-    </div>
+    {{-- 
+        [LOGIKA TOMBOL - UPDATE] 
+        Menggunakan strtolower & trim untuk mengatasi perbedaan huruf besar/kecil atau spasi di database.
+        Hanya 'admin' yang melihat tombol ini.
+    --}}
+    @if(strtolower(trim(auth()->user()->jenis_user)) == 'admin')
+        <div class="d-none d-sm-inline-block">
+            <a href="{{ route('surat-jalan.create') }}" class="btn btn-sm btn-primary shadow-sm mr-2">
+                <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> Surat Jalan
+            </a>
+            <a href="{{ route('barangkeluar.create') }}" class="btn btn-sm btn-success shadow-sm">
+                <i class="fas fa-handshake fa-sm text-white-50 mr-1"></i> Serah Terima (BAST)
+            </a>
+        </div>
+    @endif
 </div>
 
-{{-- BARIS 1: KARTU STATISTIK (LINK SUDAH SESUAI ROUTE WEB.PHP) --}}
+{{-- BARIS 1: KARTU STATISTIK --}}
 <div class="row">
 
-    {{-- Kartu Team IT --}}
+    {{-- Kartu Team IT (SHARED) --}}
     <div class="col-xl-3 col-md-6 mb-4">
         <a href="{{ route('team') }}" class="card border-left-primary shadow h-100 py-2 card-hover-effect text-decoration-none">
             <div class="card-body">
@@ -65,7 +71,7 @@
         </a>
     </div>
 
-    {{-- Kartu Pengguna --}}
+    {{-- Kartu Pengguna (SHARED) --}}
     <div class="col-xl-3 col-md-6 mb-4">
         <a href="{{ route('pengguna.index') }}" class="card border-left-success shadow h-100 py-2 card-hover-effect text-decoration-none">
             <div class="card-body">
@@ -83,9 +89,14 @@
         </a>
     </div>
 
-    {{-- Kartu Aset --}}
+    {{-- Kartu Aset (CONDITIONAL LINK - UPDATE) --}}
+    {{-- Logika disamakan dengan header: Admin -> barangmasuk, SuperAdmin -> master-barang --}}
+    @php
+        $userRole = strtolower(trim(auth()->user()->jenis_user));
+        $linkAset = ($userRole == 'admin') ? route('barangmasuk.index') : route('master-barang.index');
+    @endphp
     <div class="col-xl-3 col-md-6 mb-4">
-        <a href="{{ route('barangmasuk.index') }}" class="card border-left-info shadow h-100 py-2 card-hover-effect text-decoration-none">
+        <a href="{{ $linkAset }}" class="card border-left-info shadow h-100 py-2 card-hover-effect text-decoration-none">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
@@ -100,7 +111,7 @@
         </a>
     </div>
 
-    {{-- Kartu Tiket Open --}}
+    {{-- Kartu Tiket Open (SHARED) --}}
     <div class="col-xl-3 col-md-6 mb-4">
         <a href="{{ route('admin.helpdesk.index') }}" class="card border-left-warning shadow h-100 py-2 card-hover-effect text-decoration-none">
             <div class="card-body">
@@ -277,7 +288,7 @@
                 </div>
 
                 <div class="text-center mt-4">
-                    <a href="{{ route('barangmasuk.index') }}" class="btn btn-outline-info btn-sm btn-block">Lihat Detail Aset</a>
+                    <a href="{{ $linkAset }}" class="btn btn-outline-info btn-sm btn-block">Lihat Detail Aset</a>
                 </div>
             </div>
         </div>
