@@ -142,4 +142,40 @@ class PpiController extends Controller
             'riwayatPpi' => $riwayatPpi
         ]);
     }
+
+    public function exportPdf(Request $request)
+    {
+        // 1. Ambil User Login
+        $userId = Auth::id();
+        
+        // 2. Query Data dengan Filter
+        $query = Ppi::where('user_id', $userId);
+        
+        $label = "Semua Data";
+        
+        if ($request->filled('bulan') && $request->filled('tahun')) {
+            $query->whereMonth('created_at', $request->bulan)
+                  ->whereYear('created_at', $request->tahun);
+            
+            $namaBulan = \Carbon\Carbon::createFromDate($request->tahun, $request->bulan, 1)->format('F');
+            $label = "Bulan $namaBulan " . $request->tahun;
+        } elseif ($request->filled('tahun')) {
+            $query->whereYear('created_at', $request->tahun);
+            $label = "Tahun " . $request->tahun;
+        }
+
+        $data = $query->latest()->get();
+
+        // 3. Generate PDF
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pengguna.ppi.pdf_report', [
+            'data' => $data,
+            'label' => $label
+        ]);
+        
+        // 4. Set ukuran kertas
+        $pdf->setPaper('a4', 'portrait');
+
+        // 5. Download / Stream
+        return $pdf->stream('Laporan_PPI_' . time() . '.pdf');
+    }
 }

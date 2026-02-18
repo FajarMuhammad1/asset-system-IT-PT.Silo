@@ -5,8 +5,61 @@
 
     <div class="d-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 text-gray-800">{{ $title }}</h1>
-        {{-- Tombol Tambah (Opsional, kalau mau dipasang disini juga) --}}
-        {{-- <a href="{{ route('pengguna.ppi.create') }}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Buat Baru</a> --}}
+        
+        {{-- Tombol Filter & Cetak PDF --}}
+        <button class="btn btn-danger btn-sm shadow-sm" data-toggle="modal" data-target="#modalCetakPdf">
+            <i class="fas fa-file-pdf fa-sm text-white-50"></i> Cetak Laporan PDF
+        </button>
+    </div>
+
+    {{-- MODAL FILTER CETAK PDF --}}
+    <div class="modal fade" id="modalCetakPdf" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-print"></i> Cetak Laporan PPI</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="{{ route('pengguna.ppi.pdf') }}" method="GET" target="_blank">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="font-weight-bold">Pilih Periode Laporan:</label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <select name="bulan" class="form-control">
+                                        <option value="">-- Semua Bulan --</option>
+                                        @for($m=1; $m<=12; $m++)
+                                            <option value="{{ $m }}" {{ date('n') == $m ? 'selected' : '' }}>
+                                                {{ date('F', mktime(0, 0, 0, $m, 1)) }}
+                                            </option>
+                                        @endfor
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <select name="tahun" class="form-control">
+                                        <option value="">-- Semua Tahun --</option>
+                                        @for($y=date('Y'); $y>=2020; $y--)
+                                            <option value="{{ $y }}" {{ date('Y') == $y ? 'selected' : '' }}>
+                                                {{ $y }}
+                                            </option>
+                                        @endfor
+                                    </select>
+                                </div>
+                            </div>
+                            <small class="text-muted mt-2 d-block">
+                                *Biarkan kosong untuk mencetak semua data.
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-danger"><i class="fas fa-file-pdf"></i> Cetak PDF</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     {{-- ================================================= --}}
