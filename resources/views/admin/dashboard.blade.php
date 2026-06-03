@@ -32,23 +32,28 @@
     </div>
     
     {{-- 
-        [LOGIKA TOMBOL - UPDATE] 
+        [LOGIKA TOMBOL - UPDATE DENGAN DISPOSAL] 
         Menggunakan strtolower & trim untuk mengatasi perbedaan huruf besar/kecil atau spasi di database.
         Hanya 'admin' yang melihat tombol ini.
     --}}
     @if(strtolower(trim(auth()->user()->jenis_user)) == 'admin')
         <div class="d-none d-sm-inline-block">
-            <a href="{{ route('surat-jalan.create') }}" class="btn btn-sm btn-primary shadow-sm mr-2">
+            <a href="{{ route('surat-jalan.create') }}" class="btn btn-sm btn-primary shadow-sm mr-2 mb-1">
                 <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> Surat Jalan
             </a>
-            <a href="{{ route('barangkeluar.create') }}" class="btn btn-sm btn-success shadow-sm">
+            <a href="{{ route('barangkeluar.create') }}" class="btn btn-sm btn-success shadow-sm mr-2 mb-1">
                 <i class="fas fa-handshake fa-sm text-white-50 mr-1"></i> Serah Terima (BAST)
+            </a>
+            {{-- TOMBOL BARU: Pintasan ke Manajemen Disposal --}}
+            <a href="{{ route('disposal.index') }}" class="btn btn-sm btn-danger shadow-sm mb-1">
+                <i class="fas fa-trash-alt fa-sm text-white-50 mr-1"></i> Pengajuan Disposal
             </a>
         </div>
     @endif
 </div>
 
-{{-- BARIS 1: KARTU STATISTIK --}}
+{{-- BARIS 1: KARTU STATISTIK (DIPERBARUI MENJADI 4 KARTU + 1 DISPOSAL) --}}
+{{-- Karena grid Bootstrap maksimal 12 kolom, kita sesuaikan proporsinya atau biarkan flow otomatis --}}
 <div class="row">
 
     {{-- Kartu Team IT (SHARED) --}}
@@ -57,8 +62,7 @@
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            Team IT (Staff)</div>
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Team IT (Staff)</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $teamCount ?? 0 }} <small class="text-muted" style="font-size: 0.6em">Personil</small></div>
                     </div>
                     <div class="col-auto">
@@ -71,26 +75,7 @@
         </a>
     </div>
 
-    {{-- Kartu Pengguna (SHARED) --}}
-    <div class="col-xl-3 col-md-6 mb-4">
-        <a href="{{ route('pengguna.index') }}" class="card border-left-success shadow h-100 py-2 card-hover-effect text-decoration-none">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                            Total Pengguna</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $penggunaCount ?? 0 }} <small class="text-muted" style="font-size: 0.6em">User</small></div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-user-tie fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    {{-- Kartu Aset (CONDITIONAL LINK - UPDATE) --}}
-    {{-- Logika disamakan dengan header: Admin -> barangmasuk, SuperAdmin -> master-barang --}}
+    {{-- Kartu Aset (CONDITIONAL LINK) --}}
     @php
         $userRole = strtolower(trim(auth()->user()->jenis_user));
         $linkAset = ($userRole == 'admin') ? route('barangmasuk.index') : route('master-barang.index');
@@ -117,8 +102,7 @@
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                            Tiket (Open)</div>
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Tiket (Open)</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $ticketOpenCount ?? 0 }} <small class="text-muted" style="font-size: 0.6em">Tiket</small></div>
                     </div>
                     <div class="col-auto">
@@ -128,6 +112,26 @@
             </div>
         </a>
     </div>
+
+    {{-- KARTU BARU: Pengajuan Disposal Pending --}}
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="{{ route('disposal.index') }}" class="card border-left-danger shadow h-100 py-2 card-hover-effect text-decoration-none">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Disposal (Pending)</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $disposalPendingCount ?? 0 }} <small class="text-muted" style="font-size: 0.6em">Aset</small></div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon-circle bg-danger text-white p-3 rounded-circle">
+                            <i class="fas fa-trash-alt fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
 </div>
 
 {{-- BARIS 2: CHARTS --}}
@@ -252,9 +256,14 @@
             </div>
             <div class="card-body">
                 @php
-                    $totalAset = ($assetCount > 0) ? $assetCount : 1;
-                    $persenDipakai = ($dipakaiCount / $totalAset) * 100;
-                    $persenStok = ($stokCount / $totalAset) * 100;
+                    $currentAssetCount = $assetCount ?? 0;
+                    $totalAset = ($currentAssetCount > 0) ? $currentAssetCount : 1;
+                    
+                    $currentDipakai = $dipakaiCount ?? 0;
+                    $currentStok = $stokCount ?? 0;
+
+                    $persenDipakai = ($currentDipakai / $totalAset) * 100;
+                    $persenStok = ($currentStok / $totalAset) * 100;
 
                     // Logika Warna Stok
                     $stokColor = 'bg-success';
@@ -265,7 +274,7 @@
                 {{-- Dipakai --}}
                 <div class="mb-4">
                     <div class="d-flex justify-content-between mb-1">
-                        <span class="small font-weight-bold text-dark">Unit Dipakai <span class="text-muted">({{ $dipakaiCount }})</span></span>
+                        <span class="small font-weight-bold text-dark">Unit Dipakai <span class="text-muted">({{ $currentDipakai }})</span></span>
                         <span class="small font-weight-bold text-primary">{{ round($persenDipakai) }}%</span>
                     </div>
                     <div class="progress progress-sm rounded">
@@ -276,7 +285,7 @@
                 {{-- Stok (Warna Dinamis) --}}
                 <div class="mb-3">
                     <div class="d-flex justify-content-between mb-1">
-                        <span class="small font-weight-bold text-dark">Stok / Backup <span class="text-muted">({{ $stokCount }})</span></span>
+                        <span class="small font-weight-bold text-dark">Stok / Backup <span class="text-muted">({{ $currentStok }})</span></span>
                         <span class="small font-weight-bold {{ str_replace('bg-', 'text-', $stokColor) }}">{{ round($persenStok) }}%</span>
                     </div>
                     <div class="progress progress-sm rounded">

@@ -7,6 +7,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PenggunaController;
+use App\Http\Controllers\DisposalController; // <--- BARU: Tambahkan import DisposalController di sini
 
 // KONTROLER ADMIN
 use App\Http\Controllers\DashboardController;
@@ -101,6 +102,10 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::get('/task-reports', [TaskReportAdminController::class, 'index'])->name('taskreport.index');
     Route::get('/task-reports/{id}', [TaskReportAdminController::class, 'show'])->name('taskreport.show');
 
+    // --- MODUL DISPOSAL (BARU) ---
+    // Halaman List Transaksi Disposal (Bisa dilihat Admin maupun SuperAdmin)
+    Route::get('/disposal', [DisposalController::class, 'index'])->name('disposal.index');
+
 });
 
 
@@ -117,7 +122,6 @@ Route::middleware(['checkLogin:Admin'])->group(function () {
     Route::resource('surat-jalan', SuratJalanController::class);
 
     // --- BARANG MASUK (ASET IN) ---
-    // Gw masukin sini juga biar Super Admin gak ngacak2 stok masuk
     Route::get('/barangmasuk/export', [BarangMasukController::class, 'exportExcel'])->name('barangmasuk.export');
     Route::resource('barangmasuk', BarangMasukController::class);
     Route::get('/barangmasuk/{id}/cetak-label', [BarangMasukController::class, 'cetakLabel'])->name('barangmasuk.cetak_label');
@@ -136,6 +140,10 @@ Route::middleware(['checkLogin:Admin'])->group(function () {
         Route::get('/{id}', [BarangKeluarController::class, 'show'])->name('show');
         Route::post('/{id}/admin-sign', [BarangKeluarController::class, 'adminSign'])->name('adminSign');
     });
+
+    // --- MODUL DISPOSAL (BARU) ---
+    // Proses Simpan Pengajuan Disposal Baru (Hanya boleh diakses Admin IT Lokal)
+    Route::post('/disposal', [DisposalController::class, 'store'])->name('disposal.store');
 
 });
 
@@ -157,6 +165,11 @@ Route::middleware(['checkLogin:SuperAdmin'])->prefix('superadmin')->name('supera
     // Aksi Reject (Tolak)
     Route::put('/approval/{id}/reject', [SuperAdminPpiController::class, 'reject'])->name('approval.reject');
 
+    // --- MODUL DISPOSAL (BARU) ---
+    // Aksi Eksekusi Setuju & Tolak Penghapusan Aset (Gunakan POST karena Controller meminta POST/pemanggilan balik)
+    Route::post('/disposal/{id}/approve', [DisposalController::class, 'approve'])->name('disposal.approve');
+    Route::post('/disposal/{id}/reject', [DisposalController::class, 'reject'])->name('disposal.reject');
+
 });
 
 
@@ -170,7 +183,7 @@ Route::middleware(['checkLogin:Pengguna'])->prefix('Pengguna')->name('pengguna.'
     // PPI Pengguna
     Route::get('/ppi/create', [PenggunaPpiController::class, 'create'])->name('ppi.create');
     Route::post('/ppi/store', [PenggunaPpiController::class, 'store'])->name('ppi.store');
-    Route::get('/ppi/export/pdf', [PenggunaPpiController::class, 'exportPdf'])->name('ppi.pdf'); // Route Export PDF
+    Route::get('/ppi/export/pdf', [PenggunaPpiController::class, 'exportPdf'])->name('ppi.pdf'); 
     Route::get('/ppi/riwayat', [PenggunaPpiController::class, 'index'])->name('ppi.index'); 
     
     // Helpdesk (Tiket)
@@ -201,7 +214,7 @@ Route::middleware(['checkLogin:Staff'])->prefix('Staff')->name('staff.')->group(
     Route::get('/helpdesk/{id}', [StaffHelpdeskController::class, 'show'])->name('helpdesk.show');
     Route::post('/helpdesk/{id}/start', [StaffHelpdeskController::class, 'start'])->name('helpdesk.start');
     Route::post('/helpdesk/{id}/finish', [StaffHelpdeskController::class, 'finish'])->name('helpdesk.finish');
-    Route::post('/helpdesk/{id}/reject', [StaffHelpdeskController::class, 'reject'])->name('helpdesk.reject');
+    Route::post('/helpdesk/{id}/reject', [StaffHelpdeskController::class, 'reject'])->name('staff.helpdesk.reject');
 
     // Fitur Laporan Tugas Staff
     Route::get('/reports', [StaffReportController::class, 'index'])->name('reports.index');
