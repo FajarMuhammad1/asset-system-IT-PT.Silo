@@ -84,7 +84,7 @@
                                     <label class="custom-file-label" for="customFile">Pilih file...</label>
                                     @error('data_wiping_proof')
                                         <span class="invalid-feedback" role="alert" style="display: block;"><strong>{{ $message }}</strong></span>
-                                    @enderror {{-- SUDAH DIPERBAIKI DI SINI --}}
+                                    @enderror
                                 </div>
                             </div>
                         </div>
@@ -117,7 +117,7 @@
                                     <th class="border-top-0">Diajukan Oleh</th>
                                     <th class="border-top-0 text-center">Bukti Hapus Data</th>
                                     <th class="border-top-0 text-center">Status</th>
-                                    <th class="border-top-0 text-center pr-4">Aksi (Super Admin)</th>
+                                    <th class="border-top-0 text-center pr-4">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="text-gray-700">
@@ -170,7 +170,13 @@
                                                 </form>
                                             </div>
                                         @elseif($item->status === 'Approved')
-                                            <span class="text-success small font-weight-bold"><i class="fas fa-dumpster mr-1"></i> Selesai Dimusnahkan</span>
+                                            <span class="text-success small font-weight-bold d-block mb-1"><i class="fas fa-dumpster mr-1"></i> Selesai Dimusnahkan</span>
+                                            
+                                            {{-- TOMBOL CETAK DITAMBAHKAN DI SINI --}}
+                                            <a href="{{ route('disposal.print', $item->id) }}" target="_blank" class="btn btn-sm btn-secondary shadow-sm mt-1" title="Cetak Berita Acara">
+                                                <i class="fas fa-print"></i> Cetak BAPA
+                                            </a>
+                                            
                                         @elseif($item->status === 'Rejected')
                                             <span class="text-danger small font-weight-bold"><i class="fas fa-ban mr-1"></i> Ditolak SuperAdmin</span>
                                         @else

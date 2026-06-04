@@ -15,15 +15,10 @@ class DisposalController extends Controller
      */
     public function index()
     {
-        // 1. Variabel Title untuk Layout Header
         $title = "Manajemen Disposal";
 
-        // 2. Mengambil data disposal beserta relasi aset fisiknya (barangMasuk) 
-        //    dan nama/tipe dari master barang, diurutkan dari yang terbaru.
         $disposals = Disposal::with(['barangMasuk.masterBarang', 'pengaju'])->latest()->get();
         
-        // 3. Menampilkan list barang yang tersedia untuk diajukan disposal.
-        //    Kita filter agar barang yang sudah "Dimusnahkan" tidak muncul lagi di form Admin.
         $availableAssets = BarangMasuk::with('masterBarang')
                             ->where('status', '!=', 'Dimusnahkan')
                             ->get(); 
@@ -37,8 +32,8 @@ class DisposalController extends Controller
      */
     public function store(Request $request)
     {
-        // PENGAMAN: Menggunakan Facade Auth::user() dan kolom 'jenis_user'
-        if (!Auth::check() || strtolower(trim(Auth::user()->jenis_user)) !== 'admin') {
+        // FIX 1: Gunakan kolom 'role' secara langsung tanpa strtolower agar cocok dengan Enum 'Admin'
+        if (!Auth::check() || Auth::user()->role !== 'Admin') {
             return back()->with('error', 'Akses ditolak! Hanya Admin lokal yang dapat membuat pengajuan.');
         }
 
@@ -49,19 +44,17 @@ class DisposalController extends Controller
             'data_wiping_proof' => 'required|mimes:pdf,jpg,png,jpeg|max:2048', // Maksimal 2MB
         ]);
 
-        // Proses unggah file bukti data wiping ke dalam folder storage/app/public/disposal_proofs
         $filePath = null;
         if ($request->hasFile('data_wiping_proof')) {
             $filePath = $request->file('data_wiping_proof')->store('disposal_proofs', 'public');
         }
         
-        // Simpan data formulir ke tabel disposals
-        // Kolom asset_id digunakan untuk mereferensikan id pada tabel barang_masuk
+        // FIX 2: Sesuaikan nama kolom dengan struktur database (barang_masuk_id)
         Disposal::create([
-            'asset_id'          => $request->barang_masuk_id, 
+            'barang_masuk_id'   => $request->barang_masuk_id, 
             'reason'            => $request->reason,
             'data_wiping_proof' => $filePath,
-            'status'            => 'Pending', // Default awal menunggu persetujuan
+            'status'            => 'Pending', 
             'submitted_by'      => Auth::id(),
         ]);
 
@@ -75,17 +68,16 @@ class DisposalController extends Controller
      */
     public function approve($id)
     {
-        // PENGAMAN: Cek jenis_user SuperAdmin (atau sesuaikan penulisannya di database kamu, misal 'super admin')
-        if (!Auth::check() || strtolower(trim(Auth::user()->jenis_user)) !== 'superadmin') {
+        // FIX 3: Gunakan pengecekan langsung ke role 'SuperAdmin'
+        if (!Auth::check() || Auth::user()->role !== 'SuperAdmin') {
             abort(403, 'Akses ditolak! Hanya Super Admin yang berhak menyetujui.');
         }
 
-        // 1. Cari data pengajuan disposal dan ubah status transaksinya menjadi Approved
         $disposal = Disposal::findOrFail($id);
         $disposal->update(['status' => 'Approved']);
 
-        // 2. EFEK DOMINO: Ubah status aset fisik di tabel barang_masuk menjadi 'Dimusnahkan'
-        $asset = BarangMasuk::findOrFail($disposal->asset_id);
+        // FIX 4: Gunakan kolom barang_masuk_id untuk mencari aset
+        $asset = BarangMasuk::findOrFail($disposal->barang_masuk_id);
         $asset->update(['status' => 'Dimusnahkan']); 
 
         return back()->with('success', 'Disposal disetujui. Status inventaris resmi diubah menjadi Dimusnahkan.');
@@ -97,15 +89,25 @@ class DisposalController extends Controller
      */
     public function reject($id)
     {
-        // PENGAMAN: Cek jenis_user SuperAdmin
-        if (!Auth::check() || strtolower(trim(Auth::user()->jenis_user)) !== 'superadmin') {
+        // FIX 5: Gunakan pengecekan langsung ke role 'SuperAdmin'
+        if (!Auth::check() || Auth::user()->role !== 'SuperAdmin') {
             abort(403, 'Akses ditolak! Hanya Super Admin yang berhak menolak.');
         }
 
-        // Cari data pengajuan disposal dan ubah status transaksinya menjadi Rejected
         $disposal = Disposal::findOrFail($id);
         $disposal->update(['status' => 'Rejected']);
 
         return back()->with('warning', 'Pengajuan disposal telah ditolak.');
+    }
+
+    /**
+     * Cetak Berita Acara Pemusnahan (Disposal).
+     * Bisa diakses dari link cetak di tabel index.
+     */
+    public function print($id)
+    {
+        $disposal = Disposal::with(['barangMasuk.masterBarang', 'pengaju'])->findOrFail($id);
+
+        return view('admin.disposal.print', compact('disposal'));
     }
 }

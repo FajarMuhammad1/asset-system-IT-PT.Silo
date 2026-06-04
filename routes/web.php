@@ -7,7 +7,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PenggunaController;
-use App\Http\Controllers\DisposalController; // <--- BARU: Tambahkan import DisposalController di sini
+use App\Http\Controllers\DisposalController;
+use App\Http\Controllers\MutasiController; // <--- BARU: Menambahkan import MutasiController
 
 // KONTROLER ADMIN
 use App\Http\Controllers\DashboardController;
@@ -71,7 +72,8 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::prefix('admin')->name('admin.')->group(function() {
 
         // 1. MONITORING PPI (Bisa lihat list, tapi approve di menu superadmin sendiri)
-        Route::get('/ppi-monitoring/export', [PpiAdminController::class, 'exportExcel'])->name('ppi.export'); 
+        $routePpiExport = [PpiAdminController::class, 'exportExcel'];
+        Route::get('/ppi-monitoring/export', $routePpiExport)->name('ppi.export'); 
         Route::get('/ppi-monitoring', [PpiAdminController::class, 'index'])->name('ppi.index');
         Route::get('/ppi-monitoring/{id}', [PpiAdminController::class, 'show'])->name('ppi.show');
         Route::put('/ppi-monitoring/{id}/update', [PpiAdminController::class, 'updateStatus'])->name('ppi.update');
@@ -102,9 +104,13 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::get('/task-reports', [TaskReportAdminController::class, 'index'])->name('taskreport.index');
     Route::get('/task-reports/{id}', [TaskReportAdminController::class, 'show'])->name('taskreport.show');
 
-    // --- MODUL DISPOSAL (BARU) ---
-    // Halaman List Transaksi Disposal (Bisa dilihat Admin maupun SuperAdmin)
+    // --- MODUL DISPOSAL ---
     Route::get('/disposal', [DisposalController::class, 'index'])->name('disposal.index');
+    Route::get('/disposal/{id}/print', [DisposalController::class, 'print'])->name('disposal.print');
+
+    // --- MODUL MUTASI ASET (BARU) ---
+    // Halaman Riwayat Mutasi (Bisa dipantau oleh Admin Lokal maupun Super Admin HO)
+    Route::get('/mutasi', [MutasiController::class, 'index'])->name('mutasi.index');
 
 });
 
@@ -141,9 +147,12 @@ Route::middleware(['checkLogin:Admin'])->group(function () {
         Route::post('/{id}/admin-sign', [BarangKeluarController::class, 'adminSign'])->name('adminSign');
     });
 
-    // --- MODUL DISPOSAL (BARU) ---
-    // Proses Simpan Pengajuan Disposal Baru (Hanya boleh diakses Admin IT Lokal)
+    // --- MODUL DISPOSAL ---
     Route::post('/disposal', [DisposalController::class, 'store'])->name('disposal.store');
+
+    // --- MODUL MUTASI ASET (BARU) ---
+    // Proses Submit/Simpan Mutasi Baru (Hanya boleh dioperasikan oleh Admin IT Lokal)
+    Route::post('/mutasi', [MutasiController::class, 'store'])->name('mutasi.store');
 
 });
 
@@ -165,8 +174,7 @@ Route::middleware(['checkLogin:SuperAdmin'])->prefix('superadmin')->name('supera
     // Aksi Reject (Tolak)
     Route::put('/approval/{id}/reject', [SuperAdminPpiController::class, 'reject'])->name('approval.reject');
 
-    // --- MODUL DISPOSAL (BARU) ---
-    // Aksi Eksekusi Setuju & Tolak Penghapusan Aset (Gunakan POST karena Controller meminta POST/pemanggilan balik)
+    // --- MODUL DISPOSAL ---
     Route::post('/disposal/{id}/approve', [DisposalController::class, 'approve'])->name('disposal.approve');
     Route::post('/disposal/{id}/reject', [DisposalController::class, 'reject'])->name('disposal.reject');
 

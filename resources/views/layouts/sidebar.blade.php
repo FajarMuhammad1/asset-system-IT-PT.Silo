@@ -51,13 +51,27 @@
         <hr class="sidebar-divider">
         
         <div class="sidebar-heading">
-            Persetujuan (Approval)
+            Approval & Monitoring
         </div>
 
         <li class="nav-item {{ Request::routeIs('superadmin.approval.*') ? 'active' : '' }}">
             <a class="nav-link text-warning font-weight-bold" href="{{ route('superadmin.approval.index') }}">
                 <i class="fas fa-fw fa-signature text-warning"></i>
                 <span>Approval PPI</span>
+            </a>
+        </li>
+
+        <li class="nav-item {{ request()->routeIs('mutasi.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('mutasi.index') }}">
+                <i class="fas fa-fw fa-exchange-alt"></i>
+                <span>Log Mutasi Aset</span>
+            </a>
+        </li>
+
+        <li class="nav-item {{ request()->routeIs('disposal.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('disposal.index') }}">
+                <i class="fas fa-fw fa-trash-alt"></i>
+                <span>Approval Disposal</span>
             </a>
         </li>
 
@@ -88,21 +102,35 @@
             </a>
         </li>
 
-        <li class="nav-item">
+        <li class="nav-item {{ Request::routeIs('master-barang.*') || Request::routeIs('barangmasuk.*') || Request::routeIs('barangkeluar.*') ? 'active' : '' }}">
             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseBarang" aria-expanded="true" aria-controls="collapseBarang">
                 <i class="fas fa-boxes"></i>
                 <span>Data Barang</span>
             </a>
-            <div id="collapseBarang" class="collapse" aria-labelledby="headingBarang" data-parent="#accordionSidebar">
+            <div id="collapseBarang" class="collapse {{ Request::routeIs('master-barang.*') || Request::routeIs('barangmasuk.*') || Request::routeIs('barangkeluar.*') ? 'show' : '' }}" aria-labelledby="headingBarang" data-parent="#accordionSidebar">
                 <div class="bg-white py-2 collapse-inner rounded">
                     <h6 class="collapse-header">Data Barang:</h6> 
-                    <a class="collapse-item" href="{{ route('master-barang.index') }}">Master Barang</a>
-                    <a class="collapse-item" href="{{ route('barangmasuk.create') }}">Input Barang Masuk</a>
-                    <a class="collapse-item" href="{{ route('barangmasuk.index') }}">Daftar Aset</a>
-                    <a class="collapse-item" href="{{ route('barangkeluar.create') }}">Serah Terima (Keluar)</a>
-                    <a class="collapse-item" href="{{ route('barangkeluar.index') }}">Riwayat Serah Terima</a>
+                    <a class="collapse-item {{ Request::routeIs('master-barang.*') ? 'active' : '' }}" href="{{ route('master-barang.index') }}">Master Barang</a>
+                    <a class="collapse-item {{ Request::routeIs('barangmasuk.create') ? 'active' : '' }}" href="{{ route('barangmasuk.create') }}">Input Barang Masuk</a>
+                    <a class="collapse-item {{ Request::routeIs('barangmasuk.index') ? 'active' : '' }}" href="{{ route('barangmasuk.index') }}">Daftar Aset</a>
+                    <a class="collapse-item {{ Request::routeIs('barangkeluar.create') ? 'active' : '' }}" href="{{ route('barangkeluar.create') }}">Serah Terima (Keluar)</a>
+                    <a class="collapse-item {{ Request::routeIs('barangkeluar.index') ? 'active' : '' }}" href="{{ route('barangkeluar.index') }}">Riwayat Serah Terima</a>
                 </div>
             </div>
+        </li>
+
+        <li class="nav-item {{ request()->routeIs('mutasi.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('mutasi.index') }}">
+                <i class="fas fa-fw fa-exchange-alt"></i>
+                <span>Mutasi Aset</span>
+            </a>
+        </li>
+
+        <li class="nav-item {{ request()->routeIs('disposal.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('disposal.index') }}">
+                <i class="fas fa-fw fa-trash-alt"></i>
+                <span>Disposal Aset</span>
+            </a>
         </li>
 
         <li class="nav-item {{ Request::routeIs('pengguna.*') ? 'active' : '' }}">

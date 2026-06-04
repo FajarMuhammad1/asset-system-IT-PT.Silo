@@ -32,11 +32,10 @@
     </div>
     
     {{-- 
-        [LOGIKA TOMBOL - UPDATE DENGAN DISPOSAL] 
-        Menggunakan strtolower & trim untuk mengatasi perbedaan huruf besar/kecil atau spasi di database.
-        Hanya 'admin' yang melihat tombol ini.
+        [LOGIKA TOMBOL PINTASAN] 
+        Hanya 'Admin' lokal yang bisa melihat tombol operasional ini.
     --}}
-    @if(strtolower(trim(auth()->user()->jenis_user)) == 'admin')
+    @if(auth()->user()->role === 'Admin')
         <div class="d-none d-sm-inline-block">
             <a href="{{ route('surat-jalan.create') }}" class="btn btn-sm btn-primary shadow-sm mr-2 mb-1">
                 <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> Surat Jalan
@@ -44,16 +43,17 @@
             <a href="{{ route('barangkeluar.create') }}" class="btn btn-sm btn-success shadow-sm mr-2 mb-1">
                 <i class="fas fa-handshake fa-sm text-white-50 mr-1"></i> Serah Terima (BAST)
             </a>
-            {{-- TOMBOL BARU: Pintasan ke Manajemen Disposal --}}
-            <a href="{{ route('disposal.index') }}" class="btn btn-sm btn-danger shadow-sm mb-1">
+            <a href="{{ route('disposal.index') }}" class="btn btn-sm btn-danger shadow-sm mr-2 mb-1">
                 <i class="fas fa-trash-alt fa-sm text-white-50 mr-1"></i> Pengajuan Disposal
+            </a>
+            <a href="{{ route('mutasi.index') }}" class="btn btn-sm btn-info shadow-sm mb-1 text-white">
+                <i class="fas fa-exchange-alt fa-sm text-white-50 mr-1"></i> Mutasi Aset
             </a>
         </div>
     @endif
 </div>
 
-{{-- BARIS 1: KARTU STATISTIK (DIPERBARUI MENJADI 4 KARTU + 1 DISPOSAL) --}}
-{{-- Karena grid Bootstrap maksimal 12 kolom, kita sesuaikan proporsinya atau biarkan flow otomatis --}}
+{{-- BARIS 1: KARTU STATISTIK (4 KARTU PROPORSIONAL GRID 12) --}}
 <div class="row">
 
     {{-- Kartu Team IT (SHARED) --}}
@@ -77,8 +77,9 @@
 
     {{-- Kartu Aset (CONDITIONAL LINK) --}}
     @php
-        $userRole = strtolower(trim(auth()->user()->jenis_user));
-        $linkAset = ($userRole == 'admin') ? route('barangmasuk.index') : route('master-barang.index');
+        // FIX: Menggunakan kolom 'role' dari database
+        $userRole = auth()->user()->role;
+        $linkAset = ($userRole === 'Admin') ? route('barangmasuk.index') : route('master-barang.index');
     @endphp
     <div class="col-xl-3 col-md-6 mb-4">
         <a href="{{ $linkAset }}" class="card border-left-info shadow h-100 py-2 card-hover-effect text-decoration-none">
@@ -233,7 +234,7 @@
                                 {{ $bast->aset->masterBarang->nama_barang ?? 'Unknown Asset' }}
                             </div>
                             <div class="small text-muted text-truncate">
-                                <i class="fas fa-user-circle mr-1"></i> {{ $bast->pemegang->nama ?? 'Tanpa Nama' }}
+                                <i class="fas fa-user-circle mr-1"></i> {{ $bast->pemegang->nama ?? 'nama' }}
                             </div>
                         </div>
                         <div class="text-right">
