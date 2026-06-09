@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\MasterBarang; // <-- PANGGIL MODELNYA
+use App\Models\MasterBarang;
 use Illuminate\Http\Request;
-use Illuminate\Database\QueryException; // <-- Buat nangkep error pas hapus
+use Illuminate\Database\QueryException;
 
 class MasterBarangController extends Controller
 {
@@ -13,7 +13,9 @@ class MasterBarangController extends Controller
      */
     public function index()
     {
-        $masterBarangList = MasterBarang::latest()->paginate(20); // Ambil data, urut dari terbaru
+        // Opsional Eager Loading: Jika Anda butuh menghitung jumlah aset per master barang di view,
+        // Anda bisa ganti menjadi: MasterBarang::withCount('assets')->latest()->paginate(20);
+        $masterBarangList = MasterBarang::latest()->paginate(20);
 
         return view('admin.masterbarang.index', [
             'title' => 'Master Katalog Barang',
@@ -22,7 +24,7 @@ class MasterBarangController extends Controller
     }
 
     /**
-     * Tampilkan form buat nambah barang baru ke katalog.
+     * Tampilkan form untuk menambah barang baru ke katalog.
      */
     public function create()
     {
@@ -32,48 +34,48 @@ class MasterBarangController extends Controller
     }
 
     /**
-     * Simpen barang baru ke katalog.
+     * Simpan barang baru ke katalog.
      */
     public function store(Request $request)
     {
-        // 1. Validasi
-        $request->validate([
+        // 1. Validasi Data
+        $validatedData = $request->validate([
             'nama_barang' => 'required|string|max:255',
-            'kategori' => 'required|string|max:255',
-            'merk' => 'required|string|max:255',
+            'kategori'    => 'required|string|max:255',
+            'merk'        => 'required|string|max:255',
             'spesifikasi' => 'nullable|string',
         ]);
 
-        // 2. Simpen
-        MasterBarang::create($request->all());
+        // 2. Simpan (PERBAIKAN: Gunakan $validatedData, bukan $request->all())
+        MasterBarang::create($validatedData);
 
-        // 3. Balikin
+        // 3. Redirect dengan pesan sukses
         return redirect()->route('master-barang.index')
                          ->with('success', 'Item katalog baru berhasil ditambahkan.');
     }
 
     /**
-     * Tampilkan detail (gak wajib, tapi lo bikinin)
+     * Tampilkan detail item katalog.
      */
     public function show(string $id)
     {
         $masterBarang = MasterBarang::findOrFail($id);
         
         return view('admin.masterbarang.show', [
-            'title' => 'Detail Item Katalog',
+            'title'        => 'Detail Item Katalog',
             'masterBarang' => $masterBarang
         ]);
     }
 
     /**
-     * Tampilkan form buat ngedit item katalog.
+     * Tampilkan form untuk mengedit item katalog.
      */
     public function edit(string $id)
     {
         $masterBarang = MasterBarang::findOrFail($id);
 
         return view('admin.masterbarang.edit', [
-            'title' => 'Edit Item Katalog',
+            'title'        => 'Edit Item Katalog',
             'masterBarang' => $masterBarang
         ]);
     }
@@ -85,18 +87,18 @@ class MasterBarangController extends Controller
     {
         $masterBarang = MasterBarang::findOrFail($id);
 
-        // 1. Validasi
-        $request->validate([
+        // 1. Validasi Data
+        $validatedData = $request->validate([
             'nama_barang' => 'required|string|max:255',
-            'kategori' => 'required|string|max:255',
-            'merk' => 'required|string|max:255',
+            'kategori'    => 'required|string|max:255',
+            'merk'        => 'required|string|max:255',
             'spesifikasi' => 'nullable|string',
         ]);
 
-        // 2. Update
-        $masterBarang->update($request->all());
+        // 2. Update (PERBAIKAN: Gunakan $validatedData, bukan $request->all())
+        $masterBarang->update($validatedData);
 
-        // 3. Balikin
+        // 3. Redirect dengan pesan sukses
         return redirect()->route('master-barang.index')
                          ->with('success', 'Item katalog berhasil diperbarui.');
     }
@@ -115,13 +117,13 @@ class MasterBarangController extends Controller
                              ->with('success', 'Item katalog berhasil dihapus.');
 
         } catch (QueryException $e) {
-            // Kalo GAGAL (karena datanya dipake di 'surat_jalan_details')
-            // Kita pake kode 1451 untuk foreign key constraint
+            // Jika GAGAL karena datanya berelasi/dipakai di tabel lain (Foreign Key Constraint)
             if ($e->errorInfo[1] == 1451) {
                 return redirect()->back()
-                                 ->with('error', 'Gagal hapus! Item ini sedang dipakai di Surat Jalan atau Aset.');
+                                 ->with('error', 'Gagal hapus! Item ini sedang dipakai di Surat Jalan atau terikat dengan Aset Fisik.');
             }
-            // Error lain
+            
+            // Error database lainnya
             return redirect()->back()->with('error', 'Gagal hapus! Error: ' . $e->getMessage());
         }
     }

@@ -15,7 +15,8 @@ class Ticket extends Model
 
     protected $fillable = [
         'no_tiket', 
-        'pelapor_id', 
+        'pelapor_id',
+        'barang_masuk_id', // <--- DITAMBAHKAN AGAR TIKET BISA TERHUBUNG KE ASET FISIK
         'judul_masalah', 
         'deskripsi', 
         'foto_masalah', 
@@ -53,5 +54,11 @@ class Ticket extends Model
     public function teknisi()
     {
         return $this->belongsTo(User::class, 'teknisi_id');
+    }
+
+    // Relasi: Aset / Unit Fisik (Barang Masuk) <--- DITAMBAHKAN
+    public function barangMasuk()
+    {
+        return $this->belongsTo(BarangMasuk::class, 'barang_masuk_id');
     }
 }

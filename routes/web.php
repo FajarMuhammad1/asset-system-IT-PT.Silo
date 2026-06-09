@@ -8,7 +8,9 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\DisposalController;
-use App\Http\Controllers\MutasiController; // <--- BARU: Menambahkan import MutasiController
+use App\Http\Controllers\MutasiController;
+use App\Http\Controllers\RkabController;
+use App\Http\Controllers\AssetLifecycleController; // <--- DITAMBAHKAN UNTUK LIFE CYCLE
 
 // KONTROLER ADMIN
 use App\Http\Controllers\DashboardController;
@@ -108,9 +110,22 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::get('/disposal', [DisposalController::class, 'index'])->name('disposal.index');
     Route::get('/disposal/{id}/print', [DisposalController::class, 'print'])->name('disposal.print');
 
-    // --- MODUL MUTASI ASET (BARU) ---
+    // --- MODUL MUTASI ASET ---
     // Halaman Riwayat Mutasi (Bisa dipantau oleh Admin Lokal maupun Super Admin HO)
     Route::get('/mutasi', [MutasiController::class, 'index'])->name('mutasi.index');
+
+    // --- MODUL RKAB & BUDGET ANALYSIS ---
+    // Halaman Analisis Anggaran yang dapat dipantau & dikelola oleh Admin & Super Admin
+    Route::get('/rkab-analysis', [RkabController::class, 'index'])->name('rkab.index');
+    Route::post('/rkab-analysis', [RkabController::class, 'store'])->name('rkab.store');
+    Route::put('/rkab-analysis/{id}', [RkabController::class, 'update'])->name('rkab.update');
+    Route::delete('/rkab-analysis/{id}', [RkabController::class, 'destroy'])->name('rkab.destroy');
+    Route::get('/rkab-analysis/print', [RkabController::class, 'print'])->name('rkab.print');
+
+    // --- MODUL ASSET LIFE CYCLE ---
+    // Halaman pelacakan riwayat perjalanan aset dari hulu ke hilir
+    Route::get('/asset-lifecycle', [AssetLifecycleController::class, 'index'])->name('asset-lifecycle.index');
+    Route::get('/asset-lifecycle/track', [AssetLifecycleController::class, 'track'])->name('asset-lifecycle.track');
 
 });
 
@@ -150,7 +165,7 @@ Route::middleware(['checkLogin:Admin'])->group(function () {
     // --- MODUL DISPOSAL ---
     Route::post('/disposal', [DisposalController::class, 'store'])->name('disposal.store');
 
-    // --- MODUL MUTASI ASET (BARU) ---
+    // --- MODUL MUTASI ASET ---
     // Proses Submit/Simpan Mutasi Baru (Hanya boleh dioperasikan oleh Admin IT Lokal)
     Route::post('/mutasi', [MutasiController::class, 'store'])->name('mutasi.store');
 

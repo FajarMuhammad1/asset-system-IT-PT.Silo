@@ -41,13 +41,24 @@
                 <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> Surat Jalan
             </a>
             <a href="{{ route('barangkeluar.create') }}" class="btn btn-sm btn-success shadow-sm mr-2 mb-1">
-                <i class="fas fa-handshake fa-sm text-white-50 mr-1"></i> Serah Terima (BAST)
+                <i class="fas fa-handshake fa-sm text-white-50 mr-1"></i> BAST
             </a>
+            
+            {{-- TAMBAHAN: TOMBOL ASSET LIFECYCLE --}}
+            <a href="{{ route('asset-lifecycle.index') }}" class="btn btn-sm btn-secondary shadow-sm mr-2 mb-1">
+                <i class="fas fa-sync-alt fa-sm text-white-50 mr-1"></i> Asset Lifecycle
+            </a>
+
             <a href="{{ route('disposal.index') }}" class="btn btn-sm btn-danger shadow-sm mr-2 mb-1">
                 <i class="fas fa-trash-alt fa-sm text-white-50 mr-1"></i> Pengajuan Disposal
             </a>
-            <a href="{{ route('mutasi.index') }}" class="btn btn-sm btn-info shadow-sm mb-1 text-white">
+            <a href="{{ route('mutasi.index') }}" class="btn btn-sm btn-info shadow-sm mr-2 mb-1 text-white">
                 <i class="fas fa-exchange-alt fa-sm text-white-50 mr-1"></i> Mutasi Aset
+            </a>
+            
+            {{-- TOMBOL RKAB --}}
+            <a href="{{ route('rkab.index') }}" class="btn btn-sm btn-warning shadow-sm mb-1 text-dark">
+                <i class="fas fa-chart-pie fa-sm text-dark-50 mr-1"></i> Budget RKAB
             </a>
         </div>
     @endif
@@ -77,7 +88,6 @@
 
     {{-- Kartu Aset (CONDITIONAL LINK) --}}
     @php
-        // FIX: Menggunakan kolom 'role' dari database
         $userRole = auth()->user()->role;
         $linkAset = ($userRole === 'Admin') ? route('barangmasuk.index') : route('master-barang.index');
     @endphp
@@ -199,7 +209,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($topTechnicians as $index => $tech)
+                            @forelse($topTechnicians ?? [] as $index => $tech)
                             <tr>
                                 <td class="text-center align-middle">
                                     @if($index == 0) <i class="fas fa-medal text-warning fa-lg"></i>
