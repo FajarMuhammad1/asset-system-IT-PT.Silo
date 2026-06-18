@@ -237,7 +237,9 @@ Route::middleware(['checkLogin:Staff'])->prefix('Staff')->name('staff.')->group(
     Route::get('/helpdesk/{id}', [StaffHelpdeskController::class, 'show'])->name('helpdesk.show');
     Route::post('/helpdesk/{id}/start', [StaffHelpdeskController::class, 'start'])->name('helpdesk.start');
     Route::post('/helpdesk/{id}/finish', [StaffHelpdeskController::class, 'finish'])->name('helpdesk.finish');
-    Route::post('/helpdesk/{id}/reject', [StaffHelpdeskController::class, 'reject'])->name('staff.helpdesk.reject');
+    
+    // PERBAIKAN: Menghapus teks "staff." pada nama route agar tidak menjadi staff.staff.helpdesk.reject
+    Route::post('/helpdesk/{id}/reject', [StaffHelpdeskController::class, 'reject'])->name('helpdesk.reject');
 
     // Fitur Laporan Tugas Staff
     Route::get('/reports', [StaffReportController::class, 'index'])->name('reports.index');
