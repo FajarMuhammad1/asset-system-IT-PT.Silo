@@ -85,6 +85,9 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
         Route::get('/helpdesk', [HelpdeskController::class, 'index'])->name('helpdesk.index');
         Route::get('/helpdesk/{id}', [HelpdeskController::class, 'show'])->name('helpdesk.show');
         Route::post('/helpdesk/{id}/assign', [HelpdeskController::class, 'assignTeknisi'])->name('helpdesk.assign');
+        
+        // <--- DITAMBAHKAN: Rute untuk Update Pengaturan Prioritas & Tipe Penyelesaian --->
+        Route::put('/helpdesk/{id}/settings', [HelpdeskController::class, 'updateSettings'])->name('helpdesk.settings');
     });
 
     // --- MASTER DATA (REFERENSI) ---

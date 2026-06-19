@@ -14,7 +14,9 @@ class HelpdeskController extends Controller
      */
     public function index()
     {
+        // Mengurutkan tiket: Prioritas tertinggi (Urgent) di atas, lalu urutkan berdasarkan waktu terbaru
         $tickets = Ticket::with(['pelapor', 'teknisi'])
+                         ->orderByRaw("FIELD(prioritas, 'Urgent', 'High', 'Normal', 'Low') DESC")
                          ->latest()
                          ->get();
 
@@ -37,7 +39,7 @@ class HelpdeskController extends Controller
 
         return view('admin.helpdesk.show', [
             'title'     => 'Detail Tiket ' . $ticket->no_tiket,
-            'ticket'    => $ticket,
+            'ticket'    => $ticket, // Variabel yang dikirim ke view adalah $ticket
             'staffList' => $staffList
         ]);
     }
@@ -61,5 +63,29 @@ class HelpdeskController extends Controller
         return redirect()
             ->back()
             ->with('success', 'Teknisi berhasil diassign!');
+    }
+
+    /**
+     * Update Pengaturan Prioritas dan Tipe Penyelesaian Tiket (Baru)
+     */
+    public function updateSettings(Request $request, $id)
+    {
+        // Validasi input sesuai dengan nilai yang ada di Database
+        $request->validate([
+            'prioritas'         => 'required|in:Low,Normal,High,Urgent',
+            'tipe_penyelesaian' => 'required|in:Individu,Tim'
+        ]);
+
+        $ticket = Ticket::findOrFail($id);
+        
+        // Update data menggunakan mass assignment
+        $ticket->update([
+            'prioritas'         => $request->prioritas,
+            'tipe_penyelesaian' => $request->tipe_penyelesaian,
+        ]);
+
+        return redirect()
+            ->back()
+            ->with('success', 'Pengaturan Prioritas dan Tipe Pengerjaan tiket berhasil diperbarui!');
     }
 }

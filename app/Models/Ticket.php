@@ -16,7 +16,7 @@ class Ticket extends Model
     protected $fillable = [
         'no_tiket', 
         'pelapor_id',
-        'barang_masuk_id', // <--- DITAMBAHKAN AGAR TIKET BISA TERHUBUNG KE ASET FISIK
+        'barang_masuk_id', // <--- TIKET TERHUBUNG KE ASET FISIK
         'judul_masalah', 
         'deskripsi', 
         'foto_masalah', 
@@ -26,15 +26,16 @@ class Ticket extends Model
         'tgl_selesai', 
         'solusi_teknisi',
         'alasan_penolakan',
-        'started_at'
+        'started_at',
+        'tipe_penyelesaian' // <--- DITAMBAHKAN UNTUK TIAP TIKET (Individu / Tim)
     ];
 
     // --- KONFIGURASI ACTIVITY LOG (Spatie) ---
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            // Catat perubahan pada kolom-kolom penting ini
-            ->logOnly(['status', 'teknisi_id', 'prioritas', 'solusi_teknisi', 'alasan_penolakan'])
+            // Ditambahkan 'tipe_penyelesaian' agar jika diubah, log mencatat aktivitasnya
+            ->logOnly(['status', 'teknisi_id', 'prioritas', 'solusi_teknisi', 'alasan_penolakan', 'tipe_penyelesaian'])
             
             // Hanya catat yang berubah saja (biar log gak penuh sampah)
             ->logOnlyDirty()
@@ -56,7 +57,7 @@ class Ticket extends Model
         return $this->belongsTo(User::class, 'teknisi_id');
     }
 
-    // Relasi: Aset / Unit Fisik (Barang Masuk) <--- DITAMBAHKAN
+    // Relasi: Aset / Unit Fisik (Barang Masuk)
     public function barangMasuk()
     {
         return $this->belongsTo(BarangMasuk::class, 'barang_masuk_id');

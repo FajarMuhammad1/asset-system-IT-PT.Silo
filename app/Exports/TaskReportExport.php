@@ -3,7 +3,7 @@
 namespace App\Exports;
 
 use App\Models\TaskReport;
-use Maatwebsite\Excel\Concerns\FromQuery; // Menggunakan FromQuery untuk performa lebih baik
+use Maatwebsite\Excel\Concerns\FromQuery; 
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -68,7 +68,7 @@ class TaskReportExport implements FromQuery, WithHeadings, WithMapping, ShouldAu
     {
         return [
             'TANGGAL LAPORAN',    // A
-            'NOMOR TIKET',        // B
+            'SUMBER TUGAS',       // B (Diubah sedikit agar lebih luas maknanya)
             'NAMA TEKNISI',       // C
             'JUDUL PEKERJAAN',    // D
             'DURASI PENGERJAAN',  // E
@@ -78,8 +78,7 @@ class TaskReportExport implements FromQuery, WithHeadings, WithMapping, ShouldAu
     // --- ISI DATA PER BARIS ---
     public function map($task): array
     {
-        // LOGIC HITUNG DURASI (TIDAK DIUBAH, HANYA DIPERAPIH)
-        $durasi = 'DALAM PROSES'; // Default Uppercase
+        $durasi = 'DALAM PROSES'; 
         
         if ($task->tanggal_mulai && $task->tanggal_selesai) {
             $start = Carbon::parse($task->tanggal_mulai);
@@ -100,26 +99,23 @@ class TaskReportExport implements FromQuery, WithHeadings, WithMapping, ShouldAu
             }
         }
 
-        // Mapping Data (Menggunakan strtoupper untuk standar laporan lapangan)
+        // Pemisahan Sumber Tugas (Otomatis vs Manual)
+        $sumberTugas = $task->ticket ? 'TIKET: ' . $task->ticket->no_tiket : 'TUGAS MANUAL';
+
         return [
-            Carbon::parse($task->created_at)->format('d-M-Y H:i'), // Format dd-MMM-yyyy lebih jelas
-
-            strtoupper($task->ticket->no_tiket ?? 'NON-TIKET'),
-
+            Carbon::parse($task->created_at)->format('d-M-Y H:i'), 
+            $sumberTugas,
             strtoupper($task->staff->name ?? $task->staff->nama ?? 'UNKNOWN'),
-
             strtoupper($task->judul ?? $task->pekerjaan ?? '-'),
-
             strtoupper($durasi),
         ];
     }
 
     public function styles(Worksheet $sheet)
     {
-        // Styling Header Tabel (Baris 6)
         return [
             6 => [
-                'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']], // Text Putih
+                'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']], 
                 'fill' => [
                     'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['argb' => 'FF1F4E78'], // Corporate Navy Blue
@@ -162,7 +158,6 @@ class TaskReportExport implements FromQuery, WithHeadings, WithMapping, ShouldAu
                 ]);
 
                 // --- 3. FILTER INFO (AUDIT TRAIL) ---
-                // Menggunakan (int) agar Carbon aman membaca bulan
                 $monthName = $this->bulan 
                     ? Carbon::createFromDate(null, (int)$this->bulan, 1)->format('F') 
                     : 'All Months';
@@ -178,7 +173,6 @@ class TaskReportExport implements FromQuery, WithHeadings, WithMapping, ShouldAu
                 // --- 4. BORDER & ALIGNMENT DATA ---
                 $lastRow = $sheet->getHighestRow();
                 
-                // Style Border Seluruh Data
                 $styleArray = [
                     'borders' => [
                         'allBorders' => [
@@ -197,7 +191,7 @@ class TaskReportExport implements FromQuery, WithHeadings, WithMapping, ShouldAu
                 // Terapkan border dari baris 6 sampai bawah
                 $sheet->getStyle('A6:E' . $lastRow)->applyFromArray($styleArray);
 
-                // Center Alignment untuk kolom Tanggal (A), Tiket (B), Durasi (E)
+                // Center Alignment untuk kolom Tanggal (A), Sumber Tugas (B), Durasi (E)
                 $sheet->getStyle('A6:B'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle('E6:E'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             },
