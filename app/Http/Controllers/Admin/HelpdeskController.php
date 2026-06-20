@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Carbon\Carbon; // <-- Jangan lupa tambahkan ini untuk memanipulasi tanggal
 
 class HelpdeskController extends Controller
 {
@@ -34,12 +35,18 @@ class HelpdeskController extends Controller
         $ticket = Ticket::with(['pelapor', 'teknisi'])
                         ->findOrFail($id);
 
-        // Ambil semua user dengan role Staff
-        $staffList = User::where('role', 'Staff')->get();
+        // Ambil semua user dengan role Staff, lalu hitung tiket mereka hari ini
+        $staffList = User::where('role', 'Staff')->get()->map(function($staff) {
+            // Menghitung jumlah tiket yang dipegang staf ini pada hari ini
+            $staff->task_count = Ticket::where('teknisi_id', $staff->id)
+                                       ->whereDate('created_at', Carbon::today())
+                                       ->count();
+            return $staff;
+        });
 
         return view('admin.helpdesk.show', [
             'title'     => 'Detail Tiket ' . $ticket->no_tiket,
-            'ticket'    => $ticket, // Variabel yang dikirim ke view adalah $ticket
+            'ticket'    => $ticket, 
             'staffList' => $staffList
         ]);
     }
@@ -52,6 +59,20 @@ class HelpdeskController extends Controller
         $request->validate([
             'teknisi_id' => 'required|exists:users,id',
         ]);
+
+        // ========================================================
+        // VALIDASI MAX 5 TIKET PER HARI
+        // ========================================================
+        $jumlahTugasHariIni = Ticket::where('teknisi_id', $request->teknisi_id)
+                                    ->whereDate('created_at', Carbon::today())
+                                    ->count();
+
+        if ($jumlahTugasHariIni >= 5) {
+            return redirect()
+                ->back()
+                ->with('error', 'Gagal! Staf yang dipilih sudah mencapai batas maksimal 5 tiket hari ini.');
+        }
+        // ========================================================
 
         $ticket = Ticket::findOrFail($id);
 

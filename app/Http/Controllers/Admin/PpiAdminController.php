@@ -13,12 +13,13 @@ class PpiAdminController extends Controller
     // 1. TAMPILKAN SEMUA REQUEST
     public function index()
     {
-        // Ambil semua data, urutkan dari yang terbaru
+        // Ambil semua data PPI, urutkan dari yang terbaru
+        // Pastikan model Ppi memiliki relasi 'user'
         $ppi = Ppi::with('user')->latest()->get();
 
         return view('admin.ppi.index', [
-            'title' => 'Monitoring Request PPI',
-            'dataPpi' => $ppi
+            'title'   => 'Monitoring Request PPI',
+            'dataPpi' => $ppi // Data ini akan di-filter menggunakan collection di View
         ]);
     }
 
@@ -28,7 +29,7 @@ class PpiAdminController extends Controller
         $ppi = Ppi::with('user')->findOrFail($id);
         return view('admin.ppi.show', [
             'title' => 'Detail PPI ' . $ppi->no_ppi,
-            'ppi' => $ppi
+            'ppi'   => $ppi
         ]);
     }
 
@@ -37,7 +38,7 @@ class PpiAdminController extends Controller
     {
         $ppi = Ppi::findOrFail($id);
         
-        // Validasi input status harus sesuai ENUM (UPDATED: Tambah pending_superadmin)
+        // Validasi input status harus sesuai ENUM 
         $request->validate([
             'status' => 'required|in:pending,pending_superadmin,disetujui,selesai,ditolak'
         ]);
@@ -48,7 +49,7 @@ class PpiAdminController extends Controller
         return back()->with('success', 'Status PPI berhasil diperbarui jadi ' . ucfirst($request->status));
     }
 
-    // 4. [BARU] FORWARD KE SUPER ADMIN (Untuk Approval)
+    // 4. FORWARD KE SUPER ADMIN (Untuk Approval)
     public function forwardToSuperAdmin($id)
     {
         $ppi = Ppi::findOrFail($id);
@@ -59,14 +60,11 @@ class PpiAdminController extends Controller
         }
 
         // ================================================================
-        // PERBAIKAN DI SINI WAK (SAYA KOMENTAR DULU BIAR GAK ERROR)
+        // Opsional: Cek Tanda Tangan
         // ================================================================
-        // Cek apakah User Pemohon sudah TTD (Opsional, tapi disarankan)
-        
         // if (empty($ppi->ttd_pemohon)) {
-        //    return back()->with('error', 'User belum tanda tangan! Tidak bisa diteruskan.');
+        //     return back()->with('error', 'User belum tanda tangan! Tidak bisa diteruskan.');
         // }
-        
         // ================================================================
 
         // Update status agar muncul di dashboard Super Admin

@@ -12,9 +12,20 @@
         </a>
     </div>
 
+    {{-- Alert Success --}}
     @if (session('success'))
         <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
             <i class="fas fa-check-circle mr-1"></i> {{ session('success') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
+
+    {{-- Alert Error (Ditambahkan untuk menangkap error validasi max 5 tiket) --}}
+    @if (session('error'))
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-circle mr-1"></i> {{ session('error') }}
             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
@@ -122,12 +133,25 @@
                                     <select name="teknisi_id" class="form-control" required>
                                         <option value="">-- Pilih Teknisi --</option>
                                         @foreach($staffList as $s)
-                                            <option value="{{ $s->id }}" {{ $ticket->teknisi_id == $s->id ? 'selected' : '' }}>
-                                                {{ $s->nama }}
+                                            @php
+                                                // Cek apakah tugas teknisi ini sudah mencapai 5
+                                                // dan pastikan teknisi ini bukan yang sedang ter-assign di tiket ini
+                                                $isSelected = $ticket->teknisi_id == $s->id;
+                                                $isFull = $s->task_count >= 5;
+                                            @endphp
+                                            
+                                            <option value="{{ $s->id }}" 
+                                                {{ $isSelected ? 'selected' : '' }} 
+                                                {{ ($isFull && !$isSelected) ? 'disabled' : '' }}
+                                                class="{{ $isFull ? 'text-danger' : '' }}">
+                                                
+                                                {{ $s->nama }} (Terisi: {{ $s->task_count ?? 0 }}/5 Laporan) 
+                                                {{ $isFull && !$isSelected ? '- FULL' : '' }}
+                                                
                                             </option>
                                         @endforeach
                                     </select>
-                                    <small class="text-muted mt-1 d-block">*Teknisi ini akan menjadi penanggung jawab tiket.</small>
+                                    <small class="text-muted mt-1 d-block">*Teknisi hanya dapat menerima maksimal 5 laporan per hari.</small>
                                 </div>
                                 <button class="btn btn-primary mt-2">
                                     <i class="fas fa-check-circle mr-1"></i> Simpan Teknisi
