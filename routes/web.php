@@ -10,7 +10,7 @@ use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\DisposalController;
 use App\Http\Controllers\MutasiController;
 use App\Http\Controllers\RkabController;
-use App\Http\Controllers\AssetLifecycleController; // <--- DITAMBAHKAN UNTUK LIFE CYCLE
+use App\Http\Controllers\AssetLifecycleController;
 
 // KONTROLER ADMIN
 use App\Http\Controllers\DashboardController;
@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\HelpdeskController;
 use App\Http\Controllers\Admin\TaskReportAdminController;
 use App\Http\Controllers\Admin\PpiAdminController;
+use App\Http\Controllers\Admin\MaintenanceController; // <--- KONTROLER MAINTENANCE ADMIN
 
 // KONTROLER SUPER ADMIN
 use App\Http\Controllers\SuperAdminPpiController;
@@ -31,6 +32,7 @@ use App\Http\Controllers\SuperAdmin\SuperAdminController;
 // KONTROLER STAFF
 use App\Http\Controllers\Staff\StaffHelpdeskController;
 use App\Http\Controllers\Staff\StaffReportController;
+use App\Http\Controllers\Staff\StaffMaintenanceController; // <--- KONTROLER MAINTENANCE STAFF (BARU)
 
 // KONTROLER PENGGUNA
 use App\Http\Controllers\PenggunaDashboardController;
@@ -65,7 +67,6 @@ Route::middleware(['auth'])->group(function () {
 // ====================================================
 // KAVLING 1: SHARED (SUPER ADMIN & ADMIN BISA AKSES)
 // ====================================================
-// Berisi: Dashboard, Monitoring, Master Data, User Management, Laporan
 Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
@@ -73,7 +74,7 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     // --- GROUP KHUSUS URL "/admin/..." ---
     Route::prefix('admin')->name('admin.')->group(function() {
 
-        // 1. MONITORING PPI (Bisa lihat list, tapi approve di menu superadmin sendiri)
+        // 1. MONITORING PPI
         $routePpiExport = [PpiAdminController::class, 'exportExcel'];
         Route::get('/ppi-monitoring/export', $routePpiExport)->name('ppi.export'); 
         Route::get('/ppi-monitoring', [PpiAdminController::class, 'index'])->name('ppi.index');
@@ -81,17 +82,18 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
         Route::put('/ppi-monitoring/{id}/update', [PpiAdminController::class, 'updateStatus'])->name('ppi.update');
         Route::put('/ppi-monitoring/{id}/forward', [PpiAdminController::class, 'forwardToSuperAdmin'])->name('ppi.forward');
 
-        // 2. HELPDESK (Monitoring Tiket)
+        // 2. HELPDESK
         Route::get('/helpdesk', [HelpdeskController::class, 'index'])->name('helpdesk.index');
         Route::get('/helpdesk/{id}', [HelpdeskController::class, 'show'])->name('helpdesk.show');
         Route::post('/helpdesk/{id}/assign', [HelpdeskController::class, 'assignTeknisi'])->name('helpdesk.assign');
-        
-        // <--- DITAMBAHKAN: Rute untuk Update Pengaturan Prioritas & Tipe Penyelesaian --->
         Route::put('/helpdesk/{id}/settings', [HelpdeskController::class, 'updateSettings'])->name('helpdesk.settings');
+
+        // 3. MAINTENANCE ASET RUTIN (KONTROL ADMIN: HANYA LIHAT & BUAT JADWAL)
+        Route::get('/maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
+        Route::post('/maintenance/schedule', [MaintenanceController::class, 'storeSchedule'])->name('maintenance.schedule.store');
     });
 
     // --- MASTER DATA (REFERENSI) ---
-    // Team IT
     Route::get('team', [TeamController::class, 'index'])->name('team');
     Route::get('/team/create', [TeamController::class, 'create'])->name('team.create');
     Route::post('/team/store', [TeamController::class, 'store'])->name('team.store');
@@ -99,58 +101,47 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::put('/team/update/{id}', [TeamController::class, 'update'])->name('team.update');
     Route::delete('/team/destroy/{id}', [TeamController::class, 'destroy'])->name('team.destroy');
     
-    // User Management & Master Barang (Data Mentah)
     Route::resource('pengguna', PenggunaController::class);
     Route::resource('master-barang', MasterBarangController::class);
 
-    // Activity Log & Task Report (Monitoring Kinerja)
+    // Activity Log & Task Report
     Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity.log');
     Route::get('/task-reports/export', [TaskReportAdminController::class, 'exportExcel'])->name('admin.task_report.export');
     Route::get('/task-reports', [TaskReportAdminController::class, 'index'])->name('taskreport.index');
     Route::get('/task-reports/{id}', [TaskReportAdminController::class, 'show'])->name('taskreport.show');
 
-    // --- MODUL DISPOSAL ---
+    // --- MODUL DISPOSAL, MUTASI, RKAB & ASSET LIFECYCLE ---
     Route::get('/disposal', [DisposalController::class, 'index'])->name('disposal.index');
     Route::get('/disposal/{id}/print', [DisposalController::class, 'print'])->name('disposal.print');
-
-    // --- MODUL MUTASI ASET ---
-    // Halaman Riwayat Mutasi (Bisa dipantau oleh Admin Lokal maupun Super Admin HO)
+    
     Route::get('/mutasi', [MutasiController::class, 'index'])->name('mutasi.index');
 
-    // --- MODUL RKAB & BUDGET ANALYSIS ---
-    // Halaman Analisis Anggaran yang dapat dipantau & dikelola oleh Admin & Super Admin
     Route::get('/rkab-analysis', [RkabController::class, 'index'])->name('rkab.index');
     Route::post('/rkab-analysis', [RkabController::class, 'store'])->name('rkab.store');
     Route::put('/rkab-analysis/{id}', [RkabController::class, 'update'])->name('rkab.update');
     Route::delete('/rkab-analysis/{id}', [RkabController::class, 'destroy'])->name('rkab.destroy');
     Route::get('/rkab-analysis/print', [RkabController::class, 'print'])->name('rkab.print');
 
-    // --- MODUL ASSET LIFE CYCLE ---
-    // Halaman pelacakan riwayat perjalanan aset dari hulu ke hilir
     Route::get('/asset-lifecycle', [AssetLifecycleController::class, 'index'])->name('asset-lifecycle.index');
     Route::get('/asset-lifecycle/track', [AssetLifecycleController::class, 'track'])->name('asset-lifecycle.track');
-
 });
 
 
 // ====================================================
-// KAVLING 2: OPERASIONAL KHUSUS ADMIN (SUPER ADMIN DIBLOKIR)
+// KAVLING 2: OPERASIONAL KHUSUS ADMIN
 // ====================================================
-// Berisi: Surat Jalan, Barang Masuk, Barang Keluar, Scan
 Route::middleware(['checkLogin:Admin'])->group(function () {
 
-    // --- [SURAT JALAN] ---
+    // --- [SURAT JALAN & BARANG MASUK] ---
     Route::get('surat-jalan/export/excel', [SuratJalanController::class, 'exportExcelFiltered'])->name('surat-jalan.export-excel');
     Route::get('surat-jalan/export/pdf', [SuratJalanController::class, 'exportPdfFiltered'])->name('surat-jalan.export-pdf');
     Route::get('surat-jalan/{id}/cetak', [SuratJalanController::class, 'exportPdf'])->name('surat-jalan.cetak-pdf');
     Route::resource('surat-jalan', SuratJalanController::class);
 
-    // --- BARANG MASUK (ASET IN) ---
     Route::get('/barangmasuk/export', [BarangMasukController::class, 'exportExcel'])->name('barangmasuk.export');
     Route::resource('barangmasuk', BarangMasukController::class);
     Route::get('/barangmasuk/{id}/cetak-label', [BarangMasukController::class, 'cetakLabel'])->name('barangmasuk.cetak_label');
     
-    // Fitur Scan Barcode
     Route::get('/scan', [BarangMasukController::class, 'scanPage'])->name('scan.index');
     Route::post('/scan/cek', [BarangMasukController::class, 'processScan'])->name('scan.process');
 
@@ -165,13 +156,8 @@ Route::middleware(['checkLogin:Admin'])->group(function () {
         Route::post('/{id}/admin-sign', [BarangKeluarController::class, 'adminSign'])->name('adminSign');
     });
 
-    // --- MODUL DISPOSAL ---
     Route::post('/disposal', [DisposalController::class, 'store'])->name('disposal.store');
-
-    // --- MODUL MUTASI ASET ---
-    // Proses Submit/Simpan Mutasi Baru (Hanya boleh dioperasikan oleh Admin IT Lokal)
     Route::post('/mutasi', [MutasiController::class, 'store'])->name('mutasi.store');
-
 });
 
 
@@ -179,23 +165,13 @@ Route::middleware(['checkLogin:Admin'])->group(function () {
 // KAVLING 3: KHUSUS SUPER ADMIN (APPROVAL)
 // ====================================================
 Route::middleware(['checkLogin:SuperAdmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
-    
-    // Dashboard Approval List
     Route::get('/approval', [SuperAdminPpiController::class, 'index'])->name('approval.index');
-    
-    // Halaman Review & Tanda Tangan
     Route::get('/approval/{id}/review', [SuperAdminPpiController::class, 'showReview'])->name('approval.review');
-    
-    // Aksi Approve (Setuju)
     Route::put('/approval/{id}/approve', [SuperAdminPpiController::class, 'approve'])->name('approval.approve');
-    
-    // Aksi Reject (Tolak)
     Route::put('/approval/{id}/reject', [SuperAdminPpiController::class, 'reject'])->name('approval.reject');
 
-    // --- MODUL DISPOSAL ---
     Route::post('/disposal/{id}/approve', [DisposalController::class, 'approve'])->name('disposal.approve');
     Route::post('/disposal/{id}/reject', [DisposalController::class, 'reject'])->name('disposal.reject');
-
 });
 
 
@@ -203,28 +179,23 @@ Route::middleware(['checkLogin:SuperAdmin'])->prefix('superadmin')->name('supera
 // KAVLING 4: PENGGUNA
 // ====================================================
 Route::middleware(['checkLogin:Pengguna'])->prefix('Pengguna')->name('pengguna.')->group(function () {
-    
     Route::get('/dashboard', [PenggunaDashboardController::class, 'index'])->name('dashboard');
     
-    // PPI Pengguna
     Route::get('/ppi/create', [PenggunaPpiController::class, 'create'])->name('ppi.create');
     Route::post('/ppi/store', [PenggunaPpiController::class, 'store'])->name('ppi.store');
     Route::get('/ppi/export/pdf', [PenggunaPpiController::class, 'exportPdf'])->name('ppi.pdf'); 
     Route::get('/ppi/riwayat', [PenggunaPpiController::class, 'index'])->name('ppi.index'); 
     
-    // Helpdesk (Tiket)
     Route::get('/helpdesk', [PenggunaTicketController::class, 'index'])->name('helpdesk.index');
     Route::get('/helpdesk/create', [PenggunaTicketController::class, 'create'])->name('helpdesk.create');
     Route::post('/helpdesk', [PenggunaTicketController::class, 'store'])->name('helpdesk.store');
     Route::get('/helpdesk/{id}', [PenggunaTicketController::class, 'show'])->name('helpdesk.show');
 
-    // BAST Untuk Pengguna (TTD)
     Route::prefix('user/bast')->name('userbast.')->group(function () {
         Route::get('/', [UserBASTController::class, 'index'])->name('index');
         Route::get('/sign/{id}', [UserBASTController::class, 'sign'])->name('sign');
         Route::post('/sign/{id}', [UserBASTController::class, 'submitSign'])->name('submit');
     });
-
 });
 
 
@@ -235,13 +206,11 @@ Route::middleware(['checkLogin:Staff'])->prefix('Staff')->name('staff.')->group(
     
     Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('dashboard');
     
-    // Fitur Helpdesk Staff (Kerja)
+    // Fitur Helpdesk Staff
     Route::get('/helpdesk', [StaffHelpdeskController::class, 'index'])->name('helpdesk.index');
     Route::get('/helpdesk/{id}', [StaffHelpdeskController::class, 'show'])->name('helpdesk.show');
     Route::post('/helpdesk/{id}/start', [StaffHelpdeskController::class, 'start'])->name('helpdesk.start');
     Route::post('/helpdesk/{id}/finish', [StaffHelpdeskController::class, 'finish'])->name('helpdesk.finish');
-    
-    // PERBAIKAN: Menghapus teks "staff." pada nama route agar tidak menjadi staff.staff.helpdesk.reject
     Route::post('/helpdesk/{id}/reject', [StaffHelpdeskController::class, 'reject'])->name('helpdesk.reject');
 
     // Fitur Laporan Tugas Staff
@@ -249,5 +218,12 @@ Route::middleware(['checkLogin:Staff'])->prefix('Staff')->name('staff.')->group(
     Route::get('/reports/create', [StaffReportController::class, 'create'])->name('reports.create');
     Route::post('/reports', [StaffReportController::class, 'store'])->name('reports.store');
     Route::get('/reports/{id}', [StaffReportController::class, 'show'])->name('reports.show');
+
+    // === MAINTENANCE KHUSUS STAFF (EKSEKUSI TIKET OLEH STAFF) ===
+    Route::get('/maintenance', [StaffMaintenanceController::class, 'index'])->name('maintenance.index');
+    
+    // UPDATE DI BAWAH INI: Penambahan ".ticket." pada ->name() agar sinkron dengan form Blade
+    Route::put('/maintenance/ticket/{id}/mulai', [StaffMaintenanceController::class, 'mulaiTiket'])->name('maintenance.ticket.mulai');
+    Route::put('/maintenance/ticket/{id}/selesai', [StaffMaintenanceController::class, 'selesaikanTiket'])->name('maintenance.ticket.selesai');
 
 });

@@ -150,20 +150,28 @@
         <hr class="sidebar-divider">
 
         <div class="sidebar-heading">
-            Task/Heldesk
+            Task/Helpdesk
         </div>
 
-        <li class="nav-item">
+        <li class="nav-item {{ Request::routeIs('admin.helpdesk.*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('admin.helpdesk.index') }}">
                 <i class="fas fa-fw fa-desktop"></i>
                 <span>Helpdesk Monitoring</span>
             </a>
         </li>
 
-        <li class="nav-item {{ request()->routeIs('admin.taskreport.*') ? 'active' : '' }}">
+        <li class="nav-item {{ request()->routeIs('admin.taskreport.*') || request()->routeIs('taskreport.*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('taskreport.index') }}">
                 <i class="fas fa-fw fa-tasks"></i>
                 <span>Task Report dari Team IT</span>
+            </a>
+        </li>
+
+        {{-- TAMBAHAN: MENU MAINTENANCE UNTUK ADMIN (Hanya Jadwal) --}}
+        <li class="nav-item {{ Request::routeIs('admin.maintenance.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('admin.maintenance.index') }}">
+                <i class="fas fa-fw fa-calendar-plus"></i>
+                <span>Jadwal Maintenance</span>
             </a>
         </li>
 
@@ -189,10 +197,18 @@
             Tugas Saya
         </div>
 
-        <li class="nav-item">
+        <li class="nav-item {{ Request::routeIs('staff.helpdesk.*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('staff.helpdesk.index') }}">
                 <i class="fas fa-fw fa-info-circle"></i>
-                <span>Task Info</span>
+                <span>Task Info (Helpdesk)</span>
+            </a>
+        </li>
+
+        {{-- UPDATE: MENU MAINTENANCE KHUSUS STAFF (Eksekusi Tiket) --}}
+        <li class="nav-item {{ Request::routeIs('staff.maintenance.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('staff.maintenance.index') }}">
+                <i class="fas fa-fw fa-tools"></i>
+                <span>Maintenance Rutin</span>
             </a>
         </li>
 
@@ -234,7 +250,7 @@
                 <span>Lapor Kerusakan</span>
             </a>
         </li>
-        <li class="nav-item">
+        <li class="nav-item {{ Request::routeIs('pengguna.userbast.*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('pengguna.userbast.index') }}">
                 <i class="fas fa-info-circle"></i>
                 <span>Informasi Barang</span>

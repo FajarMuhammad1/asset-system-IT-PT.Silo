@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\BarangMasuk; 
 use Illuminate\Support\Facades\DB; 
+use Carbon\Carbon;
 
 class AssetLifecycleController extends Controller
 {
@@ -16,7 +17,7 @@ class AssetLifecycleController extends Controller
 
     public function track(Request $request)
     {
-        // Validasi input wajib kode_asset
+        // Validasi input wajib kode_asset atau serial number
         $request->validate([
             'kode_asset' => 'required|string'
         ]);
@@ -24,11 +25,17 @@ class AssetLifecycleController extends Controller
         $kodeAsset = $request->kode_asset;
         $title = "Hasil Tracking: " . $kodeAsset;
 
-        // 1. Ambil data aset beserta relasi murni yang melekat pada barang fisik
-        $asset = BarangMasuk::with(['masterBarang', 'mutasiAssets', 'disposal'])
-                    ->where('kode_asset', $kodeAsset)
-                    ->orWhere('serial_number', $kodeAsset)
-                    ->first();
+        // 1. Ambil data aset beserta relasi murni + relasi PERAWATAN BARANG (MAINTENANCE RUTIN)
+        $asset = BarangMasuk::with([
+                    'masterBarang', 
+                    'mutasiAssets', 
+                    'disposal',
+                    // Memanggil riwayat pengerjaan perawatan rutin beserta teknisinya
+                    'perawatanBarangs.teknisi' 
+                ])
+                ->where('kode_asset', $kodeAsset)
+                ->orWhere('serial_number', $kodeAsset)
+                ->first();
 
         if (!$asset) {
             return redirect()->back()->with('error', 'Aset dengan kode/SN tersebut tidak ditemukan di sistem.');
@@ -73,7 +80,29 @@ class AssetLifecycleController extends Controller
             ]);
         }
 
-        // 4. Riwayat Disposal (Akhir siklus hidup aset jika dihapuskan/dijual/dimusnahkan)
+        // 4. SAMBUNGKAN RIWAYAT MAINTENANCE RUTIN (Hanya dari fitur Maintenance otomatis)
+        if ($asset->perawatanBarangs) {
+            foreach ($asset->perawatanBarangs as $rawat) {
+                // Label status berdasarkan tabel perawatan_barangs
+                $statusMaintenance = ($rawat->status == 'Selesai') ? 'Maintenance Rutin (Selesai)' : 'Maintenance Rutin (' . $rawat->status . ')';
+                
+                // Jika selesai beri warna hijau, jika masih menunggu/progres beri warna abu-abu
+                $warnaIcon = ($rawat->status == 'Selesai') ? 'bg-success' : 'bg-secondary';
+                
+                $catatanTindakan = $rawat->catatan_perawatan ?? 'Belum ada catatan/pengerjaan.';
+                $namaTeknisi = $rawat->teknisi->nama ?? 'Sistem Penjadwalan';
+
+                $history->push([
+                    // Pakai tanggal selesai jika sudah kelar, jika belum pakai tanggal_jadwal dari scheduler
+                    'tanggal' => $rawat->tanggal_selesai ?? $rawat->tanggal_jadwal,
+                    'status' => $statusMaintenance,
+                    'icon' => 'fas fa-tools ' . $warnaIcon,
+                    'keterangan' => 'Tugas pemeliharaan oleh ' . $namaTeknisi . '. Catatan: "' . $catatanTindakan . '"'
+                ]);
+            }
+        }
+
+        // 5. Riwayat Disposal (Akhir siklus hidup aset jika dihapuskan/dijual/dimusnahkan)
         if ($asset->disposal) {
             $history->push([
                 'tanggal' => $asset->disposal->tanggal_disposal,

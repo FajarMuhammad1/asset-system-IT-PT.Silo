@@ -177,6 +177,8 @@
                                         <i class="fas fa-shipping-fast"></i>
                                     @elseif(str_contains($item['icon'], 'fa-exchange-alt'))
                                         <i class="fas fa-exchange-alt"></i>
+                                    @elseif(str_contains($item['icon'], 'fa-tools')) {{-- Ditambahkan untuk mendeteksi Ikon Maintenance --}}
+                                        <i class="fas fa-tools"></i>
                                     @elseif(str_contains($item['icon'], 'fa-trash-alt'))
                                         <i class="fas fa-trash-alt"></i>
                                     @else
