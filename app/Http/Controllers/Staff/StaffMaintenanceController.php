@@ -4,56 +4,75 @@ namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\MaintenanceSchedule; // Model untuk jadwal maintenance
+use App\Models\PerawatanBarang; 
+use Carbon\Carbon; // Pastikan Carbon dipanggil untuk tanggal
 
 class StaffMaintenanceController extends Controller
 {
     /**
-     * Menampilkan daftar jadwal/tiket maintenance untuk Staff
+     * Menampilkan daftar tugas perawatan untuk Staff
      */
     public function index()
     {
-        // 1. Menyediakan data title agar tidak error "Undefined variable $title" di layout
-        $title = 'Tugas Perawatan';
+        // Menyediakan variabel $title untuk digunakan di Blade layout (mengatasi Undefined variable $title)
+        $title = 'Tugas Perawatan Aset';
 
-        // 2. Mengambil data tiket dari database yang statusnya belum selesai
-        $tickets = MaintenanceSchedule::where('status', '!=', 'Selesai')->get(); 
+        // Tarik semua tugas yang belum 'Selesai' (Menunggu / Progres)
+        $tugasPerawatan = PerawatanBarang::with('barangMasuk.masterBarang')
+            ->where('status', '!=', 'Selesai')
+            ->get(); 
         
-        // 3. Mengirim variabel $title dan $tickets ke file Blade view
-        return view('staff.maintenance.index', compact('title', 'tickets')); 
+        // Kirim variabel title dan tugasPerawatan ke Blade
+        return view('staff.maintenance.index', compact('title', 'tugasPerawatan')); 
     }
 
     /**
-     * Mengeksekusi tombol "Mulai"
+     * Mengeksekusi tombol "Mulai" (Ubah status Menunggu -> Progres)
      */
-    public function mulaiTiket($id)
+    public function mulaiPerawatan($id) 
     {
-        // Mengubah status tiket menjadi 'Proses' ketika staff mulai mengerjakan
-        $ticket = MaintenanceSchedule::findOrFail($id);
-        $ticket->update([
-            'status' => 'Proses'
+        $perawatan = PerawatanBarang::findOrFail($id);
+        
+        $perawatan->update([
+            'status'     => 'Progres',
+            'teknisi_id' => auth()->id() // Mencatat ID Staff yang mengeklik tombol "Mulai"
         ]);
 
-        return redirect()->back()->with('success', 'Maintenance berhasil dimulai! Silakan kerjakan.');
+        return redirect()->back()->with('success', 'Tugas perawatan berhasil dimulai! Silakan kerjakan.');
     }
 
     /**
-     * Mengeksekusi tombol "Selesai" (Submit form checklist)
+     * Mengeksekusi tombol "Selesai" (Kirim Laporan Servis)
      */
-    public function selesaikanTiket(Request $request, $id)
+    public function selesaikanPerawatan(Request $request, $id) 
     {
-        // Validasi opsional jika diperlukan untuk catatan
+        // 1. Validasi input, termasuk menangkap array dari form checklist Blade
         $request->validate([
+            'checklist'         => 'nullable|array',
             'catatan_perawatan' => 'nullable|string'
         ]);
 
-        // Mengubah status menjadi 'Selesai' dan menyimpan catatan dari lapangan
-        $ticket = MaintenanceSchedule::findOrFail($id);
-        $ticket->update([
-            'status' => 'Selesai',
-            'catatan' => $request->catatan_perawatan // Disesuaikan dengan name="catatan_perawatan" di file Blade
+        $perawatan = PerawatanBarang::findOrFail($id);
+        
+        // 2. Olah data checklist menjadi format teks (Contoh: "Pembersihan Fisik & Debu, Update Software")
+        $checklistTeks = $request->has('checklist') 
+            ? implode(', ', $request->checklist) 
+            : 'Tidak ada prosedur SOP yang dicentang';
+
+        // 3. Gabungkan hasil checklist dengan catatan yang diinput oleh staff
+        $catatanAkhir = "Prosedur Dilakukan: " . $checklistTeks;
+        if ($request->filled('catatan_perawatan')) {
+            $catatanAkhir .= " | Catatan Lapangan: " . $request->catatan_perawatan;
+        }
+        
+        // 4. Update status dan simpan ke database
+        $perawatan->update([
+            'status'            => 'Selesai',
+            'tanggal_selesai'   => Carbon::now()->format('Y-m-d'), // Simpan tanggal selesai hari ini
+            'catatan_perawatan' => $catatanAkhir, // Simpan gabungan checklist dan catatan lapangan
+            'teknisi_id'        => auth()->id() // Pastikan staff yang mensubmit terekam
         ]);
 
-        return redirect()->route('staff.maintenance.index')->with('success', 'Laporan maintenance berhasil disubmit!');
+        return redirect()->route('staff.maintenance.index')->with('success', 'Laporan perawatan berhasil disubmit!');
     }
 }

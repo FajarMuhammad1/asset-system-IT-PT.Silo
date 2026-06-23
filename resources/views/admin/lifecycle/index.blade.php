@@ -92,6 +92,17 @@
 
     {{-- Tampilkan Hasil Hanya Jika Data Aset Ditemukan --}}
     @if(isset($asset))
+    
+    {{-- UPDATE: Panel Bar Aksi Tambahan untuk Tombol Cetak --}}
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3">
+        <h5 class="font-weight-bold text-dark mb-2 mb-sm-0">
+            <i class="fas fa-poll-h mr-1 text-secondary"></i> Hasil Pelacakan Informasi Aset
+        </h5>
+        <a href="{{ route('asset.cetak_lifecycle', $asset->id) }}" target="_blank" class="btn btn-sm btn-danger font-weight-bold shadow-sm px-3 py-2">
+            <i class="fas fa-file-pdf mr-1"></i> Cetak PDF Lifecycle
+        </a>
+    </div>
+
     <div class="row">
         
         {{-- Kiri: Informasi Detail Identitas Aset --}}
@@ -177,7 +188,7 @@
                                         <i class="fas fa-shipping-fast"></i>
                                     @elseif(str_contains($item['icon'], 'fa-exchange-alt'))
                                         <i class="fas fa-exchange-alt"></i>
-                                    @elseif(str_contains($item['icon'], 'fa-tools')) {{-- Ditambahkan untuk mendeteksi Ikon Maintenance --}}
+                                    @elseif(str_contains($item['icon'], 'fa-tools'))
                                         <i class="fas fa-tools"></i>
                                     @elseif(str_contains($item['icon'], 'fa-trash-alt'))
                                         <i class="fas fa-trash-alt"></i>

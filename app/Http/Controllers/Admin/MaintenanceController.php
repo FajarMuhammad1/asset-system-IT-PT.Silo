@@ -11,7 +11,7 @@ use Carbon\Carbon;
 
 class MaintenanceController extends Controller
 {
-    // 1. Menampilkan Master Jadwal dan Daftar Tiket Perawatan
+    // 1. Menampilkan Master Jadwal dan Daftar Tugas Perawatan Alat
     public function index()
     {
         $user = auth()->user();
@@ -24,27 +24,27 @@ class MaintenanceController extends Controller
                 ->whereIn('status', ['Stok', 'Dipakai', 'Digunakan'])
                 ->get();
 
-            // Tarik semua Master Jadwal dan semua Tiket
+            // Tarik semua Master Jadwal dan semua Tugas Perawatan
             $schedules = MaintenanceSchedule::with('barangMasuk.masterBarang')->latest()->get();
-            $tickets = PerawatanBarang::with(['barangMasuk.masterBarang', 'teknisi'])->latest()->get();
+            $tugasPerawatan = PerawatanBarang::with(['barangMasuk.masterBarang', 'teknisi'])->latest()->get();
 
-            // Arahkan ke folder view admin
-            return view('admin.maintenance.index', compact('schedules', 'tickets', 'barangs'));
+            // Arahkan ke folder view admin (Variabel menggunakan $tugasPerawatan)
+            return view('admin.maintenance.index', compact('schedules', 'tugasPerawatan', 'barangs'));
 
         } else {
             // -- KHUSUS STAFF / TEKNISI --
-            // Filter tiket: Munculkan hanya tiket yang harus dikerjakan hari ini/sebelumnya
-            $tickets = PerawatanBarang::with(['barangMasuk.masterBarang'])
+            // Filter: Munculkan hanya tugas perawatan alat yang belum selesai (Menunggu / Progres)
+            $tugasPerawatan = PerawatanBarang::with(['barangMasuk.masterBarang'])
                 ->whereIn('status', ['Menunggu', 'Progres'])
                 ->latest()
                 ->get();
 
             // Arahkan ke folder view khusus staff
-            return view('staff.maintenance.index', compact('tickets'));
+            return view('staff.maintenance.index', compact('tugasPerawatan'));
         }
     }
 
-    // 2. Menyimpan Master Jadwal Baru (Khusus Admin)
+    // 2. Menyimpan Master Jadwal Baru (Khusus Admin - Otomatisasi Perawatan)
     public function storeSchedule(Request $request)
     {
         $request->validate([
@@ -57,12 +57,12 @@ class MaintenanceController extends Controller
         $tanggalMulai = Carbon::parse($request->tanggal_mulai);
         $tanggalNextDue = $tanggalMulai->copy();
 
-        // Jika tanggal mulai adalah masa lalu, atur eksekusi pertama ke hari ini
         if ($tanggalNextDue->isPast()) {
             $tanggalNextDue = Carbon::today();
         }
 
-        MaintenanceSchedule::create([
+        // 1. SIMPAN ATURAN JADWAL RUTIN KE DATABASE
+        $jadwal = MaintenanceSchedule::create([
             'barang_masuk_id'  => $request->barang_masuk_id,
             'frekuensi'        => $request->frekuensi,
             'tanggal_mulai'    => $request->tanggal_mulai,
@@ -71,36 +71,59 @@ class MaintenanceController extends Controller
             'status'           => 'aktif'
         ]);
 
-        return back()->with('success', 'Jadwal rutin berhasil dibuat. Tiket akan muncul otomatis saat waktunya tiba!');
+        // 2. OTOMATIS BUAT TUGAS PERTAMA (GENERATE TIKET KE STAFF)
+        // Jika tanggal jadwal adalah HARI INI (atau sebelumnya), langsung buatkan tugas untuk Staff
+        if ($tanggalNextDue->isToday() || $tanggalNextDue->isPast()) {
+            PerawatanBarang::create([
+                'maintenance_schedule_id' => $jadwal->id, // Relasi ke jadwal induk
+                'barang_masuk_id'         => $jadwal->barang_masuk_id,
+                'tanggal_jadwal'          => $tanggalNextDue,
+                'status'                  => 'Menunggu' // Status awal tugas agar muncul di layar staff
+            ]);
+        }
+
+        return back()->with('success', 'Jadwal rutin berhasil dibuat. Jika jadwal jatuh pada hari ini, tugas akan langsung muncul di halaman Staff!');
     }
 
-    // 3. Teknisi Menyelesaikan Tiket Perawatan (Menerima input Checklist & Catatan)
-    public function selesaikanTiket(Request $request, $id)
+    // 3. Teknisi Memulai Tugas Perawatan Alat (Ubah status Menunggu -> Progres)
+    public function mulaiPerawatan($id)
     {
-        $tiket = PerawatanBarang::findOrFail($id);
+        $perawatan = PerawatanBarang::findOrFail($id);
+
+        $perawatan->update([
+            'status'     => 'Progres', 
+            'teknisi_id' => auth()->id() // Log staff yang mengeksekusi perawatan alat
+        ]);
+
+        return back()->with('success', 'Perawatan alat berhasil dimulai! Silakan lakukan pengecekan fisik.');
+    }
+
+    // 4. Teknisi Menyelesaikan Perawatan (Menerima input Checklist & Catatan)
+    public function selesaikanPerawatan(Request $request, $id)
+    {
+        $perawatan = PerawatanBarang::findOrFail($id);
         
-        // a. Olah array data dari kotak centang (checklist) menjadi teks/kalimat
+        // Olah data checklist tindakan perawatan menjadi teks
         $laporanChecklist = "Tindakan: ";
         if ($request->has('checklist') && is_array($request->checklist)) {
-            // Menggabungkan pilihan staf (contoh: "Pembersihan Fisik, Update Software.")
             $laporanChecklist .= implode(', ', $request->checklist) . ".";
         } else {
             $laporanChecklist .= "Pengecekan umum (Tidak ada checklist prosedur yang dicentang).";
         }
 
-        // b. Tambahkan catatan manual dari textarea jika staf mengetik keterangan tambahan
+        // Tambahkan catatan manual dari lapangan jika ada
         if ($request->filled('catatan_perawatan')) {
             $laporanChecklist .= " | Catatan Tambahan: " . $request->catatan_perawatan;
         }
 
-        // c. Update tiket di database menjadi 'Selesai'
-        $tiket->update([
+        // Update log perawatan alat di database menjadi 'Selesai'
+        $perawatan->update([
             'status'            => 'Selesai',
-            'tanggal_selesai'   => Carbon::now(),
-            'catatan_perawatan' => $laporanChecklist, // Menyimpan teks gabungan checklist + catatan
-            'teknisi_id'        => auth()->id() // Menandai tiket ini selesai dikerjakan oleh user (staf) yang sedang login
+            'tanggal_selesai'   => Carbon::now()->format('Y-m-d'),
+            'catatan_perawatan' => $laporanChecklist, 
+            'teknisi_id'        => auth()->id() 
         ]);
 
-        return back()->with('success', 'Laporan checklist maintenance berhasil dikirim!');
+        return back()->with('success', 'Laporan maintenance alat berhasil dikirim!');
     }
 }

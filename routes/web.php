@@ -23,7 +23,7 @@ use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\HelpdeskController;
 use App\Http\Controllers\Admin\TaskReportAdminController;
 use App\Http\Controllers\Admin\PpiAdminController;
-use App\Http\Controllers\Admin\MaintenanceController; // <--- KONTROLER MAINTENANCE ADMIN
+use App\Http\Controllers\Admin\MaintenanceController; 
 
 // KONTROLER SUPER ADMIN
 use App\Http\Controllers\SuperAdminPpiController;
@@ -32,14 +32,12 @@ use App\Http\Controllers\SuperAdmin\SuperAdminController;
 // KONTROLER STAFF
 use App\Http\Controllers\Staff\StaffHelpdeskController;
 use App\Http\Controllers\Staff\StaffReportController;
-use App\Http\Controllers\Staff\StaffMaintenanceController; // <--- KONTROLER MAINTENANCE STAFF (BARU)
 
 // KONTROLER PENGGUNA
 use App\Http\Controllers\PenggunaDashboardController;
 use App\Http\Controllers\Pengguna\PpiController as PenggunaPpiController;
 use App\Http\Controllers\Pengguna\TicketController as PenggunaTicketController;
 use App\Http\Controllers\UserBASTController;
-
 
 /*
 |--------------------------------------------------------------------------
@@ -75,8 +73,7 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::prefix('admin')->name('admin.')->group(function() {
 
         // 1. MONITORING PPI
-        $routePpiExport = [PpiAdminController::class, 'exportExcel'];
-        Route::get('/ppi-monitoring/export', $routePpiExport)->name('ppi.export'); 
+        Route::get('/ppi-monitoring/export', [PpiAdminController::class, 'exportExcel'])->name('ppi.export'); 
         Route::get('/ppi-monitoring', [PpiAdminController::class, 'index'])->name('ppi.index');
         Route::get('/ppi-monitoring/{id}', [PpiAdminController::class, 'show'])->name('ppi.show');
         Route::put('/ppi-monitoring/{id}/update', [PpiAdminController::class, 'updateStatus'])->name('ppi.update');
@@ -88,9 +85,10 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
         Route::post('/helpdesk/{id}/assign', [HelpdeskController::class, 'assignTeknisi'])->name('helpdesk.assign');
         Route::put('/helpdesk/{id}/settings', [HelpdeskController::class, 'updateSettings'])->name('helpdesk.settings');
 
-        // 3. MAINTENANCE ASET RUTIN (KONTROL ADMIN: HANYA LIHAT & BUAT JADWAL)
+        // 3. MAINTENANCE ASET RUTIN
         Route::get('/maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
         Route::post('/maintenance/schedule', [MaintenanceController::class, 'storeSchedule'])->name('maintenance.schedule.store');
+        Route::put('/maintenance/tugas/{id}/selesai', [MaintenanceController::class, 'selesaikanPerawatan'])->name('maintenance.tugas.selesai');
     });
 
     // --- MASTER DATA (REFERENSI) ---
@@ -122,8 +120,12 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::delete('/rkab-analysis/{id}', [RkabController::class, 'destroy'])->name('rkab.destroy');
     Route::get('/rkab-analysis/print', [RkabController::class, 'print'])->name('rkab.print');
 
+    // --- LOG LIFECYCLE ---
     Route::get('/asset-lifecycle', [AssetLifecycleController::class, 'index'])->name('asset-lifecycle.index');
     Route::get('/asset-lifecycle/track', [AssetLifecycleController::class, 'track'])->name('asset-lifecycle.track');
+    
+    // UPDATE: Mengubah nama rute menjadi 'asset.cetak_lifecycle' agar sinkron dengan file Blade tracking sebelumnya
+    Route::get('/asset-lifecycle/{id}/cetak', [AssetLifecycleController::class, 'cetakLifecycle'])->name('asset.cetak_lifecycle');
 });
 
 
@@ -138,6 +140,7 @@ Route::middleware(['checkLogin:Admin'])->group(function () {
     Route::get('surat-jalan/{id}/cetak', [SuratJalanController::class, 'exportPdf'])->name('surat-jalan.cetak-pdf');
     Route::resource('surat-jalan', SuratJalanController::class);
 
+    // BARANG MASUK
     Route::get('/barangmasuk/export', [BarangMasukController::class, 'exportExcel'])->name('barangmasuk.export');
     Route::resource('barangmasuk', BarangMasukController::class);
     Route::get('/barangmasuk/{id}/cetak-label', [BarangMasukController::class, 'cetakLabel'])->name('barangmasuk.cetak_label');
@@ -183,7 +186,7 @@ Route::middleware(['checkLogin:Pengguna'])->prefix('Pengguna')->name('pengguna.'
     
     Route::get('/ppi/create', [PenggunaPpiController::class, 'create'])->name('ppi.create');
     Route::post('/ppi/store', [PenggunaPpiController::class, 'store'])->name('ppi.store');
-    Route::get('/ppi/export/pdf', [PenggunaPpiController::class, 'exportPdf'])->name('ppi.pdf'); 
+    Route::get('/ppi/export/pdf', [PenggunaPpiController::class, 'exportPdf'])->name('pengguna.ppi.pdf'); 
     Route::get('/ppi/riwayat', [PenggunaPpiController::class, 'index'])->name('ppi.index'); 
     
     Route::get('/helpdesk', [PenggunaTicketController::class, 'index'])->name('helpdesk.index');
@@ -200,7 +203,7 @@ Route::middleware(['checkLogin:Pengguna'])->prefix('Pengguna')->name('pengguna.'
 
 
 // ====================================================
-// KAVLING 5: STAFF
+// KAVLING 5: STAFF / TEKNISI
 // ====================================================
 Route::middleware(['checkLogin:Staff'])->prefix('Staff')->name('staff.')->group(function () {
     
@@ -219,11 +222,8 @@ Route::middleware(['checkLogin:Staff'])->prefix('Staff')->name('staff.')->group(
     Route::post('/reports', [StaffReportController::class, 'store'])->name('reports.store');
     Route::get('/reports/{id}', [StaffReportController::class, 'show'])->name('reports.show');
 
-    // === MAINTENANCE KHUSUS STAFF (EKSEKUSI TIKET OLEH STAFF) ===
-    Route::get('/maintenance', [StaffMaintenanceController::class, 'index'])->name('maintenance.index');
-    
-    // UPDATE DI BAWAH INI: Penambahan ".ticket." pada ->name() agar sinkron dengan form Blade
-    Route::put('/maintenance/ticket/{id}/mulai', [StaffMaintenanceController::class, 'mulaiTiket'])->name('maintenance.ticket.mulai');
-    Route::put('/maintenance/ticket/{id}/selesai', [StaffMaintenanceController::class, 'selesaikanTiket'])->name('maintenance.ticket.selesai');
-
+    // === MAINTENANCE KHUSUS STAFF ===
+    Route::get('/maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
+    Route::put('/maintenance/tugas/{id}/mulai', [MaintenanceController::class, 'mulaiPerawatan'])->name('maintenance.tugas.mulai');
+    Route::put('/maintenance/tugas/{id}/selesai', [MaintenanceController::class, 'selesaikanPerawatan'])->name('maintenance.tugas.selesai');
 });

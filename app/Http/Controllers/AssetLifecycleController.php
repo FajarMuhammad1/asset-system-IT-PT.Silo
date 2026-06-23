@@ -118,4 +118,16 @@ class AssetLifecycleController extends Controller
         // Kirim data murni aset ke view
         return view('admin.lifecycle.index', compact('title', 'asset', 'timeline', 'kodeAsset'));
     }
+    public function cetakLifecycle($id)
+    {
+        // Tarik data aset beserta relasi master barang dan riwayat perawatannya
+        // Sesuaikan nama relasi 'perawatanBarang' dengan yang ada di model kamu
+        $asset = \App\Models\BarangMasuk::with(['masterBarang', 'perawatanBarang' => function($query) {
+            $query->orderBy('tanggal_jadwal', 'desc'); // Urutkan dari yang terbaru
+        }])->findOrFail($id);
+
+        $title = 'Cetak Lifecycle Aset - ' . $asset->kode_asset;
+
+        return view('admin.asset.cetak_lifecycle', compact('asset', 'title'));
+    }
 }
