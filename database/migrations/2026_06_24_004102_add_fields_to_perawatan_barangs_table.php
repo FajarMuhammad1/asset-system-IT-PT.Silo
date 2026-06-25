@@ -6,17 +6,20 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up()
-    {
-        Schema::table('perawatan_barangs', function (Blueprint $table) {
-            // Pastikan Anda menyesuaikan atau menghapus kolom yang mungkin sudah ada
+   public function up(): void
+{
+    Schema::table('perawatan_barangs', function (Blueprint $table) {
+        // Tambahkan pengaman ini: Hanya buat jika kolom BELUM ada di database
+        if (!Schema::hasColumn('perawatan_barangs', 'tanggal_jadwal')) {
             $table->date('tanggal_jadwal')->nullable();
-            $table->date('tanggal_selesai')->nullable();
-            $table->text('catatan_perawatan')->nullable();
-            // Inilah kunci utamanya! Kita buat status khusus untuk teknisi:
-            $table->enum('status', ['Menunggu', 'Proses', 'Selesai'])->default('Menunggu');
-        });
-    }
+        }
+
+        // Catatan: Jika ada kolom lain di bawahnya yang ikut error, bungkus dengan cara yang sama, contoh:
+        // if (!Schema::hasColumn('perawatan_barangs', 'kolom_lain')) {
+        //     $table->string('kolom_lain')->nullable();
+        // }
+    });
+}
 
     public function down()
     {

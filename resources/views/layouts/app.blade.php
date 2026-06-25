@@ -36,7 +36,7 @@
                     $canSeeSystemNotif = $isAdmin || $isSuperAdmin;
                 @endphp
 
-                {{-- SEARCH BAR: HANYA UNTUK ADMIN & STAFF (Super Admin tidak perlu cari-cari data teknis) --}}
+                {{-- SEARCH BAR: HANYA UNTUK ADMIN & STAFF --}}
                 @if(!$isSuperAdmin)
                     <form class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
                         <div class="input-group">
@@ -79,7 +79,7 @@
                     @endif
 
                     {{-- ======================================================= --}}
-                    {{--               AREA NOTIFIKASI SYSTEM                    --}}
+                    {{--               AREA NOTIFIKASI SYSTEM (ADMIN)            --}}
                     {{-- ======================================================= --}}
 
                     @if($canSeeSystemNotif)
@@ -89,10 +89,10 @@
                             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-bell fa-fw"></i>
-                                {{-- Counter Notif --}}
-                                @if(isset($notifCount) && $notifCount > 0)
+                                {{-- Counter Notif Menggunakan Bawaan Laravel --}}
+                                @if(auth()->user()->unreadNotifications->count() > 0)
                                     <span class="badge badge-danger badge-counter">
-                                        {{ $notifCount > 5 ? '5+' : $notifCount }}
+                                        {{ auth()->user()->unreadNotifications->count() > 5 ? '5+' : auth()->user()->unreadNotifications->count() }}
                                     </span>
                                 @endif
                             </a>
@@ -107,36 +107,34 @@
                                     @endif
                                 </h6>
 
-                                @if(isset($notifications))
-                                    @forelse($notifications as $notif)
-                                        <a class="dropdown-item d-flex align-items-center" href="{{ $notif['url'] ?? '#' }}">
-                                            <div class="mr-3">
-                                                <div class="icon-circle {{ $notif['color'] ?? 'bg-primary' }}">
-                                                    <i class="fas {{ $notif['icon'] ?? 'fa-bell' }} text-white"></i>
-                                                </div>
+                                {{-- Looping data dari tabel notifications --}}
+                                @forelse(auth()->user()->unreadNotifications as $notif)
+                                    <a class="dropdown-item d-flex align-items-center" href="{{ route('notif.read', $notif->id) }}">
+                                        <div class="mr-3">
+                                            <div class="icon-circle {{ $notif->data['color'] ?? 'bg-primary' }}">
+                                                <i class="fas {{ $notif->data['icon'] ?? 'fa-bell' }} text-white"></i>
                                             </div>
-                                            <div>
-                                                <div class="small text-gray-500">{{ isset($notif['time']) ? $notif['time']->diffForHumans() : '' }}</div>
-                                                <span class="font-weight-bold">{{ $notif['title'] ?? '' }}</span>
-                                                <div class="small text-gray-600">{{ Str::limit($notif['detail'] ?? '', 40) }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="small text-gray-500">{{ $notif->created_at->diffForHumans() }}</div>
+                                            <span class="font-weight-bold">{{ $notif->data['judul'] ?? 'Pemberitahuan' }}</span>
+                                            <div class="small text-gray-600">{{ Str::limit($notif->data['pesan'] ?? '', 50) }}</div>
+                                        </div>
+                                    </a>
+                                @empty
+                                    <a class="dropdown-item d-flex align-items-center" href="#">
+                                        <div class="mr-3">
+                                            <div class="icon-circle bg-secondary">
+                                                <i class="fas fa-check text-white"></i>
                                             </div>
-                                        </a>
-                                    @empty
-                                        <a class="dropdown-item d-flex align-items-center" href="#">
-                                            <div class="mr-3">
-                                                <div class="icon-circle bg-secondary">
-                                                    <i class="fas fa-check text-white"></i>
-                                                </div>
-                                            </div>
-                                            <div><span class="font-weight-bold text-gray-500">Tidak ada notifikasi baru.</span></div>
-                                        </a>
-                                    @endforelse
-                                @endif
+                                        </div>
+                                        <div><span class="font-weight-bold text-gray-500">Tidak ada notifikasi baru.</span></div>
+                                    </a>
+                                @endforelse
                             </div>
                         </li>
 
                         {{-- Messages (HANYA UNTUK ADMIN TEKNIS) --}}
-                        {{-- Super Admin tidak perlu lihat pesan chat/helpdesk di header --}}
                         @if($isAdmin)
                         <li class="nav-item dropdown no-arrow mx-1">
                             <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button"
@@ -154,7 +152,7 @@
                     @endif
 
                     {{-- ======================================================= --}}
-                    {{--               NOTIFIKASI USER BIASA                     --}}
+                    {{--          NOTIFIKASI USER BIASA (STAFF / TEKNISI)        --}}
                     {{-- ======================================================= --}}
                     
                     @if(!$canSeeSystemNotif)
@@ -162,14 +160,36 @@
                             <a class="nav-link dropdown-toggle" href="#" id="userNotifDropdown" role="button"
                             data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-bell fa-fw"></i>
-                                @if(isset($notifCount) && $notifCount > 0)
-                                    <span class="badge badge-danger badge-counter">{{ $notifCount }}</span>
+                                {{-- Counter Notif Staff/User Menggunakan Bawaan Laravel --}}
+                                @if(auth()->user()->unreadNotifications->count() > 0)
+                                    <span class="badge badge-danger badge-counter">
+                                        {{ auth()->user()->unreadNotifications->count() > 5 ? '5+' : auth()->user()->unreadNotifications->count() }}
+                                    </span>
                                 @endif
                             </a>
                             <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userNotifDropdown">
-                                <h6 class="dropdown-header">Notifikasi Anda</h6>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">Kosong</a>
+                                <h6 class="dropdown-header bg-info">Notifikasi Anda</h6>
+                                
+                                {{-- Looping data Tugas Tiket Baru untuk Staff IT --}}
+                                @forelse(auth()->user()->unreadNotifications as $notif)
+                                    <a class="dropdown-item d-flex align-items-center" href="{{ route('notif.read', $notif->id) }}">
+                                        <div class="mr-3">
+                                            <div class="icon-circle bg-info">
+                                                <i class="fas fa-tools text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="small text-gray-500">{{ $notif->created_at->diffForHumans() }}</div>
+                                            <span class="font-weight-bold text-dark">{{ $notif->data['judul'] ?? 'Tugas Baru' }}</span>
+                                            <div class="small text-gray-600">{{ Str::limit($notif->data['pesan'] ?? '', 50) }}</div>
+                                        </div>
+                                    </a>
+                                @empty
+                                    <a class="dropdown-item text-center small text-gray-500 py-3" href="#">
+                                        Tidak ada notifikasi baru
+                                    </a>
+                                @endforelse
                             </div>
                         </li>
                     @endif
@@ -219,7 +239,6 @@
                             </a>
 
                             {{-- ACTIVITY LOG (HANYA ADMIN TEKNIS) --}}
-                            {{-- Super Admin tidak perlu lihat log sistem --}}
                             @if($isAdmin)
                                 <a class="dropdown-item" href="{{ route('activity.log') }}">
                                     <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>

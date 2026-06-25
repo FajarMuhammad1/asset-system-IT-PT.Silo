@@ -167,7 +167,6 @@
             </a>
         </li>
 
-        {{-- TAMBAHAN: MENU MAINTENANCE UNTUK ADMIN (Hanya Jadwal) --}}
         <li class="nav-item {{ Request::routeIs('admin.maintenance.*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('admin.maintenance.index') }}">
                 <i class="fas fa-fw fa-calendar-plus"></i>
@@ -176,6 +175,33 @@
         </li>
 
         <hr class="sidebar-divider my-0">
+
+        {{-- =============================================== --}}
+        {{-- PUSAT CETAK LAPORAN (BARU)                      --}}
+        {{-- =============================================== --}}
+        <li class="nav-item {{ Request::routeIs('rkab.print') || Request::routeIs('admin.ppi.export') || Request::routeIs('admin.task_report.export') || Request::routeIs('surat-jalan.export-pdf') || Request::routeIs('barangmasuk.export') || Request::routeIs('asset-lifecycle.index') ? 'active' : '' }}">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseCetak" aria-expanded="true" aria-controls="collapseCetak">
+                <i class="fas fa-fw fa-print"></i>
+                <span>Pusat Cetak Laporan</span>
+            </a>
+            <div id="collapseCetak" class="collapse {{ Request::routeIs('rkab.print') || Request::routeIs('admin.ppi.export') || Request::routeIs('admin.task_report.export') || Request::routeIs('surat-jalan.export-pdf') || Request::routeIs('barangmasuk.export') || Request::routeIs('asset-lifecycle.index') ? 'show' : '' }}" aria-labelledby="headingCetak" data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    
+                    <h6 class="collapse-header text-primary">LAPORAN GLOBAL:</h6>
+                    <a class="collapse-item" href="{{ route('rkab.print') }}" target="_blank"><i class="fas fa-file-pdf text-danger mr-2"></i> Analisis RKAB</a>
+                    <a class="collapse-item" href="{{ route('admin.ppi.export') }}"><i class="fas fa-file-excel text-success mr-2"></i> Excel PPI</a>
+                    <a class="collapse-item" href="{{ route('admin.task_report.export') }}"><i class="fas fa-file-excel text-success mr-2"></i> Task Report</a>
+                    <a class="collapse-item" href="{{ route('surat-jalan.export-pdf') }}" target="_blank"><i class="fas fa-file-pdf text-danger mr-2"></i> Surat Jalan</a>
+                    <a class="collapse-item" href="{{ route('barangmasuk.export') }}"><i class="fas fa-file-excel text-success mr-2"></i> Barang Masuk</a>
+
+                    <h6 class="collapse-header text-primary mt-2">CETAK PER UNIT:</h6>
+                    <a class="collapse-item {{ Request::routeIs('asset-lifecycle.index') ? 'active' : '' }}" href="{{ route('asset-lifecycle.index') }}"><i class="fas fa-search text-info mr-2"></i> Lifecycle Asset</a>
+                    <a class="collapse-item" href="{{ route('barangkeluar.index') }}"><i class="fas fa-file-contract text-info mr-2"></i> BAST Barang Keluar</a>
+                    <a class="collapse-item" href="{{ route('disposal.index') }}"><i class="fas fa-trash-alt text-info mr-2"></i> Dokumen Disposal</a>
+                    
+                </div>
+            </div>
+        </li>
 
         {{-- MENU SCANNER --}}
         <li class="nav-item {{ Request::routeIs('scan.index') ? 'active' : '' }}">

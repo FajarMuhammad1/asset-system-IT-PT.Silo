@@ -6,7 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Carbon\Carbon; // <-- Jangan lupa tambahkan ini untuk memanipulasi tanggal
+use Carbon\Carbon; 
+use App\Notifications\TicketAssigned; // <-- [BARU] Import class Notifikasi
 
 class HelpdeskController extends Controller
 {
@@ -81,9 +82,18 @@ class HelpdeskController extends Controller
             'teknisi_id' => $request->teknisi_id,
         ]);
 
+        // ========================================================
+        // [BARU] TRIGGER NOTIFIKASI MULTI-CHANNEL
+        // ========================================================
+        $teknisi = User::find($request->teknisi_id);
+        if ($teknisi) {
+            // Ini akan mengeksekusi file App\Notifications\TicketAssigned
+            $teknisi->notify(new TicketAssigned($ticket));
+        }
+
         return redirect()
             ->back()
-            ->with('success', 'Teknisi berhasil diassign!');
+            ->with('success', 'Teknisi berhasil diassign dan notifikasi telah dikirim!');
     }
 
     /**

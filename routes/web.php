@@ -59,6 +59,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+
+    // PERBAIKAN DI SINI: Menambahkan rute penanganan klik notifikasi lonceng
+    Route::get('/notification/{id}/read', function ($id) {
+        $notification = auth()->user()->notifications()->find($id);
+        if ($notification) {
+            $notification->markAsRead();
+            // Ambil link tujuan dari array database ('link' atau 'url'), jika tidak ada balik ke dashboard
+            $url = $notification->data['link'] ?? $notification->data['url'] ?? url('/dashboard');
+            return redirect($url);
+        }
+        return back();
+    })->name('notif.read');
 });
 
 
@@ -114,6 +126,7 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     
     Route::get('/mutasi', [MutasiController::class, 'index'])->name('mutasi.index');
 
+    // --- RKAB ANALYSIS ---
     Route::get('/rkab-analysis', [RkabController::class, 'index'])->name('rkab.index');
     Route::post('/rkab-analysis', [RkabController::class, 'store'])->name('rkab.store');
     Route::put('/rkab-analysis/{id}', [RkabController::class, 'update'])->name('rkab.update');
@@ -123,8 +136,6 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     // --- LOG LIFECYCLE ---
     Route::get('/asset-lifecycle', [AssetLifecycleController::class, 'index'])->name('asset-lifecycle.index');
     Route::get('/asset-lifecycle/track', [AssetLifecycleController::class, 'track'])->name('asset-lifecycle.track');
-    
-    // UPDATE: Mengubah nama rute menjadi 'asset.cetak_lifecycle' agar sinkron dengan file Blade tracking sebelumnya
     Route::get('/asset-lifecycle/{id}/cetak', [AssetLifecycleController::class, 'cetakLifecycle'])->name('asset.cetak_lifecycle');
 });
 
@@ -186,7 +197,7 @@ Route::middleware(['checkLogin:Pengguna'])->prefix('Pengguna')->name('pengguna.'
     
     Route::get('/ppi/create', [PenggunaPpiController::class, 'create'])->name('ppi.create');
     Route::post('/ppi/store', [PenggunaPpiController::class, 'store'])->name('ppi.store');
-    Route::get('/ppi/export/pdf', [PenggunaPpiController::class, 'exportPdf'])->name('pengguna.ppi.pdf'); 
+    Route::get('/ppi/export/pdf', [PenggunaPpiController::class, 'exportPdf'])->name('ppi.pdf'); 
     Route::get('/ppi/riwayat', [PenggunaPpiController::class, 'index'])->name('ppi.index'); 
     
     Route::get('/helpdesk', [PenggunaTicketController::class, 'index'])->name('helpdesk.index');
@@ -215,6 +226,8 @@ Route::middleware(['checkLogin:Staff'])->prefix('Staff')->name('staff.')->group(
     Route::post('/helpdesk/{id}/start', [StaffHelpdeskController::class, 'start'])->name('helpdesk.start');
     Route::post('/helpdesk/{id}/finish', [StaffHelpdeskController::class, 'finish'])->name('helpdesk.finish');
     Route::post('/helpdesk/{id}/reject', [StaffHelpdeskController::class, 'reject'])->name('helpdesk.reject');
+    
+    Route::put('/helpdesk/{id}/update', [StaffHelpdeskController::class, 'update'])->name('helpdesk.update');
 
     // Fitur Laporan Tugas Staff
     Route::get('/reports', [StaffReportController::class, 'index'])->name('reports.index');
