@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\MaintenanceSchedule;
 use App\Models\PerawatanBarang;
 use App\Models\BarangMasuk;
+use App\Models\User; // [BARU] Import model User untuk mengambil data staff
+use App\Notifications\MaintenanceReminderNotification; // [BARU] Import class notifikasi
+use Illuminate\Support\Facades\Notification; // [BARU] Import facade notifikasi Laravel
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -19,7 +22,7 @@ class MaintenanceController extends Controller
         // PEMISAHAN LOGIKA TAMPILAN & DATA BERDASARKAN ROLE
         if ($user->role === 'Admin') {
             // -- KHUSUS ADMIN --
-            // Ambil data barang untuk form dropdown jadwal
+            // Ambal data barang untuk form dropdown jadwal
             $barangs = BarangMasuk::with('masterBarang')
                 ->whereIn('status', ['Stok', 'Dipakai', 'Digunakan'])
                 ->get();
@@ -74,15 +77,29 @@ class MaintenanceController extends Controller
         // 2. OTOMATIS BUAT TUGAS PERTAMA (GENERATE TIKET KE STAFF)
         // Jika tanggal jadwal adalah HARI INI (atau sebelumnya), langsung buatkan tugas untuk Staff
         if ($tanggalNextDue->isToday() || $tanggalNextDue->isPast()) {
-            PerawatanBarang::create([
+            $task = PerawatanBarang::create([
                 'maintenance_schedule_id' => $jadwal->id, // Relasi ke jadwal induk
                 'barang_masuk_id'         => $jadwal->barang_masuk_id,
                 'tanggal_jadwal'          => $tanggalNextDue,
                 'status'                  => 'Menunggu' // Status awal tugas agar muncul di layar staff
             ]);
+
+            // [BARU] Tarik relasi nama barang agar bisa dikirim ke teks Telegram
+            $task->load('barangMasuk.masterBarang');
+            $task->keterangan = $task->barangMasuk->masterBarang->nama_barang ?? $jadwal->deskripsi_tugas;
+
+            // [BARU] JALUR 1: Kirim ke lonceng web SEMUA user yang rolenya Staff
+            $semuaTeknisi = User::where('role', 'Staff')->get();
+            Notification::send($semuaTeknisi, new MaintenanceReminderNotification($task));
+
+            // [BARU] JALUR 2: Kirim langsung nge-blass ke GRUP TELEGRAM TIM IT
+            if (env('TELEGRAM_GROUP_ID')) {
+                Notification::route('telegram', env('TELEGRAM_GROUP_ID'))
+                            ->notify(new MaintenanceReminderNotification($task));
+            }
         }
 
-        return back()->with('success', 'Jadwal rutin berhasil dibuat. Jika jadwal jatuh pada hari ini, tugas akan langsung muncul di halaman Staff!');
+        return back()->with('success', 'Jadwal rutin berhasil dibuat. Tugas otomatis dikirim ke halaman Staff dan Grup Telegram Tim IT!');
     }
 
     // 3. Teknisi Memulai Tugas Perawatan Alat (Ubah status Menunggu -> Progres)

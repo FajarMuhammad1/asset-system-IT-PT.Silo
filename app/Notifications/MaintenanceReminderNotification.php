@@ -3,11 +3,16 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
+// Hapus ShouldQueue agar notifikasi langsung jalan saat testing
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Notifications\AnonymousNotifiable; // <-- [BARU] Wajib untuk ngirim ke Grup
 
-class MaintenanceReminderNotification extends Notification implements ShouldQueue
+// Import class untuk Telegram
+use NotificationChannels\Telegram\TelegramChannel;
+use NotificationChannels\Telegram\TelegramMessage;
+
+class MaintenanceReminderNotification extends Notification 
 {
     use Queueable;
 
@@ -26,8 +31,31 @@ class MaintenanceReminderNotification extends Notification implements ShouldQueu
      */
     public function via(object $notifiable): array
     {
-        // Mengirim notifikasi ke In-app dashboard (database) dan Email (mail)
-        return ['database', 'mail'];
+        // 1. Jika ini pengiriman tanpa nama user (untuk tembak ke Grup Telegram)
+        if ($notifiable instanceof AnonymousNotifiable) {
+            return [TelegramChannel::class];
+        }
+
+        // 2. Jika dikirim ke User biasa (untuk masuk ke lonceng web)
+        return ['database'];
+    }
+
+    /**
+     * [BARU] FORMAT NOTIFIKASI TELEGRAM (MASUK KE GRUP)
+     */
+    public function toTelegram($notifiable)
+    {
+        $namaPekerjaan = $this->task->keterangan ?? 'Maintenance Rutin Aset';
+        $status = $this->task->status ?? 'Menunggu';
+
+        return TelegramMessage::create()
+            ->to(env('TELEGRAM_GROUP_ID')) // <-- Tembak ke ID grup di .env
+            ->content("📢 *TUGAS MAINTENANCE BERSAMA*\n\n" .
+                      "Halo Tim IT, ada jadwal maintenance terbuka yang perlu dikerjakan hari ini.\n\n" .
+                      "▪️ *Pekerjaan:* " . $namaPekerjaan . "\n" .
+                      "▪️ *Status:* " . $status . "\n\n" .
+                      "Siapa yang standby mohon segera dieksekusi ya! 💪")
+            ->button('Buka Halaman Tugas', route('staff.maintenance.index'));
     }
 
     /**
@@ -35,16 +63,14 @@ class MaintenanceReminderNotification extends Notification implements ShouldQueu
      */
     public function toMail(object $notifiable): MailMessage
     {
-        // Catatan: Sesuaikan nama kolom ('keterangan', 'lokasi', dll) dengan yang ada di tabel Anda
         $namaPekerjaan = $this->task->keterangan ?? 'Maintenance Rutin Aset';
 
         return (new MailMessage)
                     ->subject('🔔 Pengingat: Jadwal Maintenance Hari Ini')
-                    ->greeting('Halo, ' . $notifiable->name)
-                    ->line('Ini adalah pengingat otomatis bahwa Anda memiliki jadwal maintenance hari ini.')
+                    ->greeting('Halo, ' . ($notifiable->nama ?? 'Tim')) 
+                    ->line('Ini adalah pengingat otomatis bahwa ada jadwal maintenance hari ini.')
                     ->line('Detail Pekerjaan: ' . $namaPekerjaan)
                     ->line('Status Saat Ini: ' . $this->task->status)
-                    // Sesuaikan route di bawah dengan route detail tugas teknisi Anda
                     ->action('Buka Halaman Tugas', route('staff.maintenance.index'))
                     ->line('Mohon segera dieksekusi agar aset tetap dalam kondisi prima. Terima kasih!');
     }
@@ -58,9 +84,8 @@ class MaintenanceReminderNotification extends Notification implements ShouldQueu
 
         return [
             'maintenance_id' => $this->task->id,
-            'judul'          => 'Tugas Maintenance Hari Ini',
-            'pesan'          => 'Jangan lupa untuk mengeksekusi jadwal: ' . $namaPekerjaan,
-            // Sesuaikan route link tujuan saat notifikasi di klik
+            'judul'          => 'Tugas Maintenance Baru',
+            'pesan'          => 'Jadwal terbuka: ' . $namaPekerjaan,
             'link'           => route('staff.maintenance.index') 
         ];
     }

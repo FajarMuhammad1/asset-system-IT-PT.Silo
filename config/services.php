@@ -31,4 +31,9 @@ return [
         ],
     ],
 
+    // [BARU] Tambahkan konfigurasi Telegram di sini
+    'telegram-bot-api' => [
+        'token' => env('TELEGRAM_BOT_TOKEN', '')
+    ],
+
 ];
