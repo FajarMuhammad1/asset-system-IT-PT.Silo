@@ -22,7 +22,7 @@ class MaintenanceController extends Controller
         // PEMISAHAN LOGIKA TAMPILAN & DATA BERDASARKAN ROLE
         if ($user->role === 'Admin') {
             // -- KHUSUS ADMIN --
-            // Ambal data barang untuk form dropdown jadwal
+            // Ambil data barang untuk form dropdown jadwal
             $barangs = BarangMasuk::with('masterBarang')
                 ->whereIn('status', ['Stok', 'Dipakai', 'Digunakan'])
                 ->get();
@@ -84,22 +84,33 @@ class MaintenanceController extends Controller
                 'status'                  => 'Menunggu' // Status awal tugas agar muncul di layar staff
             ]);
 
-            // [BARU] Tarik relasi nama barang agar bisa dikirim ke teks Telegram
+            // Tarik relasi nama barang agar bisa dikirim ke teks Telegram/WhatsApp
             $task->load('barangMasuk.masterBarang');
             $task->keterangan = $task->barangMasuk->masterBarang->nama_barang ?? $jadwal->deskripsi_tugas;
 
-            // [BARU] JALUR 1: Kirim ke lonceng web SEMUA user yang rolenya Staff
+            // JALUR 1: Kirim ke lonceng web SEMUA user yang rolenya Staff
             $semuaTeknisi = User::where('role', 'Staff')->get();
             Notification::send($semuaTeknisi, new MaintenanceReminderNotification($task));
 
-            // [BARU] JALUR 2: Kirim langsung nge-blass ke GRUP TELEGRAM TIM IT
-            if (env('TELEGRAM_GROUP_ID')) {
-                Notification::route('telegram', env('TELEGRAM_GROUP_ID'))
-                            ->notify(new MaintenanceReminderNotification($task));
+            // JALUR 2: Kirim ke Grup Eksternal (Telegram & WhatsApp secara kondisional)
+            $telegramGroup = env('TELEGRAM_GROUP_ID');
+            $waTarget = env('WHATSAPP_TARGET');
+
+            if ($telegramGroup || $waTarget) {
+                // Inisiasi route dasar dengan Telegram (jika kosong, kirim string kosong agar tidak error)
+                $route = Notification::route('telegram', $telegramGroup ?? '');
+                
+                // Jika target WhatsApp ada, tambahkan ke rantai routing
+                if ($waTarget) {
+                    $route->route(\App\Channels\WhatsAppChannel::class, $waTarget);
+                }
+
+                // Tembak notifikasinya
+                $route->notify(new MaintenanceReminderNotification($task));
             }
         }
 
-        return back()->with('success', 'Jadwal rutin berhasil dibuat. Tugas otomatis dikirim ke halaman Staff dan Grup Telegram Tim IT!');
+        return back()->with('success', 'Jadwal rutin berhasil dibuat. Jika jadwal hari ini, notifikasi otomatis dikirim ke Web, Telegram, dan WhatsApp!');
     }
 
     // 3. Teknisi Memulai Tugas Perawatan Alat (Ubah status Menunggu -> Progres)

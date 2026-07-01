@@ -3,10 +3,10 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-// Hapus ShouldQueue agar notifikasi langsung jalan saat testing
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Illuminate\Notifications\AnonymousNotifiable; // <-- [BARU] Wajib untuk ngirim ke Grup
+use Illuminate\Notifications\AnonymousNotifiable; // Wajib untuk routing grup eksternal
+use App\Channels\WhatsAppChannel; // [BARU] Import Custom Channel WhatsApp Abang
 
 // Import class untuk Telegram
 use NotificationChannels\Telegram\TelegramChannel;
@@ -27,21 +27,33 @@ class MaintenanceReminderNotification extends Notification
     }
 
     /**
-     * Tentukan pintu pengiriman notifikasi (Pilih: mail, database, telegram)
+     * Tentukan pintu pengiriman notifikasi (Pilih: database, telegram, whatsapp)
      */
     public function via(object $notifiable): array
     {
-        // 1. Jika ini pengiriman tanpa nama user (untuk tembak ke Grup Telegram)
+        // 1. Jika ini pengiriman tanpa nama/user (Sistem Broadcast via Controller)
         if ($notifiable instanceof AnonymousNotifiable) {
-            return [TelegramChannel::class];
+            $channels = [];
+
+            // Jika route telegram terkonfigurasi, daftarkan jalurnya
+            if ($notifiable->routeNotificationFor('telegram')) {
+                $channels[] = TelegramChannel::class;
+            }
+
+            // [BARU] Jika route whatsapp terkonfigurasi, daftarkan jalurnya
+            if ($notifiable->routeNotificationFor(WhatsAppChannel::class)) {
+                $channels[] = WhatsAppChannel::class;
+            }
+
+            return $channels;
         }
 
-        // 2. Jika dikirim ke User biasa (untuk masuk ke lonceng web)
+        // 2. Jika dikirim ke User biasa (untuk masuk ke lonceng dashboard web)
         return ['database'];
     }
 
     /**
-     * [BARU] FORMAT NOTIFIKASI TELEGRAM (MASUK KE GRUP)
+     * FORMAT NOTIFIKASI TELEGRAM (MASUK KE GRUP)
      */
     public function toTelegram($notifiable)
     {
@@ -49,8 +61,8 @@ class MaintenanceReminderNotification extends Notification
         $status = $this->task->status ?? 'Menunggu';
 
         return TelegramMessage::create()
-            ->to(env('TELEGRAM_GROUP_ID')) // <-- Tembak ke ID grup di .env
-            ->content("📢 *TUGAS MAINTENANCE BERSAMA*\n\n" .
+            ->to(env('TELEGRAM_GROUP_ID')) // Tembak ke ID grup di .env
+            ->content("📢 *TUGAS MAINTENANCE BERSAMA (TELEGRAM)*\n\n" .
                       "Halo Tim IT, ada jadwal maintenance terbuka yang perlu dikerjakan hari ini.\n\n" .
                       "▪️ *Pekerjaan:* " . $namaPekerjaan . "\n" .
                       "▪️ *Status:* " . $status . "\n\n" .
@@ -59,7 +71,31 @@ class MaintenanceReminderNotification extends Notification
     }
 
     /**
-     * 1. FORMAT NOTIFIKASI EMAIL
+     * [BARU] FORMAT NOTIFIKASI WHATSAPP
+     * Menghasilkan struktur array sesuai kebutuhan WhatsAppChannel.php milik Abang
+     */
+    public function toWhatsApp($notifiable)
+    {
+        $namaPekerjaan = $this->task->keterangan ?? 'Maintenance Rutin Aset';
+        $status = $this->task->status ?? 'Menunggu';
+
+        // Susun teks pesan WhatsApp (Menggunakan bintang '*' untuk cetak tebal)
+        $pesan = "📢 *TUGAS MAINTENANCE BERSAMA (WHATSAPP)*\n\n" .
+                 "Halo Tim IT, ada jadwal maintenance terbuka baru hari ini.\n\n" .
+                 "▪️ *Pekerjaan:* " . $namaPekerjaan . "\n" .
+                 "▪️ *Status:* " . $status . "\n\n" .
+                 "🔗 *Link Tugas:* " . route('staff.maintenance.index') . "\n\n" .
+                 "Siapa yang standby mohon segera dieksekusi ya! 💪";
+
+        // Mengembalikan data array yang nantinya dibaca $notification->toWhatsApp($notifiable)
+        return [
+            'phone'   => $notifiable->routeNotificationFor(WhatsAppChannel::class) ?? env('WHATSAPP_TARGET'),
+            'message' => $pesan
+        ];
+    }
+
+    /**
+     * FORMAT NOTIFIKASI EMAIL
      */
     public function toMail(object $notifiable): MailMessage
     {
@@ -76,7 +112,7 @@ class MaintenanceReminderNotification extends Notification
     }
 
     /**
-     * 2. FORMAT NOTIFIKASI IN-APP (DATABASE)
+     * FORMAT NOTIFIKASI IN-APP (DATABASE)
      */
     public function toArray(object $notifiable): array
     {
