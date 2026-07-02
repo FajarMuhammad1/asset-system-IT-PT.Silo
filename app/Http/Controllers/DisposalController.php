@@ -20,7 +20,7 @@ class DisposalController extends Controller
         $disposals = Disposal::with(['barangMasuk.masterBarang', 'pengaju'])->latest()->get();
         
         $availableAssets = BarangMasuk::with('masterBarang')
-                            ->where('status', '!=', 'Dimusnahkan')
+                            ->whereNotIn('status', ['Dimusnahkan', 'Hilang']) // Menghindari barang yang sudah hilang/dimusnahkan muncul kembali
                             ->get(); 
 
         return view('admin.disposal.index', compact('title', 'disposals', 'availableAssets'));
@@ -32,16 +32,18 @@ class DisposalController extends Controller
      */
     public function store(Request $request)
     {
-        // FIX 1: Gunakan kolom 'role' secara langsung tanpa strtolower agar cocok dengan Enum 'Admin'
+        // Gunakan kolom 'role' secara langsung tanpa strtolower agar cocok dengan Enum 'Admin'
         if (!Auth::check() || Auth::user()->role !== 'Admin') {
             return back()->with('error', 'Akses ditolak! Hanya Admin lokal yang dapat membuat pengajuan.');
         }
 
-        // Validasi inputan form
+        // VALIDASI UPDATE: Bukti wiping wajib KECUALI jika alasan (reason) adalah 'Hilang'
         $request->validate([
             'barang_masuk_id'   => 'required|exists:barang_masuk,id',
             'reason'            => 'required|string|max:500',
-            'data_wiping_proof' => 'required|mimes:pdf,jpg,png,jpeg|max:2048', // Maksimal 2MB
+            'data_wiping_proof' => 'required_unless:reason,Hilang|nullable|mimes:pdf,jpg,png,jpeg|max:2048', // Maksimal 2MB, boleh null kalau hilang
+        ], [
+            'data_wiping_proof.required_unless' => 'Bukti Data Wiping wajib dilampirkan untuk proses pemusnahan fisik aset.'
         ]);
 
         $filePath = null;
@@ -49,7 +51,7 @@ class DisposalController extends Controller
             $filePath = $request->file('data_wiping_proof')->store('disposal_proofs', 'public');
         }
         
-        // FIX 2: Sesuaikan nama kolom dengan struktur database (barang_masuk_id)
+        // Sesuaikan nama kolom dengan struktur database (barang_masuk_id)
         Disposal::create([
             'barang_masuk_id'   => $request->barang_masuk_id, 
             'reason'            => $request->reason,
@@ -68,7 +70,7 @@ class DisposalController extends Controller
      */
     public function approve($id)
     {
-        // FIX 3: Gunakan pengecekan langsung ke role 'SuperAdmin'
+        // Gunakan pengecekan langsung ke role 'SuperAdmin'
         if (!Auth::check() || Auth::user()->role !== 'SuperAdmin') {
             abort(403, 'Akses ditolak! Hanya Super Admin yang berhak menyetujui.');
         }
@@ -76,11 +78,19 @@ class DisposalController extends Controller
         $disposal = Disposal::findOrFail($id);
         $disposal->update(['status' => 'Approved']);
 
-        // FIX 4: Gunakan kolom barang_masuk_id untuk mencari aset
+        // Gunakan kolom barang_masuk_id untuk mencari aset
         $asset = BarangMasuk::findOrFail($disposal->barang_masuk_id);
-        $asset->update(['status' => 'Dimusnahkan']); 
+        
+        // LOGIKA UPDATE: Jika alasannya hilang, ubah status barang menjadi 'Hilang'. Jika alasan lain, ubah ke 'Dimusnahkan'
+        if ($disposal->reason === 'Hilang') {
+            $asset->update(['status' => 'Hilang']);
+            $pesanSukses = 'Disposal disetujui. Status inventaris resmi diubah menjadi Hilang.';
+        } else {
+            $asset->update(['status' => 'Dimusnahkan']); 
+            $pesanSukses = 'Disposal disetujui. Status inventaris resmi diubah menjadi Dimusnahkan.';
+        }
 
-        return back()->with('success', 'Disposal disetujui. Status inventaris resmi diubah menjadi Dimusnahkan.');
+        return back()->with('success', $pesanSukses);
     }
 
     /**
@@ -89,7 +99,7 @@ class DisposalController extends Controller
      */
     public function reject($id)
     {
-        // FIX 5: Gunakan pengecekan langsung ke role 'SuperAdmin'
+        // Gunakan pengecekan langsung ke role 'SuperAdmin'
         if (!Auth::check() || Auth::user()->role !== 'SuperAdmin') {
             abort(403, 'Akses ditolak! Hanya Super Admin yang berhak menolak.');
         }

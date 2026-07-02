@@ -7,7 +7,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Carbon\Carbon; 
-use App\Notifications\TicketAssigned; // <-- [BARU] Import class Notifikasi
+use App\Notifications\TicketAssigned; // <-- Import class Notifikasi
 
 class HelpdeskController extends Controller
 {
@@ -83,21 +83,25 @@ class HelpdeskController extends Controller
         ]);
 
         // ========================================================
-        // [BARU] TRIGGER NOTIFIKASI MULTI-CHANNEL
+        // [PERBAIKAN] TRIGGER NOTIFIKASI MULTI-CHANNEL OPTIMAL
         // ========================================================
         $teknisi = User::find($request->teknisi_id);
         if ($teknisi) {
-            // Ini akan mengeksekusi file App\Notifications\TicketAssigned
-            $teknisi->notify(new TicketAssigned($ticket));
+            // Menggunakan fresh() agar instance tiket memperbarui isi data terbarunya setelah di-update
+            // Ini menjamin field baru seperti 'no_tiket', 'prioritas', dll. ikut terkirim ke WhatsApp/Telegram
+            $ticketTerbaru = $ticket->fresh();
+            
+            // Eksekusi pengiriman notifikasi via App\Notifications\TicketAssigned
+            $teknisi->notify(new TicketAssigned($ticketTerbaru));
         }
 
         return redirect()
             ->back()
-            ->with('success', 'Teknisi berhasil diassign dan notifikasi telah dikirim!');
+            ->with('success', 'Teknisi berhasil diassign dan notifikasi (Web, Email, WA, Telegram) telah diproses!');
     }
 
     /**
-     * Update Pengaturan Prioritas dan Tipe Penyelesaian Tiket (Baru)
+     * Update Pengaturan Prioritas dan Tipe Penyelesaian Tiket
      */
     public function updateSettings(Request $request, $id)
     {

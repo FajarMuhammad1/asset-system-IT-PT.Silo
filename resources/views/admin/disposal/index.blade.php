@@ -67,17 +67,23 @@
                                 @enderror
                             </div>
 
-                            {{-- Alasan Disposal --}}
+                            {{-- Alasan Disposal (DIUBAH JADI DROPDOWN) --}}
                             <div class="form-group col-md-4">
-                                <label class="font-weight-bold text-gray-800">Alasan Pemusnahan</label>
-                                <input type="text" name="reason" value="{{ old('reason') }}" placeholder="Contoh: Rusak parah / tidak bisa diperbaiki" class="form-control @error('reason') is-invalid @enderror" required>
+                                <label class="font-weight-bold text-gray-800">Alasan Pemusnahan / Status</label>
+                                <select name="reason" id="reason" class="form-control @error('reason') is-invalid @enderror" required>
+                                    <option value="">-- Pilih Alasan --</option>
+                                    <option value="Rusak Total" {{ old('reason') == 'Rusak Total' ? 'selected' : '' }}>Rusak Total</option>
+                                    <option value="Dijual / Dilelang" {{ old('reason') == 'Dijual / Dilelang' ? 'selected' : '' }}>Dijual / Dilelang</option>
+                                    <option value="Dihibahkan" {{ old('reason') == 'Dihibahkan' ? 'selected' : '' }}>Dihibahkan</option>
+                                    <option value="Hilang" {{ old('reason') == 'Hilang' ? 'selected' : '' }}>Hilang (Dicuri / Tidak Ditemukan)</option>
+                                </select>
                                 @error('reason')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
                             </div>
 
-                            {{-- Upload Bukti Wiping --}}
-                            <div class="form-group col-md-4">
+                            {{-- Upload Bukti Wiping (DIBERI ID UNTUK JAVASCRIPT) --}}
+                            <div class="form-group col-md-4" id="wipingProofDiv">
                                 <label class="font-weight-bold text-gray-800">Bukti Data Wiping (PDF/JPG/PNG)</label>
                                 <div class="custom-file">
                                     <input type="file" name="data_wiping_proof" class="custom-file-input @error('data_wiping_proof') is-invalid @enderror" id="customFile" accept=".pdf,.jpg,.jpeg,.png" required>
@@ -86,6 +92,7 @@
                                         <span class="invalid-feedback" role="alert" style="display: block;"><strong>{{ $message }}</strong></span>
                                     @enderror
                                 </div>
+                                <small class="text-muted" id="wipingProofHelp">Wajib dilampirkan kecuali status barang Hilang.</small>
                             </div>
                         </div>
                         
@@ -129,7 +136,13 @@
                                     <td class="align-middle">
                                         {{ $item->barangMasuk->masterBarang->nama_barang ?? 'Data Hilang' }}
                                     </td>
-                                    <td class="align-middle">{{ $item->reason }}</td>
+                                    <td class="align-middle">
+                                        @if($item->reason == 'Hilang')
+                                            <span class="badge badge-danger px-2 py-1"><i class="fas fa-search mr-1"></i> Hilang</span>
+                                        @else
+                                            {{ $item->reason }}
+                                        @endif
+                                    </td>
                                     <td class="align-middle">
                                         <span class="font-weight-bold">{{ $item->pengaju->nama ?? 'Unknown' }}</span><br>
                                         <small class="text-muted"><i class="far fa-calendar-alt mr-1"></i>{{ $item->created_at->format('d M Y') }}</small>
@@ -219,6 +232,23 @@
             var fileName = $(this).val().split('\\').pop();
             $(this).next('.custom-file-label').addClass("selected").html(fileName);
         });
+
+        // 3. LOGIKA UNTUK MENYEMBUNYIKAN UPLOAD BUKTI JIKA ALASAN = HILANG
+        $('#reason').on('change', function() {
+            var selectedReason = $(this).val();
+            if(selectedReason === 'Hilang') {
+                // Sembunyikan div upload dan hapus atribut required
+                $('#wipingProofDiv').hide();
+                $('#customFile').removeAttr('required');
+            } else {
+                // Tampilkan kembali dan jadikan required
+                $('#wipingProofDiv').show();
+                $('#customFile').attr('required', 'required');
+            }
+        });
+
+        // Jalankan saat halaman pertama kali diload (mengakomodasi nilai old('reason') jika validasi error)
+        $('#reason').trigger('change');
     });
 </script>
 @endpush

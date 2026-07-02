@@ -32,6 +32,7 @@
             flex-direction: column;
             background: #ffe600;
             height: 180px;
+            box-sizing: border-box;
         }
 
         /* 4. BAGIAN ATAS */
@@ -48,31 +49,32 @@
             border-right: 3px solid #000;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            padding: 5px 5px 5px 12px; 
+            justify-content: center; /* Vertikal Center */
+            align-items: center;     /* Horizontal Center */
+            padding: 15px 20px 10px 20px; /* Padding lebih proporsional */
+            box-sizing: border-box;
+            background-color: #ffe600;
         }
 
         .barcode-container {
-            width: 100%;
-            height: 70px;
+            width: 100%; /* Memaksa kontainer ambil full lebar area kiri */
             display: flex;
             justify-content: center;
             align-items: center;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
 
+        /* PERBAIKAN: Paksa Barcode Besar & Di Tengah */
         .barcode-container > div, 
         .barcode-container > img, 
         .barcode-container > svg {
-            width: 85% !important;
-            height: 100% !important;
-            object-fit: contain;
+            width: 100% !important;     /* Paksa lebar memenuhi kontainer */
+            height: 90px !important;    /* Tinggi dinaikkan drastis agar tidak kekecilan */
+            max-height: 100px !important;
+            object-fit: fill;           /* Gunakan fill agar garis barcode memanjang dengan rata */
             mix-blend-mode: multiply;
             display: block;
-            margin-left: auto !important;
-            margin-right: auto !important;
+            margin: 0 auto !important;  /* Paksa posisi absolut di tengah */
         }
 
         .text-kode {
@@ -82,7 +84,6 @@
             letter-spacing: 2px;
             color: #000;
             line-height: 1;
-            margin-top: 5px;
             text-align: center;
         }
 
@@ -95,6 +96,7 @@
             text-align: center;
             padding: 5px;
             background-color: #ffe600;
+            box-sizing: border-box;
         }
 
         .pt-name { 
@@ -124,21 +126,15 @@
             overflow: hidden;
         }
 
-        /* --- UPDATE STYLE LOGO --- */
+        /* --- STYLE LOGO --- */
         .logo-img {
-            margin-top: auto; /* Dorong ke bawah */
-            
-            /* 1. PERBESAR UKURAN */
+            margin-top: auto;
             width: auto;
-            max-width: 95%;   /* Mentok lebar kolom */
-            max-height: 60px; /* Tinggi dinaikkan jadi 60px (sebelumnya 40px) */
+            max-width: 95%;
+            max-height: 60px;
             object-fit: contain;
             margin-bottom: 8px;
-
-            /* 2. UBAH JADI HITAM */
-            /* Ubah jadi grayscale dulu */
             filter: grayscale(100%) contrast(120%); 
-            /* Blend dengan background kuning agar putih jadi transparan dan gelap jadi hitam */
             mix-blend-mode: multiply; 
         }
 
@@ -219,7 +215,6 @@
                         <img src="{{ asset('image/images.png') }}" 
                              alt="Logo" 
                              class="logo-img">
-                             
                     </div>
                 </div>
 

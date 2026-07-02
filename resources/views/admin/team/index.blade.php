@@ -14,8 +14,6 @@
             </a>
         </div>
 
-      
-
     </div>
 
     <div class="card-body">
@@ -28,7 +26,7 @@
                         <th>Nik</th>
                         <th>Nama</th>
                         <th>Email</th>
-                        <th>Jabatan</th>
+                        <th>No. WhatsApp</th> <th>Jabatan</th>
                         <th>Role</th>
                         <th>Status</th>
                         <th><i class="fas fa-cog"></i></th>
@@ -46,6 +44,15 @@
                             <span class="badge badge-primary">{{ $item->email }}</span>
                         </td>
 
+                        <td class="text-center">
+                            @if($item->no_hp)
+                                <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $item->no_hp) }}" target="_blank" class="text-success font-weight-bold" style="text-decoration: none;">
+                                    <i class="fab fa-whatsapp"></i> {{ $item->no_hp }}
+                                </a>
+                            @else
+                                <span class="badge badge-secondary" style="font-size: 11px;">Belum diset</span>
+                            @endif
+                        </td>
                         <td class="text-center">
                             @switch($item->jabatan)
                                 @case('Head IT')
@@ -173,4 +180,3 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endpush
-

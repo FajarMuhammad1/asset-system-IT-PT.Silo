@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berita Acara Pemusnahan Aset - PT. SILO</title>
+    <title>Berita Acara {{ $disposal->reason == 'Hilang' ? 'Penghapusan' : 'Pemusnahan' }} Aset - PT. SILO</title>
     <style>
         body {
             font-family: 'Times New Roman', Times, serif;
@@ -87,11 +87,11 @@
         </div>
 
         <div class="title">
-            BERITA ACARA PEMUSNAHAN ASET (DISPOSAL)
+            BERITA ACARA {{ $disposal->reason == 'Hilang' ? 'PENGHAPUSAN' : 'PEMUSNAHAN' }} ASET (DISPOSAL)
         </div>
 
         <div class="content">
-            <p>Pada hari ini, tanggal <strong>{{ \Carbon\Carbon::parse($disposal->updated_at)->isoFormat('D MMMM Y') }}</strong>, telah dilakukan persetujuan dan eksekusi pemusnahan aset inventaris IT PT. SILO, dengan rincian sebagai berikut:</p>
+            <p>Pada hari ini, tanggal <strong>{{ \Carbon\Carbon::parse($disposal->updated_at)->isoFormat('D MMMM Y') }}</strong>, telah dilakukan persetujuan dan eksekusi resmi terhadap {{ $disposal->reason == 'Hilang' ? 'penghapusan administratif' : 'pemusnahan fisik' }} aset inventaris IT PT. SILO, dengan rincian sebagai berikut:</p>
 
             <table class="detail-table">
                 <thead>
@@ -99,7 +99,7 @@
                         <th width="5%">No</th>
                         <th width="35%">Nama Barang / Tipe</th>
                         <th width="20%">No. Inventaris / SN</th>
-                        <th width="40%">Alasan Pemusnahan</th>
+                        <th width="40%">Alasan Disposal / Keterangan</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -112,14 +112,19 @@
                 </tbody>
             </table>
 
-            <p>Barang tersebut di atas telah dinyatakan rusak berat / tidak dapat digunakan kembali dan/atau telah melewati masa pakai (usang). Data pada perangkat penyimpanan (jika ada) telah dibersihkan secara permanen (*Data Wiping*).</p>
+            {{-- LOGIKA DINAMIS SIKLUS WIPING BERDASARKAN ALASAN --}}
+            @if($disposal->reason == 'Hilang')
+                <p>Barang tersebut di atas telah dinyatakan hilang (dicuri / tidak ditemukan) berdasarkan pelaporan resmi dari unit kerja terkait. Dikarenakan fisik perangkat tidak lagi berada di bawah penguasaan perusahaan, maka proses pembersihan data secara permanen (*Data Wiping*) secara fisik tidak dapat dilaksanakan.</p>
+            @else
+                <p>Barang tersebut di atas telah dinyatakan rusak berat / tidak dapat digunakan kembali dan/atau telah melewati masa pakai (usang). Data pada perangkat penyimpanan (jika ada) telah dibersihkan secara permanen (*Data Wiping*) sesuai dengan standar prosedur keamanan informasi yang berlaku.</p>
+            @endif
             
-            <p>Demikian Berita Acara ini dibuat dengan sebenar-benarnya untuk dapat dipergunakan sebagaimana mestinya dan sebagai bukti perubahan status aset menjadi "Dimusnahkan" pada Sistem Aset IT.</p>
+            <p>Demikian Berita Acara ini dibuat dengan sebenar-benarnya untuk dapat dipergunakan sebagaimana mestinya dan sebagai bukti perubahan status aset menjadi <strong>"{{ $disposal->reason == 'Hilang' ? 'Hilang' : 'Dimusnahkan' }}"</strong> pada Sistem Aset IT PT. SILO.</p>
         </div>
 
         <div class="signature-section">
             <div class="signature-box">
-                <p>Dibuat & Dieksekusi Oleh,<br><strong>Admin IT (Lokal)</strong></p>
+                <p>Dibuat & Diaksekusi Oleh,<br><strong>Admin IT (Lokal)</strong></p>
                 <div class="signature-space"></div>
                 <p><u>{{ $disposal->pengaju->nama ?? '...................................' }}</u></p>
             </div>

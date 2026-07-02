@@ -35,6 +35,14 @@
             </div>
 
             <div class="form-group">
+                <label>Nomor WhatsApp (Aktif)</label>
+                <input type="text" name="no_hp" class="form-control @error('no_hp') is-invalid @enderror" value="{{ old('no_hp') }}" placeholder="Contoh: 081234567890">
+                @error('no_hp')
+                <small class="text-danger">{{ $message }}</small>
+                @enderror
+                <small class="text-muted">Nomor WA ini akan digunakan untuk menerima notifikasi penugasan tiket Helpdesk.</small>
+            </div>
+            <div class="form-group">
                 <label>Jabatan</label>
                 <select name="jabatan" class="form-control @error('jabatan') is-invalid @enderror">
                     <option value="">-- Pilih Jabatan --</option>

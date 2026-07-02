@@ -7,26 +7,31 @@
 
 <div class="card">
     <div class="card-body">
-        <!-- FORM EDIT MULAI -->
         <form action="{{ route('team.update', $team->id) }}" method="POST">
             @csrf
-            @method('PUT')  <!-- ✅ WAJIB ditambah agar request menjadi PUT -->
-
-            <div class="form-group">
+            @method('PUT')  <div class="form-group">
                 <label>NIK</label>
-                <input type="text" name="nik" class="form-control" value="{{ $team->nik }}">
+                <input type="text" name="nik" class="form-control @error('nik') is-invalid @enderror" value="{{ old('nik', $team->nik) }}">
             </div>
 
             <div class="form-group">
                 <label>Nama</label>
-                <input type="text" name="nama" class="form-control" value="{{ $team->nama }}">
+                <input type="text" name="nama" class="form-control @error('nama') is-invalid @enderror" value="{{ old('nama', $team->nama) }}">
             </div>
 
             <div class="form-group">
                 <label>Email</label>
-                <input type="email" name="email" class="form-control" value="{{ $team->email }}">
+                <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email', $team->email) }}">
             </div>
 
+            <div class="form-group">
+                <label>Nomor WhatsApp (Aktif)</label>
+                <input type="text" name="no_hp" class="form-control @error('no_hp') is-invalid @enderror" value="{{ old('no_hp', $team->no_hp) }}" placeholder="Contoh: 081234567890">
+                @error('no_hp')
+                <small class="text-danger">{{ $message }}</small>
+                @enderror
+                <small class="text-muted">Nomor WA ini akan digunakan untuk menerima notifikasi penugasan tiket Helpdesk.</small>
+            </div>
             <div class="form-group">
                 <label>Jabatan</label>
                 <select name="jabatan" class="form-control">
@@ -64,8 +69,7 @@
             </div>
 
         </form>
-        <!-- FORM EDIT SELESAI -->
-    </div>
+        </div>
 </div>
 
 @endsection
