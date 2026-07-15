@@ -133,6 +133,20 @@
             </a>
         </li>
 
+        {{-- MENU AUDIT ASET (SUDAH DIPERBAIKI ROUTE-NYA) --}}
+        <li class="nav-item {{ Request::routeIs('admin.audit.*') ? 'active' : '' }}">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseAudit" aria-expanded="true" aria-controls="collapseAudit">
+                <i class="fas fa-search"></i>
+                <span>Audit Aset</span>
+            </a>
+            <div id="collapseAudit" class="collapse {{ Request::routeIs('admin.audit.*') ? 'show' : '' }}" aria-labelledby="headingAudit" data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <h6 class="collapse-header">Siklus 6: Opname:</h6>
+                    <a class="collapse-item {{ Request::routeIs('admin.audit.*') ? 'active' : '' }}" href="{{ route('admin.audit.index') }}">Kelola Audit</a>
+                </div>
+            </div>
+        </li>
+
         <li class="nav-item {{ Request::routeIs('pengguna.*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('pengguna.index') }}">
                 <i class="fas fa-fw fa-user"></i>
@@ -177,7 +191,7 @@
         <hr class="sidebar-divider my-0">
 
         {{-- =============================================== --}}
-        {{-- PUSAT CETAK LAPORAN (BARU)                      --}}
+        {{-- PUSAT CETAK LAPORAN                             --}}
         {{-- =============================================== --}}
         <li class="nav-item {{ Request::routeIs('rkab.print') || Request::routeIs('admin.ppi.export') || Request::routeIs('admin.task_report.export') || Request::routeIs('surat-jalan.export-pdf') || Request::routeIs('barangmasuk.export') || Request::routeIs('asset-lifecycle.index') ? 'active' : '' }}">
             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseCetak" aria-expanded="true" aria-controls="collapseCetak">

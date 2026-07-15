@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\HelpdeskController;
 use App\Http\Controllers\Admin\TaskReportAdminController;
 use App\Http\Controllers\Admin\PpiAdminController;
 use App\Http\Controllers\Admin\MaintenanceController; 
+use App\Http\Controllers\Admin\AuditController;
 
 // KONTROLER SUPER ADMIN
 use App\Http\Controllers\SuperAdminPpiController;
@@ -60,7 +61,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
-    // PERBAIKAN DI SINI: Menambahkan rute penanganan klik notifikasi lonceng
+    // Menambahkan rute penanganan klik notifikasi lonceng
     Route::get('/notification/{id}/read', function ($id) {
         $notification = auth()->user()->notifications()->find($id);
         if ($notification) {
@@ -120,7 +121,7 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::get('/task-reports', [TaskReportAdminController::class, 'index'])->name('taskreport.index');
     Route::get('/task-reports/{id}', [TaskReportAdminController::class, 'show'])->name('taskreport.show');
 
-    // --- MODUL DISPOSAL, MUTASI, RKAB & ASSET LIFECYCLE ---
+    // --- MODUL DISPOSAL, MUTASI, RKAB, ASSET LIFECYCLE & AUDIT ---
     Route::get('/disposal', [DisposalController::class, 'index'])->name('disposal.index');
     Route::get('/disposal/{id}/print', [DisposalController::class, 'print'])->name('disposal.print');
     
@@ -137,6 +138,23 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::get('/asset-lifecycle', [AssetLifecycleController::class, 'index'])->name('asset-lifecycle.index');
     Route::get('/asset-lifecycle/track', [AssetLifecycleController::class, 'track'])->name('asset-lifecycle.track');
     Route::get('/asset-lifecycle/{id}/cetak', [AssetLifecycleController::class, 'cetakLifecycle'])->name('asset.cetak_lifecycle');
+
+    // --- AUDIT ASET ---
+    Route::prefix('audit')->name('admin.audit.')->group(function () {
+        Route::get('/', [AuditController::class, 'index'])->name('index');
+        Route::post('/store', [AuditController::class, 'store'])->name('store');
+        Route::get('/{id}', [AuditController::class, 'show'])->name('show');
+        
+        // [TAMBAHAN BARU]: Route untuk hapus (destroy)
+        Route::delete('/{id}', [AuditController::class, 'destroy'])->name('destroy'); 
+        
+        // Custom route untuk scan dan tombol complete
+        Route::post('/{id}/scan', [AuditController::class, 'scanItem'])->name('scan');
+        Route::post('/{id}/complete', [AuditController::class, 'complete'])->name('complete');
+        
+        // Cetak PDF diarahkan ke 'printReport' sesuai nama method di controller Anda
+        Route::get('/{id}/print', [AuditController::class, 'printReport'])->name('print'); 
+    });
 });
 
 
