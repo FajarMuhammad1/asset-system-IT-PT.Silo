@@ -11,6 +11,16 @@
         </a>
     </div>
 
+    {{-- Alert Success --}}
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle mr-1"></i> {{ session('success') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
+
     <div class="row">
 
         {{-- ========================================== --}}
@@ -163,6 +173,66 @@
 
                 </div>
             </div>
+
+            {{-- ========================================== --}}
+            {{-- AREA FEEDBACK PENGGUNA --}}
+            {{-- ========================================== --}}
+            @if($ticket->status == 'Closed' && !$ticket->feedback)
+                <div class="card shadow mb-4 border-left-info">
+                    <div class="card-header py-3 bg-white">
+                        <h6 class="m-0 font-weight-bold text-info"><i class="fas fa-star mr-1"></i> Berikan Penilaian Pelayanan</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info border-0 small">
+                            <i class="fas fa-info-circle mr-1"></i> Mohon kesediaannya memberikan penilaian atas kinerja teknisi kami.
+                        </div>
+                        <form action="{{ route('pengguna.helpdesk.feedback', $ticket->id) }}" method="POST">
+                            @csrf
+                            
+                            <div class="form-group mb-3">
+                                <label for="rating"><strong>Rating (1-5 Bintang) <span class="text-danger">*</span></strong></label>
+                                <select name="rating" id="rating" class="form-control" required>
+                                    <option value="">-- Pilih Rating --</option>
+                                    <option value="5">⭐⭐⭐⭐⭐ (Sangat Puas)</option>
+                                    <option value="4">⭐⭐⭐⭐ (Puas)</option>
+                                    <option value="3">⭐⭐⭐ (Cukup)</option>
+                                    <option value="2">⭐⭐ (Kurang)</option>
+                                    <option value="1">⭐ (Sangat Kurang)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="feedback_text"><strong>Kritik & Saran (Opsional)</strong></label>
+                                <textarea name="feedback_text" id="feedback_text" rows="3" class="form-control" placeholder="Tuliskan pengalaman atau saran Anda..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-info shadow-sm font-weight-bold">
+                                <i class="fas fa-paper-plane mr-1"></i> Kirim Penilaian
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            @elseif($ticket->feedback)
+                <div class="card shadow mb-4 border-left-success">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-check-circle fa-2x text-success mr-3"></i>
+                            <div>
+                                <h6 class="font-weight-bold text-success mb-0">Terima kasih atas penilaian Anda!</h6>
+                                <p class="mb-0 text-muted small">Anda memberikan rating <strong>{{ $ticket->feedback->rating }} Bintang</strong>.</p>
+                            </div>
+                        </div>
+                        
+                        @if($ticket->feedback->feedback_text)
+                            <div class="p-3 bg-light rounded mt-3">
+                                <p class="mb-0 font-italic">"{{ $ticket->feedback->feedback_text }}"</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endif
+            {{-- END AREA FEEDBACK --}}
+
         </div>
 
     </div>

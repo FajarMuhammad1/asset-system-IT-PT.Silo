@@ -54,9 +54,15 @@
     <div class="card shadow mb-4 border-bottom-primary">
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
             <h6 class="m-0 font-weight-bold text-primary">Daftar Item Katalog</h6>
-            <a href="{{ route('master-barang.create') }}" class="btn btn-primary btn-sm shadow-sm">
-                <i class="fas fa-plus mr-1"></i> Tambah Item Baru
-            </a>
+            <div>
+                {{-- Tombol Navigasi Menuju Laporan Keuangan Nilai Aset --}}
+                <a href="{{ route('admin.report.asset_value') }}" class="btn btn-success btn-sm shadow-sm mr-2">
+                    <i class="fas fa-file-invoice-dollar mr-1"></i> Laporan Nilai Aset
+                </a>
+                <a href="{{ route('master-barang.create') }}" class="btn btn-primary btn-sm shadow-sm">
+                    <i class="fas fa-plus mr-1"></i> Tambah Item Baru
+                </a>
+            </div>
         </div>
         
         <div class="card-body">
@@ -129,7 +135,7 @@
                                         Katalog kategori ini masih kosong.
                                     </td>
                                 </tr>
-                                @endforelse
+                                @endforelse {{-- <-- PERBAIKAN DI SINI (Sebelumnya @endendif) --}}
                             </tbody>
                         </table>
                     </div>
@@ -156,7 +162,6 @@
         // 1. LOGIKA DROPDOWN SEBAGAI TABS FILTER
         const dropdownFilter = document.getElementById('dropdownTabFilter');
         dropdownFilter.addEventListener('change', function() {
-            // Ambil target ID wadah tabel dari value option yang dipilih
             const targetPaneId = this.value; 
 
             // Sembunyikan semua tabel
@@ -183,8 +188,6 @@
                 
                 $('.datatable-multi').DataTable({
                     "pageLength": 10,
-                    // Karena sudah ada paginasi Laravel, kita matikan paging bawaan datatables 
-                    // agar tidak terjadi paginasi ganda (Paginasi di dalam paginasi)
                     "paging": {{ $isPaginator ? 'false' : 'true' }}, 
                     "info": {{ $isPaginator ? 'false' : 'true' }},
                     "language": {

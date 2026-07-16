@@ -22,7 +22,7 @@
         </div>
     @endif
 
-    {{-- Alert Error (Ditambahkan untuk menangkap error validasi max 5 tiket) --}}
+    {{-- Alert Error --}}
     @if (session('error'))
         <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
             <i class="fas fa-exclamation-circle mr-1"></i> {{ session('error') }}
@@ -114,6 +114,31 @@
                         @endif
                     </td>
                 </tr>
+                
+                {{-- [TAMBAHAN BARU]: Tampilkan Hasil Kepuasan Pengguna Jika Status Closed --}}
+                @if($ticket->status == 'Closed')
+                    <tr>
+                        <th class="bg-light text-primary font-weight-bold"><i class="fas fa-star mr-1"></i> Rating Layanan</th>
+                        <td>
+                            @if($ticket->feedback)
+                                <span class="text-warning font-weight-bold h5">
+                                    {{ str_repeat('⭐', $ticket->feedback->rating) }}
+                                </span>
+                                <span class="badge badge-dark ml-2">({{ $ticket->feedback->rating }} / 5.0)</span>
+                            @else
+                                <span class="text-muted font-italic">User belum memberikan bintang penilaian</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @if($ticket->feedback && $ticket->feedback->feedback_text)
+                        <tr>
+                            <th class="bg-light text-primary font-weight-bold"><i class="fas fa-comment-dots mr-1"></i> Kritik & Saran</th>
+                            <td class="font-italic text-gray-800 bg-light-custom">
+                                "{{ $ticket->feedback->feedback_text }}"
+                            </td>
+                        </tr>
+                    @endif
+                @endif
             </table>
 
             <hr class="my-4">
@@ -134,8 +159,6 @@
                                         <option value="">-- Pilih Teknisi --</option>
                                         @foreach($staffList as $s)
                                             @php
-                                                // Cek apakah tugas teknisi ini sudah mencapai 5
-                                                // dan pastikan teknisi ini bukan yang sedang ter-assign di tiket ini
                                                 $isSelected = $ticket->teknisi_id == $s->id;
                                                 $isFull = $s->task_count >= 5;
                                             @endphp
@@ -169,7 +192,8 @@
                         <div class="card-body">
                             <form action="{{ route('admin.helpdesk.settings', $ticket->id) }}" method="POST">
                                 @csrf
-                                @method('PUT')
+                                @php method_field('PUT') @endphp
+                                <input type="hidden" name="_method" value="PUT">
                                 
                                 <div class="row">
                                     <div class="col-sm-6">

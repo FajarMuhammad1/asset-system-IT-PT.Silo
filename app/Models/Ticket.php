@@ -35,9 +35,8 @@ class Ticket extends Model
     {
         return LogOptions::defaults()
             // Ditambahkan 'tipe_penyelesaian' agar jika diubah, log mencatat aktivitasnya
-            ->logOnly(['status', 'teknisi_id', 'prioritas', 'solusi_teknisi', 'alasan_penolakan', 'tipe_penyelesaian'])
-            
             // Hanya catat yang berubah saja (biar log gak penuh sampah)
+            ->logOnly(['status', 'teknisi_id', 'prioritas', 'solusi_teknisi', 'alasan_penolakan', 'tipe_penyelesaian'])
             ->logOnlyDirty()
             
             // Deskripsi log
@@ -48,6 +47,7 @@ class Ticket extends Model
     // Relasi: Pelapor (User)
     public function pelapor()
     {
+        // Pastikan nama model User Anda sesuai dengan namespace (App\Models\User)
         return $this->belongsTo(User::class, 'pelapor_id');
     }
 
@@ -61,5 +61,15 @@ class Ticket extends Model
     public function barangMasuk()
     {
         return $this->belongsTo(BarangMasuk::class, 'barang_masuk_id');
+    }
+
+    /**
+     * Relasi: Feedback / Penilaian Tiket
+     * Satu tiket hanya memiliki satu feedback dari pelapor
+     */
+    public function feedback()
+    {
+        // Eloquent secara otomatis akan mencari kolom 'ticket_id' di tabel feedback
+        return $this->hasOne(TicketFeedback::class);
     }
 }

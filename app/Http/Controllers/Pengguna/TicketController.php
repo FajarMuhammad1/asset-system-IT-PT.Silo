@@ -92,4 +92,41 @@ class TicketController extends Controller
             'ticket' => $ticket
         ]);
     }
+
+    /**
+     * Proses Simpan Penilaian (Feedback)
+     */
+    public function storeFeedback(Request $request, $id)
+    {
+        // 1. Validasi input
+        $request->validate([
+            'rating'        => 'required|integer|min:1|max:5',
+            'feedback_text' => 'nullable|string'
+        ], [
+            'rating.required' => 'Rating bintang wajib diisi.',
+        ]);
+
+        // 2. Cari tiket dan pastikan itu milik user yang sedang login
+        $ticket = Ticket::where('pelapor_id', Auth::id())->findOrFail($id);
+
+        // 3. Validasi status tiket (Hanya tiket 'Closed' yang bisa dinilai)
+        if ($ticket->status !== 'Closed') {
+            return back()->with('error', 'Penilaian gagal: Tiket belum berstatus selesai.');
+        }
+
+        // 4. Validasi apakah tiket sudah pernah dinilai sebelumnya
+        if ($ticket->feedback) {
+            return back()->with('error', 'Anda sudah memberikan penilaian untuk tiket ini.');
+        }
+
+        // 5. Simpan ke dalam tabel relasi feedback
+        $ticket->feedback()->create([
+            'rating'        => $request->rating,
+            'feedback_text' => $request->feedback_text,
+            'user_id'       => Auth::id(), // Opsional: mencatat ID pemberi rating (jika ada kolom ini di tabel feedback)
+        ]);
+
+        // 6. Kembali dengan pesan sukses
+        return redirect()->back()->with('success', 'Terima kasih! Penilaian Anda berhasil disimpan.');
+    }
 }

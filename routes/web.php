@@ -92,16 +92,24 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
         Route::put('/ppi-monitoring/{id}/update', [PpiAdminController::class, 'updateStatus'])->name('ppi.update');
         Route::put('/ppi-monitoring/{id}/forward', [PpiAdminController::class, 'forwardToSuperAdmin'])->name('ppi.forward');
 
-        // 2. HELPDESK
+        // 2. HELPDESK & LAPORAN KEPUASAN
         Route::get('/helpdesk', [HelpdeskController::class, 'index'])->name('helpdesk.index');
         Route::get('/helpdesk/{id}', [HelpdeskController::class, 'show'])->name('helpdesk.show');
         Route::post('/helpdesk/{id}/assign', [HelpdeskController::class, 'assignTeknisi'])->name('helpdesk.assign');
         Route::put('/helpdesk/{id}/settings', [HelpdeskController::class, 'updateSettings'])->name('helpdesk.settings');
+        
+        // Rekap Kepuasan Pengguna & Cetak PDF/Print Window
+        Route::get('/report/feedback', [HelpdeskController::class, 'feedbackReport'])->name('report.feedback');
+        Route::get('/report/feedback/print', [HelpdeskController::class, 'printFeedbackReport'])->name('report.feedback.print');
 
         // 3. MAINTENANCE ASET RUTIN
         Route::get('/maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
         Route::post('/maintenance/schedule', [MaintenanceController::class, 'storeSchedule'])->name('maintenance.schedule.store');
         Route::put('/maintenance/tugas/{id}/selesai', [MaintenanceController::class, 'selesaikanPerawatan'])->name('maintenance.tugas.selesai');
+
+        // 4. LAPORAN NILAI ASET (TAMBAHAN BARU)
+        Route::get('/report/asset-value', [MasterBarangController::class, 'valueReport'])->name('report.asset_value');
+        Route::get('/report/asset-value/print', [MasterBarangController::class, 'printValueReport'])->name('report.asset_value.print');
     });
 
     // --- MASTER DATA (REFERENSI) ---
@@ -145,7 +153,7 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
         Route::post('/store', [AuditController::class, 'store'])->name('store');
         Route::get('/{id}', [AuditController::class, 'show'])->name('show');
         
-        // [TAMBAHAN BARU]: Route untuk hapus (destroy)
+        // Route untuk hapus (destroy)
         Route::delete('/{id}', [AuditController::class, 'destroy'])->name('destroy'); 
         
         // Custom route untuk scan dan tombol complete
@@ -202,6 +210,7 @@ Route::middleware(['checkLogin:SuperAdmin'])->prefix('superadmin')->name('supera
     Route::put('/approval/{id}/approve', [SuperAdminPpiController::class, 'approve'])->name('approval.approve');
     Route::put('/approval/{id}/reject', [SuperAdminPpiController::class, 'reject'])->name('approval.reject');
 
+    // Approval Disposal oleh SuperAdmin
     Route::post('/disposal/{id}/approve', [DisposalController::class, 'approve'])->name('disposal.approve');
     Route::post('/disposal/{id}/reject', [DisposalController::class, 'reject'])->name('disposal.reject');
 });
@@ -222,6 +231,9 @@ Route::middleware(['checkLogin:Pengguna'])->prefix('Pengguna')->name('pengguna.'
     Route::get('/helpdesk/create', [PenggunaTicketController::class, 'create'])->name('helpdesk.create');
     Route::post('/helpdesk', [PenggunaTicketController::class, 'store'])->name('helpdesk.store');
     Route::get('/helpdesk/{id}', [PenggunaTicketController::class, 'show'])->name('helpdesk.show');
+    
+    // Route untuk submit feedback ke PenggunaTicketController
+    Route::post('/helpdesk/{id}/feedback', [PenggunaTicketController::class, 'storeFeedback'])->name('helpdesk.feedback');
 
     Route::prefix('user/bast')->name('userbast.')->group(function () {
         Route::get('/', [UserBASTController::class, 'index'])->name('index');
@@ -245,7 +257,7 @@ Route::middleware(['checkLogin:Staff'])->prefix('Staff')->name('staff.')->group(
     Route::post('/helpdesk/{id}/finish', [StaffHelpdeskController::class, 'finish'])->name('helpdesk.finish');
     Route::post('/helpdesk/{id}/reject', [StaffHelpdeskController::class, 'reject'])->name('helpdesk.reject');
     
-    Route::put('/helpdesk/{id}/update', [StaffHelpdeskController::class, 'update'])->name('helpdesk.update');
+    Route::put('/helpdesk/{id}/update', [StaffHelpdeskController::class, 'update'])->name('staff.helpdesk.update');
 
     // Fitur Laporan Tugas Staff
     Route::get('/reports', [StaffReportController::class, 'index'])->name('reports.index');

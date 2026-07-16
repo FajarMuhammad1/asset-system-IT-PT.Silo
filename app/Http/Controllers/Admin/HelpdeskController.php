@@ -123,4 +123,62 @@ class HelpdeskController extends Controller
             ->back()
             ->with('success', 'Pengaturan Prioritas dan Tipe Pengerjaan tiket berhasil diperbarui!');
     }
+
+    /**
+     * Halaman Rekap Penilaian/Feedback Kepuasan Pengguna (Dilihat di Web Admin)
+     */
+    public function feedbackReport(Request $request)
+    {
+        // Default filter ke bulan berjalan
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
+
+        // Ambil tiket yang berstatus Closed dan SUDAH dinilai (punya feedback) berdasarkan rentang tanggal selesai
+        $tickets = Ticket::with(['feedback', 'pelapor', 'teknisi'])
+            ->whereHas('feedback')
+            ->whereBetween('tgl_selesai', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->latest()
+            ->get();
+
+        // Perhitungan KPI Statistik Singkat
+        $totalFeedback = $tickets->count();
+        $averageRating = $tickets->avg(fn($t) => $t->feedback->rating) ?? 0;
+
+        return view('admin.helpdesk.feedback_report', [
+            'title'          => 'Laporan Kepuasan Pengguna',
+            'tickets'        => $tickets,
+            'startDate'      => $startDate,
+            'endDate'        => $endDate,
+            'totalFeedback'  => $totalFeedback,
+            'averageRating'  => $averageRating
+        ]);
+    }
+
+    /**
+     * Halaman Khusus Print / Cetak Berkas Dokumen Kepuasan Pengguna
+     */
+    public function printFeedbackReport(Request $request)
+    {
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+
+        $tickets = Ticket::with(['feedback', 'pelapor', 'teknisi'])
+            ->whereHas('feedback')
+            ->when($startDate && $endDate, function($query) use ($startDate, $endDate) {
+                return $query->whereBetween('tgl_selesai', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+            })
+            ->latest()
+            ->get();
+
+        $totalFeedback = $tickets->count();
+        $averageRating = $tickets->avg(fn($t) => $t->feedback->rating) ?? 0;
+
+        return view('admin.helpdesk.feedback_print', [
+            'tickets'        => $tickets,
+            'startDate'      => $startDate,
+            'endDate'         => $endDate,
+            'totalFeedback'  => $totalFeedback,
+            'averageRating'  => $averageRating
+        ]);
+    }
 }
