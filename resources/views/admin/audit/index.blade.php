@@ -74,9 +74,16 @@
 
                                     {{-- Tombol Cetak PDF (Hanya Muncul Jika Sudah Selesai) --}}
                                     @if($audit->status == 'Completed')
-                                        <a href="{{ route('admin.audit.print', $audit->id) }}" class="btn btn-danger btn-sm text-white mb-1" target="_blank">
+                                        <button type="button" 
+                                                class="btn btn-danger btn-sm text-white mb-1 btn-cetak-swal"
+                                                data-url="{{ route('admin.audit.print', $audit->id) }}"
+                                                data-title="Cetak Laporan Audit"
+                                                data-desc="Anda akan mencetak laporan hasil audit opname:<br><b>{{ $audit->title }}</b><br><br>Dokumen PDF akan terbuka di tab baru. Lanjutkan?"
+                                                data-icon="info"
+                                                data-confirm="Ya, Cetak PDF"
+                                                data-target="_blank">
                                             <i class="fas fa-file-pdf"></i> Cetak
-                                        </a>
+                                        </button>
                                     @endif
 
                                     {{-- Tombol Hapus --}}

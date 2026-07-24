@@ -106,9 +106,16 @@
                     <h6 class="m-0 font-weight-bold text-primary">Rincian Anggaran RKAB Per Kategori</h6>
                     
                     <div>
-                        <a href="{{ route('rkab.print', ['tahun' => $tahunDipilih]) }}" target="_blank" class="btn btn-sm btn-info shadow-sm mr-2">
+                        <button type="button" 
+                                class="btn btn-sm btn-info shadow-sm mr-2 btn-cetak-swal"
+                                data-url="{{ route('rkab.print', ['tahun' => $tahunDipilih]) }}"
+                                data-title="Cetak Laporan Analisis RKAB"
+                                data-desc="Anda akan mencetak laporan Analisis RKAB Tahun <b>{{ $tahunDipilih }}</b>.<br>Laporan akan terbuka di tab baru sebagai file PDF. Lanjutkan?"
+                                data-icon="info"
+                                data-confirm="Ya, Cetak PDF"
+                                data-target="_blank">
                             <i class="fas fa-print fa-sm text-white-50 mr-1"></i> Cetak Laporan
-                        </a>
+                        </button>
                         
                         <button class="btn btn-sm btn-primary shadow-sm" data-toggle="modal" data-target="#modalTambahRKAB">
                             <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> Tambah RKAB

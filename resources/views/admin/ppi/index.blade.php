@@ -166,7 +166,7 @@
                 </button>
             </div>
             
-            <form action="{{ route('admin.ppi.export') }}" method="GET">
+            <form id="formPpiExport" action="{{ route('admin.ppi.export') }}" method="GET">
                 <div class="modal-body">
                     <div class="form-group">
                         <label class="font-weight-bold">Filter Harian (Tanggal):</label>
@@ -212,7 +212,15 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-success"><i class="fas fa-download"></i> Download Excel</button>
+                    <button type="button" 
+                            class="btn btn-success btn-form-submit-swal"
+                            data-form="formPpiExport"
+                            data-title="Export Data PPI"
+                            data-desc="Anda akan meng-export data PPI sesuai filter yang dipilih.<br>File Excel akan otomatis di-download. Lanjutkan?"
+                            data-icon="success"
+                            data-confirm="Ya, Download Excel">
+                        <i class="fas fa-download"></i> Download Excel
+                    </button>
                 </div>
             </form>
         </div>

@@ -123,7 +123,7 @@
             </div>
             
             {{-- Form Default Action ke Excel --}}
-            <form action="{{ route('surat-jalan.export-excel') }}" method="GET" target="_blank">
+            <form id="formSuratJalanExport" action="{{ route('surat-jalan.export-excel') }}" method="GET" target="_blank">
                 <div class="modal-body">
                     
                     {{-- OPSI 1: PER HARIAN --}}
@@ -181,12 +181,25 @@
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
                     
                     {{-- TOMBOL DOWNLOAD EXCEL (Menggunakan action default form) --}}
-                    <button type="submit" class="btn btn-success">
+                    <button type="button" 
+                            class="btn btn-success btn-form-submit-swal"
+                            data-form="formSuratJalanExport"
+                            data-title="Export Surat Jalan ke Excel"
+                            data-desc="Anda akan meng-export data Surat Jalan sesuai filter yang dipilih ke file Excel.<br>Lanjutkan?"
+                            data-icon="success"
+                            data-confirm="Ya, Download Excel">
                         <i class="fas fa-file-excel mr-1"></i> Excel
                     </button>
 
-                    {{-- TOMBOL DOWNLOAD PDF (Override Action ke route PDF) --}}
-                    <button type="submit" class="btn btn-danger" formaction="{{ route('surat-jalan.export-pdf') }}">
+                    {{-- TOMBOL DOWNLOAD PDF (Override Action ke route PDF via data-formaction) --}}
+                    <button type="button" 
+                            class="btn btn-danger btn-form-submit-swal"
+                            data-form="formSuratJalanExport"
+                            data-formaction="{{ route('surat-jalan.export-pdf') }}"
+                            data-title="Cetak Surat Jalan ke PDF"
+                            data-desc="Anda akan mencetak data Surat Jalan sesuai filter menjadi PDF.<br>Dokumen akan terbuka di tab baru. Lanjutkan?"
+                            data-icon="info"
+                            data-confirm="Ya, Cetak PDF">
                         <i class="fas fa-file-pdf mr-1"></i> PDF
                     </button>
                 </div>

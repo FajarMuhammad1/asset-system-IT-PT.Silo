@@ -113,7 +113,7 @@
             </div>
             
             {{-- Pastikan Route ini sesuai dengan web.php --}}
-            <form action="{{ route('admin.task_report.export') }}" method="GET">
+            <form id="formTaskExport" action="{{ route('admin.task_report.export') }}" method="GET">
                 <div class="modal-body">
                     
                     {{-- 1. PILIH BULAN --}}
@@ -162,7 +162,13 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-success">
+                    <button type="button" 
+                            class="btn btn-success btn-form-submit-swal"
+                            data-form="formTaskExport"
+                            data-title="Export Task Report IT"
+                            data-desc="Anda akan meng-export laporan kinerja tim IT.<br>File Excel sesuai filter akan otomatis di-download. Lanjutkan?"
+                            data-icon="success"
+                            data-confirm="Ya, Download Excel">
                         <i class="fas fa-download"></i> Download Excel
                     </button>
                 </div>

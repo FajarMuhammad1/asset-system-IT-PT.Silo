@@ -10,9 +10,16 @@
         </h1>
         
         <!-- Tombol Print (Mengirimkan parameter filter yang sedang aktif) -->
-        <a href="{{ route('admin.report.asset_value_print', request()->query()) }}" target="_blank" class="btn btn-sm btn-success shadow-sm">
+        <button type="button" 
+                class="btn btn-sm btn-success shadow-sm btn-cetak-swal"
+                data-url="{{ route('admin.report.asset_value_print', request()->query()) }}"
+                data-title="Cetak Laporan Nilai Aset"
+                data-desc="Anda akan mencetak laporan Nilai Aset Inventaris IT sesuai filter yang aktif.<br>Halaman cetak akan terbuka di tab baru dan otomatis memunculkan jendela print browser. Lanjutkan?"
+                data-icon="success"
+                data-confirm="Ya, Cetak Sekarang"
+                data-target="_blank">
             <i class="fas fa-print fa-sm text-white-50 mr-1"></i> Cetak Laporan
-        </a>
+        </button>
     </div>
 
     <!-- Papan Ringkasan (Summary Cards) -->
@@ -74,9 +81,12 @@
                         <label for="status">Status Kondisi Aset</label>
                         <select class="form-control" name="status" id="status">
                             <option value="">-- Semua Status --</option>
-                            <option value="baik" {{ $selectedStatus == 'baik' ? 'selected' : '' }}>Baik</option>
-                            <option value="rusak ringan" {{ $selectedStatus == 'rusak ringan' ? 'selected' : '' }}>Rusak Ringan</option>
-                            <option value="rusak berat" {{ $selectedStatus == 'rusak berat' ? 'selected' : '' }}>Rusak Berat</option>
+                            <option value="Stok"          {{ $selectedStatus == 'Stok' ? 'selected' : '' }}>Stok / Ready</option>
+                            <option value="Dipakai"       {{ $selectedStatus == 'Dipakai' ? 'selected' : '' }}>Dipakai / Digunakan</option>
+                            <option value="baik"          {{ $selectedStatus == 'baik' ? 'selected' : '' }}>Baik</option>
+                            <option value="Rusak"         {{ $selectedStatus == 'Rusak' ? 'selected' : '' }}>Rusak</option>
+                            <option value="rusak ringan"  {{ $selectedStatus == 'rusak ringan' ? 'selected' : '' }}>Rusak Ringan</option>
+                            <option value="rusak berat"   {{ $selectedStatus == 'rusak berat' ? 'selected' : '' }}>Rusak Berat</option>
                         </select>
                     </div>
                     <div class="col-md-2 mb-3 d-flex align-items-end">
@@ -116,9 +126,14 @@
                             <td class="text-center">{{ strtoupper($asset->kategori) }}</td>
                             <td class="text-center">{{ $asset->tgl_beli ? \Carbon\Carbon::parse($asset->tgl_beli)->format('d-m-Y') : '-' }}</td>
                             <td class="text-center">
-                                @if(strtolower($asset->status) == 'baik')
-                                    <span class="badge badge-success px-2 py-1">Baik</span>
-                                @elseif(strtolower($asset->status) == 'rusak ringan')
+                                @php
+                                    $_s = strtolower(trim($asset->status ?? ''));
+                                @endphp
+                                @if(in_array($_s, ['baik', 'stok', 'ready']))
+                                    <span class="badge badge-success px-2 py-1">{{ ucfirst($asset->status) }}</span>
+                                @elseif(in_array($_s, ['dipakai', 'digunakan']))
+                                    <span class="badge badge-primary px-2 py-1">{{ ucfirst($asset->status) }}</span>
+                                @elseif(in_array($_s, ['rusak ringan']))
                                     <span class="badge badge-warning px-2 py-1">Rusak Ringan</span>
                                 @else
                                     <span class="badge badge-danger px-2 py-1">{{ ucfirst($asset->status) }}</span>

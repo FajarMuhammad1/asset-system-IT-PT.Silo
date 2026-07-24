@@ -193,28 +193,125 @@
         {{-- =============================================== --}}
         {{-- PUSAT CETAK LAPORAN                             --}}
         {{-- =============================================== --}}
-        <li class="nav-item {{ Request::routeIs('rkab.print') || Request::routeIs('admin.ppi.export') || Request::routeIs('admin.task_report.export') || Request::routeIs('surat-jalan.export-pdf') || Request::routeIs('barangmasuk.export') || Request::routeIs('asset-lifecycle.index') || Request::routeIs('admin.report.asset_value*') ? 'active' : '' }}">
+        @php
+            $_cetakRoutes = [
+                'rkab.print',
+                'admin.ppi.export',
+                'admin.task_report.export',
+                'surat-jalan.export-*',
+                'barangmasuk.export',
+                'asset-lifecycle.index',
+                'admin.report.asset_value*',
+                'admin.report.feedback*',
+                'admin.audit.*'
+            ];
+            $_cetakActive = false;
+            foreach ($_cetakRoutes as $r) {
+                if (Request::routeIs($r)) { $_cetakActive = true; break; }
+            }
+        @endphp
+        <li class="nav-item {{ $_cetakActive ? 'active' : '' }}">
             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseCetak" aria-expanded="true" aria-controls="collapseCetak">
                 <i class="fas fa-fw fa-print"></i>
                 <span>Pusat Cetak Laporan</span>
             </a>
-            <div id="collapseCetak" class="collapse {{ Request::routeIs('rkab.print') || Request::routeIs('admin.ppi.export') || Request::routeIs('admin.task_report.export') || Request::routeIs('surat-jalan.export-pdf') || Request::routeIs('barangmasuk.export') || Request::routeIs('asset-lifecycle.index') || Request::routeIs('admin.report.asset_value*') ? 'show' : '' }}" aria-labelledby="headingCetak" data-parent="#accordionSidebar">
+            <div id="collapseCetak" class="collapse {{ $_cetakActive ? 'show' : '' }}" aria-labelledby="headingCetak" data-parent="#accordionSidebar">
                 <div class="bg-white py-2 collapse-inner rounded">
                     
-                    <h6 class="collapse-header text-primary">LAPORAN GLOBAL:</h6>
-                    <a class="collapse-item" href="{{ route('rkab.print') }}" target="_blank"><i class="fas fa-file-pdf text-danger mr-2"></i> Analisis RKAB</a>
-                    <a class="collapse-item" href="{{ route('admin.ppi.export') }}"><i class="fas fa-file-excel text-success mr-2"></i> Excel PPI</a>
-                    <a class="collapse-item" href="{{ route('admin.task_report.export') }}"><i class="fas fa-file-excel text-success mr-2"></i> Task Report</a>
-                    <a class="collapse-item" href="{{ route('surat-jalan.export-pdf') }}" target="_blank"><i class="fas fa-file-pdf text-danger mr-2"></i> Surat Jalan</a>
-                    <a class="collapse-item" href="{{ route('barangmasuk.export') }}"><i class="fas fa-file-excel text-success mr-2"></i> Barang Masuk</a>
-                    
-                    {{-- TAMBAHAN MENU BARU: Laporan Nilai Aset --}}
-                    <a class="collapse-item {{ Request::routeIs('admin.report.asset_value*') ? 'active' : '' }}" href="{{ route('admin.report.asset_value') }}"><i class="fas fa-file-invoice-dollar text-primary mr-2"></i> Laporan Nilai Aset</a>
+                    {{-- ========= GRUP 1: LAPORAN GLOBAL (REKAP KEUANGAN & ASET) ========= --}}
+                    <h6 class="collapse-header text-primary mb-1">
+                        <i class="fas fa-chart-line mr-1"></i> LAPORAN GLOBAL
+                    </h6>
 
-                    <h6 class="collapse-header text-primary mt-2">CETAK PER UNIT:</h6>
-                    <a class="collapse-item {{ Request::routeIs('asset-lifecycle.index') ? 'active' : '' }}" href="{{ route('asset-lifecycle.index') }}"><i class="fas fa-search text-info mr-2"></i> Lifecycle Asset</a>
-                    <a class="collapse-item" href="{{ route('barangkeluar.index') }}"><i class="fas fa-file-contract text-info mr-2"></i> BAST Barang Keluar</a>
-                    <a class="collapse-item" href="{{ route('disposal.index') }}"><i class="fas fa-trash-alt text-info mr-2"></i> Dokumen Disposal</a>
+                    {{-- RKAB --}}
+                    <a class="collapse-item {{ Request::routeIs('rkab.print') ? 'active' : '' }}" 
+                       href="{{ route('rkab.print') }}" target="_blank">
+                        <i class="fas fa-file-pdf text-danger mr-2"></i> Analisis RKAB (PDF)
+                    </a>
+
+                    {{-- Laporan Nilai Aset --}}
+                    <a class="collapse-item {{ Request::routeIs('admin.report.asset_value*') ? 'active' : '' }}" 
+                       href="{{ route('admin.report.asset_value') }}">
+                        <i class="fas fa-file-invoice-dollar text-primary mr-2"></i> Laporan Nilai Aset
+                    </a>
+
+                    {{-- Laporan Feedback Helpdesk (BARU) --}}
+                    <a class="collapse-item {{ Request::routeIs('admin.report.feedback*') ? 'active' : '' }}" 
+                       href="{{ route('admin.report.feedback') }}">
+                        <i class="fas fa-comments text-warning mr-2"></i> Laporan Feedback Helpdesk
+                    </a>
+
+                    {{-- ========= GRUP 2: EXPORT EXCEL (DATA MASTER) ========= --}}
+                    <h6 class="collapse-header text-success mt-3 mb-1">
+                        <i class="fas fa-file-excel mr-1"></i> EXPORT EXCEL
+                    </h6>
+
+                    {{-- PPI Excel --}}
+                    <a class="collapse-item" 
+                       href="{{ route('admin.ppi.export') }}">
+                        <i class="fas fa-file-excel text-success mr-2"></i> Data PPI (Excel)
+                    </a>
+
+                    {{-- Task Report Excel --}}
+                    <a class="collapse-item" 
+                       href="{{ route('admin.task_report.export') }}">
+                        <i class="fas fa-file-excel text-success mr-2"></i> Task Report IT (Excel)
+                    </a>
+
+                    {{-- Barang Masuk Excel --}}
+                    <a class="collapse-item" 
+                       href="{{ route('barangmasuk.export') }}">
+                        <i class="fas fa-file-excel text-success mr-2"></i> Data Inventaris Aset (Excel)
+                    </a>
+
+                    {{-- Surat Jalan Excel (BARU) --}}
+                    <a class="collapse-item" 
+                       href="{{ route('surat-jalan.export-excel') }}">
+                        <i class="fas fa-file-excel text-success mr-2"></i> Surat Jalan (Excel)
+                    </a>
+
+                    {{-- ========= GRUP 3: EXPORT PDF (DOKUMEN REKAP) ========= --}}
+                    <h6 class="collapse-header text-danger mt-3 mb-1">
+                        <i class="fas fa-file-pdf mr-1"></i> EXPORT PDF
+                    </h6>
+
+                    {{-- Surat Jalan PDF --}}
+                    <a class="collapse-item" 
+                       href="{{ route('surat-jalan.export-pdf') }}" target="_blank">
+                        <i class="fas fa-file-pdf text-danger mr-2"></i> Rekap Surat Jalan (PDF)
+                    </a>
+
+                    {{-- ========= GRUP 4: CETAK PER UNIT & OPS LAINNYA ========= --}}
+                    <h6 class="collapse-header text-info mt-3 mb-1">
+                        <i class="fas fa-box-open mr-1"></i> CETAK PER UNIT
+                    </h6>
+
+                    {{-- Lifecycle Asset --}}
+                    <a class="collapse-item {{ Request::routeIs('asset-lifecycle.index') ? 'active' : '' }}" 
+                       href="{{ route('asset-lifecycle.index') }}">
+                        <i class="fas fa-search-plus text-info mr-2"></i> Riwayat Lifecycle Aset
+                    </a>
+
+                    {{-- Audit Report (BARU) --}}
+                    <a class="collapse-item {{ Request::routeIs('admin.audit.*') ? 'active' : '' }}" 
+                       href="{{ route('admin.audit.index') }}">
+                        <i class="fas fa-clipboard-check text-info mr-2"></i> Laporan Audit (Opname)
+                    </a>
+
+                    {{-- BAST Barang Keluar --}}
+                    <a class="collapse-item" href="{{ route('barangkeluar.index') }}">
+                        <i class="fas fa-file-contract text-info mr-2"></i> BAST Serah Terima (Keluar)
+                    </a>
+
+                    {{-- Dokumen Disposal --}}
+                    <a class="collapse-item" href="{{ route('disposal.index') }}">
+                        <i class="fas fa-trash-alt text-info mr-2"></i> Dokumen Disposal
+                    </a>
+
+                    {{-- Label Aset --}}
+                    <a class="collapse-item" href="{{ route('barangmasuk.index') }}">
+                        <i class="fas fa-barcode text-info mr-2"></i> Cetak Label Aset
+                    </a>
                     
                 </div>
             </div>

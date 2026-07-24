@@ -275,7 +275,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form action="{{ route('barangmasuk.export') }}" method="GET">
+            <form id="formBarangMasukExport" action="{{ route('barangmasuk.export') }}" method="GET">
                 <div class="modal-body">
                     <div class="form-group">
                         <label>Status / Kondisi</label>
@@ -308,7 +308,15 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-success"><i class="fas fa-download mr-1"></i> Download</button>
+                    <button type="button" 
+                            class="btn btn-success btn-form-submit-swal"
+                            data-form="formBarangMasukExport"
+                            data-title="Export Data Inventaris Aset"
+                            data-desc="Anda akan meng-export data inventaris aset (Barang Masuk) sesuai filter ke file Excel.<br>Lanjutkan?"
+                            data-icon="success"
+                            data-confirm="Ya, Download Excel">
+                        <i class="fas fa-download mr-1"></i> Download
+                    </button>
                 </div>
             </form>
         </div>
