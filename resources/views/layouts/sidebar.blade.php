@@ -133,7 +133,7 @@
             </a>
         </li>
 
-        {{-- MENU AUDIT ASET (SUDAH DIPERBAIKI ROUTE-NYA) --}}
+        {{-- MENU AUDIT ASET --}}
         <li class="nav-item {{ Request::routeIs('admin.audit.*') ? 'active' : '' }}">
             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseAudit" aria-expanded="true" aria-controls="collapseAudit">
                 <i class="fas fa-search"></i>
@@ -193,12 +193,12 @@
         {{-- =============================================== --}}
         {{-- PUSAT CETAK LAPORAN                             --}}
         {{-- =============================================== --}}
-        <li class="nav-item {{ Request::routeIs('rkab.print') || Request::routeIs('admin.ppi.export') || Request::routeIs('admin.task_report.export') || Request::routeIs('surat-jalan.export-pdf') || Request::routeIs('barangmasuk.export') || Request::routeIs('asset-lifecycle.index') ? 'active' : '' }}">
+        <li class="nav-item {{ Request::routeIs('rkab.print') || Request::routeIs('admin.ppi.export') || Request::routeIs('admin.task_report.export') || Request::routeIs('surat-jalan.export-pdf') || Request::routeIs('barangmasuk.export') || Request::routeIs('asset-lifecycle.index') || Request::routeIs('admin.report.asset_value*') ? 'active' : '' }}">
             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseCetak" aria-expanded="true" aria-controls="collapseCetak">
                 <i class="fas fa-fw fa-print"></i>
                 <span>Pusat Cetak Laporan</span>
             </a>
-            <div id="collapseCetak" class="collapse {{ Request::routeIs('rkab.print') || Request::routeIs('admin.ppi.export') || Request::routeIs('admin.task_report.export') || Request::routeIs('surat-jalan.export-pdf') || Request::routeIs('barangmasuk.export') || Request::routeIs('asset-lifecycle.index') ? 'show' : '' }}" aria-labelledby="headingCetak" data-parent="#accordionSidebar">
+            <div id="collapseCetak" class="collapse {{ Request::routeIs('rkab.print') || Request::routeIs('admin.ppi.export') || Request::routeIs('admin.task_report.export') || Request::routeIs('surat-jalan.export-pdf') || Request::routeIs('barangmasuk.export') || Request::routeIs('asset-lifecycle.index') || Request::routeIs('admin.report.asset_value*') ? 'show' : '' }}" aria-labelledby="headingCetak" data-parent="#accordionSidebar">
                 <div class="bg-white py-2 collapse-inner rounded">
                     
                     <h6 class="collapse-header text-primary">LAPORAN GLOBAL:</h6>
@@ -207,6 +207,9 @@
                     <a class="collapse-item" href="{{ route('admin.task_report.export') }}"><i class="fas fa-file-excel text-success mr-2"></i> Task Report</a>
                     <a class="collapse-item" href="{{ route('surat-jalan.export-pdf') }}" target="_blank"><i class="fas fa-file-pdf text-danger mr-2"></i> Surat Jalan</a>
                     <a class="collapse-item" href="{{ route('barangmasuk.export') }}"><i class="fas fa-file-excel text-success mr-2"></i> Barang Masuk</a>
+                    
+                    {{-- TAMBAHAN MENU BARU: Laporan Nilai Aset --}}
+                    <a class="collapse-item {{ Request::routeIs('admin.report.asset_value*') ? 'active' : '' }}" href="{{ route('admin.report.asset_value') }}"><i class="fas fa-file-invoice-dollar text-primary mr-2"></i> Laporan Nilai Aset</a>
 
                     <h6 class="collapse-header text-primary mt-2">CETAK PER UNIT:</h6>
                     <a class="collapse-item {{ Request::routeIs('asset-lifecycle.index') ? 'active' : '' }}" href="{{ route('asset-lifecycle.index') }}"><i class="fas fa-search text-info mr-2"></i> Lifecycle Asset</a>
@@ -244,7 +247,6 @@
             </a>
         </li>
 
-        {{-- UPDATE: MENU MAINTENANCE KHUSUS STAFF (Eksekusi Tiket) --}}
         <li class="nav-item {{ Request::routeIs('staff.maintenance.*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('staff.maintenance.index') }}">
                 <i class="fas fa-fw fa-tools"></i>

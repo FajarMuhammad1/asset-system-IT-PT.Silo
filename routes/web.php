@@ -18,6 +18,7 @@ use App\Http\Controllers\SuratJalanController;
 use App\Http\Controllers\BarangMasukController;
 use App\Http\Controllers\BarangKeluarController;
 use App\Http\Controllers\MasterBarangController;
+use App\Http\Controllers\AssetReportController; // <-- TAMBAHAN BARU UNTUK LAPORAN
 use App\Http\Controllers\StaffDashboardController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\HelpdeskController;
@@ -107,9 +108,9 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
         Route::post('/maintenance/schedule', [MaintenanceController::class, 'storeSchedule'])->name('maintenance.schedule.store');
         Route::put('/maintenance/tugas/{id}/selesai', [MaintenanceController::class, 'selesaikanPerawatan'])->name('maintenance.tugas.selesai');
 
-        // 4. LAPORAN NILAI ASET (TAMBAHAN BARU)
-        Route::get('/report/asset-value', [MasterBarangController::class, 'valueReport'])->name('report.asset_value');
-        Route::get('/report/asset-value/print', [MasterBarangController::class, 'printValueReport'])->name('report.asset_value.print');
+        // 4. LAPORAN NILAI ASET (UPDATE: Dipindah ke AssetReportController)
+        Route::get('/report/asset-value', [AssetReportController::class, 'index'])->name('report.asset_value');
+        Route::get('/report/asset-value/print', [AssetReportController::class, 'print'])->name('report.asset_value_print');
     });
 
     // --- MASTER DATA (REFERENSI) ---

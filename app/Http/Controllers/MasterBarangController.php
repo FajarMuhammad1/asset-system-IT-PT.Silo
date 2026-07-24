@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\MasterBarang;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\DB;
 
 class MasterBarangController extends Controller
 {
@@ -47,7 +46,7 @@ class MasterBarangController extends Controller
             'spesifikasi' => 'nullable|string',
         ]);
 
-        // 2. Simpan (PERBAIKAN: Gunakan $validatedData, bukan $request->all())
+        // 2. Simpan 
         MasterBarang::create($validatedData);
 
         // 3. Redirect dengan pesan sukses
@@ -96,7 +95,7 @@ class MasterBarangController extends Controller
             'spesifikasi' => 'nullable|string',
         ]);
 
-        // 2. Update (PERBAIKAN: Gunakan $validatedData, bukan $request->all())
+        // 2. Update 
         $masterBarang->update($validatedData);
 
         // 3. Redirect dengan pesan sukses
@@ -127,94 +126,5 @@ class MasterBarangController extends Controller
             // Error database lainnya
             return redirect()->back()->with('error', 'Gagal hapus! Error: ' . $e->getMessage());
         }
-    }
-
-    /**
-     * ====================================================
-     * [TAMBAHAN BARU]: LAPORAN REKAPITULASI NILAI ASET
-     * ====================================================
-     */
-
-    /**
-     * Tampilkan Halaman Laporan Nilai Keuangan Aset + Filter Panel
-     */
-    public function valueReport(Request $request)
-    {
-        $startDate = $request->get('start_date');
-        $endDate = $request->get('end_date');
-        $status = $request->get('status');
-
-        // Menggabungkan data unit aset dengan master katalognya untuk ditarik nilai harganya
-        $query = DB::table('assets')
-            ->join('master_barang', 'assets.master_barang_id', '=', 'master_barang.id')
-            ->select(
-                'assets.*', 
-                'master_barang.nama_barang', 
-                'master_barang.kategori', 
-                'master_barang.merk'
-            );
-
-        // Penerapan Filter Rentang Tanggal Pembelian Aset
-        if ($startDate && $endDate) {
-            $query->whereBetween('assets.tgl_beli', [$startDate, $endDate]);
-        }
-
-        // Penerapan Filter Status Kondisi Fisik Aset
-        if ($status) {
-            $query->where('assets.status', $status);
-        }
-
-        $assets = $query->orderBy('assets.created_at', 'desc')->get();
-        
-        // Akumulasi Kalkulasi Total Nilai & Kuantitas Unit
-        $totalValue = $assets->sum('harga_beli');
-        $totalQty = $assets->count();
-
-        return view('admin.masterbarang.value_report', [
-            'title'          => 'Laporan Nilai Aset Inventaris',
-            'assets'         => $assets,
-            'totalValue'     => $totalValue,
-            'totalQty'       => $totalQty,
-            'startDate'      => $startDate,
-            'endDate'        => $endDate,
-            'selectedStatus' => $status
-        ]);
-    }
-
-    /**
-     * Melayani Cetak/Print Window Laporan Keuangan Aset
-     */
-    public function printValueReport(Request $request)
-    {
-        $startDate = $request->get('start_date');
-        $endDate = $request->get('end_date');
-        $status = $request->get('status');
-
-        $query = DB::table('assets')
-            ->join('master_barang', 'assets.master_barang_id', '=', 'master_barang.id')
-            ->select(
-                'assets.*', 
-                'master_barang.nama_barang', 
-                'master_barang.kategori', 
-                'master_barang.merk'
-            );
-
-        if ($startDate && $endDate) {
-            $query->whereBetween('assets.tgl_beli', [$startDate, $endDate]);
-        }
-        if ($status) {
-            $query->where('assets.status', $status);
-        }
-
-        $assets = $query->orderBy('assets.created_at', 'desc')->get();
-        $totalValue = $assets->sum('harga_beli');
-
-        return view('admin.masterbarang.value_print', [
-            'assets'     => $assets,
-            'totalValue' => $totalValue,
-            'startDate'  => $startDate,
-            'endDate'    => $endDate,
-            'status'     => $status
-        ]);
     }
 }

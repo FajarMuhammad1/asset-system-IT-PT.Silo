@@ -16,6 +16,7 @@
             </button>
         </div>
     @endif
+    
     @if (session('error'))
         <div class="alert alert-danger border-left-danger shadow-sm alert-dismissible fade show">
             <i class="fas fa-exclamation-triangle mr-1"></i> {{ session('error') }}
@@ -55,10 +56,6 @@
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
             <h6 class="m-0 font-weight-bold text-primary">Daftar Item Katalog</h6>
             <div>
-                {{-- Tombol Navigasi Menuju Laporan Keuangan Nilai Aset --}}
-                <a href="{{ route('admin.report.asset_value') }}" class="btn btn-success btn-sm shadow-sm mr-2">
-                    <i class="fas fa-file-invoice-dollar mr-1"></i> Laporan Nilai Aset
-                </a>
                 <a href="{{ route('master-barang.create') }}" class="btn btn-primary btn-sm shadow-sm">
                     <i class="fas fa-plus mr-1"></i> Tambah Item Baru
                 </a>
@@ -135,7 +132,7 @@
                                         Katalog kategori ini masih kosong.
                                     </td>
                                 </tr>
-                                @endforelse {{-- <-- PERBAIKAN DI SINI (Sebelumnya @endendif) --}}
+                                @endforelse
                             </tbody>
                         </table>
                     </div>

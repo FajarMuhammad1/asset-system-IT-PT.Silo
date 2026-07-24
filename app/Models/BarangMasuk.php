@@ -76,4 +76,13 @@ class BarangMasuk extends Model
     {
         return $this->hasMany(PerawatanBarang::class, 'barang_masuk_id');
     }
+
+    /**
+ * Hubungan Relasi (Has Many)
+ * Satu Barang Masuk bisa memiliki banyak riwayat penilaian nilai aset (jika dinilai berkala).
+ */
+public function nilaiAset()
+{
+    return $this->hasMany(NilaiAset::class, 'barang_masuk_id');
+}
 }
