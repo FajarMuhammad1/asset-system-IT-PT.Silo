@@ -258,7 +258,7 @@ Route::middleware(['checkLogin:Staff'])->prefix('Staff')->name('staff.')->group(
     Route::post('/helpdesk/{id}/finish', [StaffHelpdeskController::class, 'finish'])->name('helpdesk.finish');
     Route::post('/helpdesk/{id}/reject', [StaffHelpdeskController::class, 'reject'])->name('helpdesk.reject');
     
-    Route::put('/helpdesk/{id}/update', [StaffHelpdeskController::class, 'update'])->name('staff.helpdesk.update');
+    Route::put('/helpdesk/{id}/update', [StaffHelpdeskController::class, 'update'])->name('helpdesk.update');
 
     // Fitur Laporan Tugas Staff
     Route::get('/reports', [StaffReportController::class, 'index'])->name('reports.index');

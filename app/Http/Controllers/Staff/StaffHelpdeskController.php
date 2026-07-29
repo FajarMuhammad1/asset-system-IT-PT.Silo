@@ -122,6 +122,57 @@ class StaffHelpdeskController extends Controller
     }
 
     /**
+     * Staff menyelesaikan tiket langsung dari dashboard.
+     */
+    public function update(Request $request, $id)
+    {
+        $ticket = Ticket::findOrFail($id);
+
+        // Validasi keamanan: hanya PIC utama yang boleh menyelesaikan
+        if ($ticket->teknisi_id != Auth::id()) {
+            return back()->with('error', 'Hanya PIC Utama yang dapat menyelesaikan tiket ini.');
+        }
+
+        $request->validate([
+            'catatan_staff' => 'required|string',
+            'checklist' => 'nullable|array',
+        ]);
+
+        $waktuSelesai = now();
+        $checklist = $request->input('checklist', []);
+
+        $solusiTeknisi = trim($request->catatan_staff);
+
+        if (!empty($checklist)) {
+            $solusiTeknisi = "Checklist Penyelesaian:\n- "
+                . implode("\n- ", $checklist)
+                . "\n\nCatatan Perbaikan:\n"
+                . $solusiTeknisi;
+        }
+
+        $ticket->update([
+            'status' => 'Closed',
+            'tgl_selesai' => $waktuSelesai,
+            'solusi_teknisi' => $solusiTeknisi,
+            'started_at' => $ticket->started_at ?? now(),
+        ]);
+
+        TaskReport::create([
+            'staff_id' => Auth::id(),
+            'ticket_id' => $ticket->id,
+            'judul' => 'Penyelesaian Tiket: ' . $ticket->no_tiket,
+            'deskripsi' => "Masalah: " . $ticket->judul_masalah . "\nDetail: " . ($ticket->deskripsi ?? '-'),
+            'hasil' => $solusiTeknisi,
+            'tanggal_mulai' => $ticket->started_at ?? $ticket->created_at,
+            'tanggal_selesai' => $waktuSelesai,
+        ]);
+
+        return redirect()
+            ->route('staff.dashboard')
+            ->with('success', 'Tiket berhasil diselesaikan dari dashboard dan laporan tugas otomatis dibuat.');
+    }
+
+    /**
      * Staff menolak tiket yang ditugaskan
      */
     public function reject(Request $request, $id)
