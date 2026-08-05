@@ -18,7 +18,7 @@ use App\Http\Controllers\SuratJalanController;
 use App\Http\Controllers\BarangMasukController;
 use App\Http\Controllers\BarangKeluarController;
 use App\Http\Controllers\MasterBarangController;
-use App\Http\Controllers\AssetReportController; // <-- TAMBAHAN BARU UNTUK LAPORAN
+use App\Http\Controllers\AssetReportController; 
 use App\Http\Controllers\StaffDashboardController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\HelpdeskController;
@@ -96,8 +96,17 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
 
         // 2. HELPDESK & LAPORAN KEPUASAN
         Route::get('/helpdesk', [HelpdeskController::class, 'index'])->name('helpdesk.index');
+        
+        // [UPDATE] Route untuk modul Biaya Operasional (Rekap & Cetak)
         Route::get('/helpdesk/biaya-operasional', [HelpdeskController::class, 'rekapBiaya'])->name('helpdesk.biaya');
-        Route::post('/helpdesk/{id}/biaya-operasional', [HelpdeskController::class, 'tambahBiaya'])->name('helpdesk.biaya.store');
+        Route::get('/helpdesk/biaya-operasional/cetak', [HelpdeskController::class, 'cetakBiayaOperasional'])->name('helpdesk.biaya.cetak'); // <-- Route Cetak PDF Ditambahkan di sini
+        
+        // Route POST untuk menyimpan data Biaya Operasional dari form baru
+        Route::post('/helpdesk/biaya-operasional/store', [HelpdeskController::class, 'storeBiaya'])->name('helpdesk.biaya.store');
+        
+        // (Opsional) Jika masih ada form input biaya dari dalam detail tiket, namanya disesuaikan:
+        Route::post('/helpdesk/{id}/biaya-operasional', [HelpdeskController::class, 'tambahBiaya'])->name('helpdesk.biaya.tambah');
+        
         Route::delete('/helpdesk/biaya-operasional/{id}', [HelpdeskController::class, 'hapusBiaya'])->name('helpdesk.biaya.destroy');
         Route::get('/helpdesk/{id}', [HelpdeskController::class, 'show'])->name('helpdesk.show');
         Route::post('/helpdesk/{id}/assign', [HelpdeskController::class, 'assignTeknisi'])->name('helpdesk.assign');
@@ -112,7 +121,7 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
         Route::post('/maintenance/schedule', [MaintenanceController::class, 'storeSchedule'])->name('maintenance.schedule.store');
         Route::put('/maintenance/tugas/{id}/selesai', [MaintenanceController::class, 'selesaikanPerawatan'])->name('maintenance.tugas.selesai');
 
-        // 4. LAPORAN NILAI ASET (UPDATE: Dipindah ke AssetReportController)
+        // 4. LAPORAN NILAI ASET
         Route::get('/report/asset-value', [AssetReportController::class, 'index'])->name('report.asset_value');
         Route::get('/report/asset-value/print', [AssetReportController::class, 'print'])->name('report.asset_value_print');
     });

@@ -8,8 +8,9 @@ use App\Models\User;
 use App\Models\BiayaOperasional;
 use Illuminate\Http\Request;
 use Carbon\Carbon; 
-use App\Notifications\TicketAssigned; // <-- Import class Notifikasi
+use App\Notifications\TicketAssigned;
 use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class HelpdeskController extends Controller
 {
@@ -20,9 +21,9 @@ class HelpdeskController extends Controller
     {
         // Mengurutkan tiket: Prioritas tertinggi (Urgent) di atas, lalu urutkan berdasarkan waktu terbaru
         $tickets = Ticket::with(['pelapor', 'teknisi'])
-                         ->orderByRaw("FIELD(prioritas, 'Urgent', 'High', 'Normal', 'Low') DESC")
-                         ->latest()
-                         ->get();
+            ->orderByRaw("FIELD(prioritas, 'Urgent', 'High', 'Normal', 'Low') DESC")
+            ->latest()
+            ->get();
 
         return view('admin.helpdesk.index', [
             'title'   => 'Monitoring Tiket Helpdesk',
@@ -36,14 +37,13 @@ class HelpdeskController extends Controller
     public function show($id)
     {
         $ticket = Ticket::with(['pelapor', 'teknisi', 'biayaOperasional.staff', 'biayaOperasional.pemberi'])
-                        ->findOrFail($id);
+            ->findOrFail($id);
 
         // Ambil semua user dengan role Staff, lalu hitung tiket mereka hari ini
         $staffList = User::where('role', 'Staff')->get()->map(function($staff) {
-            // Menghitung jumlah tiket yang dipegang staf ini pada hari ini
             $staff->task_count = Ticket::where('teknisi_id', $staff->id)
-                                       ->whereDate('created_at', Carbon::today())
-                                       ->count();
+                ->whereDate('created_at', Carbon::today())
+                ->count();
             return $staff;
         });
 
@@ -67,8 +67,8 @@ class HelpdeskController extends Controller
         // VALIDASI MAX 5 TIKET PER HARI
         // ========================================================
         $jumlahTugasHariIni = Ticket::where('teknisi_id', $request->teknisi_id)
-                                    ->whereDate('created_at', Carbon::today())
-                                    ->count();
+            ->whereDate('created_at', Carbon::today())
+            ->count();
 
         if ($jumlahTugasHariIni >= 5) {
             return redirect()
@@ -85,12 +85,11 @@ class HelpdeskController extends Controller
         ]);
 
         // ========================================================
-        // [PERBAIKAN] TRIGGER NOTIFIKASI MULTI-CHANNEL OPTIMAL
+        // TRIGGER NOTIFIKASI MULTI-CHANNEL OPTIMAL
         // ========================================================
         $teknisi = User::find($request->teknisi_id);
         if ($teknisi) {
             // Menggunakan fresh() agar instance tiket memperbarui isi data terbarunya setelah di-update
-            // Ini menjamin field baru seperti 'no_tiket', 'prioritas', dll. ikut terkirim ke WhatsApp/Telegram
             $ticketTerbaru = $ticket->fresh();
             
             // Eksekusi pengiriman notifikasi via App\Notifications\TicketAssigned
@@ -127,7 +126,7 @@ class HelpdeskController extends Controller
     }
 
     /**
-     * Simpan Biaya Operasional / Bonus untuk Staff yang menyelesaikan tiket
+     * Simpan Biaya Operasional / Bonus untuk Staff yang menyelesaikan tiket (dari detail tiket)
      */
     public function tambahBiaya(Request $request, $id)
     {
@@ -155,15 +154,45 @@ class HelpdeskController extends Controller
         BiayaOperasional::updateOrCreate(
             ['ticket_id' => $ticket->id],
             [
-                'staff_id'         => $ticket->teknisi_id,
-                'diberikan_oleh'   => Auth::id(),
-                'nominal'          => $request->nominal,
-                'keterangan'       => $request->keterangan,
+                'staff_id'          => $ticket->teknisi_id,
+                'diberikan_oleh'    => Auth::id(),
+                'nominal'           => $request->nominal,
+                'keterangan'        => $request->keterangan,
                 'tanggal_pemberian' => now()->toDateString(),
             ]
         );
 
         return back()->with('success', 'Biaya operasional sebesar Rp ' . number_format($request->nominal, 0, ',', '.') . ' berhasil disimpan untuk ' . ($ticket->teknisi->nama ?? 'Staff') . '!');
+    }
+
+    /**
+     * Simpan Biaya Operasional secara mandiri/bebas (dari form rekap biaya)
+     */
+    public function storeBiaya(Request $request)
+    {
+        $request->validate([
+            'tanggal_pemberian' => 'required|date',
+            'staff_id'          => 'required|exists:users,id',
+            'nominal'           => 'required|numeric|min:1',
+            'keterangan'        => 'nullable|string|max:500',
+            'ticket_id'         => 'nullable|exists:tickets,id',
+        ], [
+            'tanggal_pemberian.required' => 'Tanggal pemberian wajib diisi.',
+            'staff_id.required'          => 'Pilih staff/teknisi penerima biaya.',
+            'nominal.required'           => 'Nominal biaya operasional wajib diisi.',
+            'nominal.min'                => 'Nominal minimum adalah Rp 1.',
+        ]);
+
+        BiayaOperasional::create([
+            'tanggal_pemberian' => $request->tanggal_pemberian,
+            'staff_id'          => $request->staff_id,
+            'nominal'           => $request->nominal,
+            'keterangan'        => $request->keterangan,
+            'ticket_id'         => $request->ticket_id ?? null,
+            'diberikan_oleh'    => Auth::id(),
+        ]);
+
+        return back()->with('success', 'Biaya operasional sebesar Rp ' . number_format($request->nominal, 0, ',', '.') . ' berhasil ditambahkan!');
     }
 
     /**
@@ -200,10 +229,10 @@ class HelpdeskController extends Controller
         // Rekap per staff: group by staff
         $rekapPerStaff = $dataRekap->groupBy('staff_id')->map(function ($items) {
             return [
-                'staff'          => $items->first()->staff,
-                'jumlah_tiket'   => $items->count(),
-                'total_nominal'  => $items->sum('nominal'),
-                'items'          => $items,
+                'staff'         => $items->first()->staff,
+                'jumlah_tiket'  => $items->count(),
+                'total_nominal' => $items->sum('nominal'),
+                'items'         => $items,
             ];
         })->sortByDesc('total_nominal');
 
@@ -214,14 +243,14 @@ class HelpdeskController extends Controller
         $staffList = User::where('role', 'Staff')->orderBy('nama')->get();
 
         return view('admin.helpdesk.rekap_biaya', [
-            'title'          => 'Rekap Biaya Operasional Staff',
-            'rekapPerStaff'  => $rekapPerStaff,
-            'dataRekap'      => $dataRekap,
-            'grandTotal'     => $grandTotal,
-            'staffList'      => $staffList,
-            'bulan'          => $bulan,
-            'tahun'          => $tahun,
-            'staffId'        => $staffId,
+            'title'         => 'Rekap Biaya Operasional Staff',
+            'rekapPerStaff' => $rekapPerStaff,
+            'dataRekap'     => $dataRekap,
+            'grandTotal'    => $grandTotal,
+            'staffList'     => $staffList,
+            'bulan'         => $bulan,
+            'tahun'         => $tahun,
+            'staffId'       => $staffId,
         ]);
     }
 
@@ -246,12 +275,12 @@ class HelpdeskController extends Controller
         $averageRating = $tickets->avg(fn($t) => $t->feedback->rating) ?? 0;
 
         return view('admin.helpdesk.feedback_report', [
-            'title'          => 'Laporan Kepuasan Pengguna',
-            'tickets'        => $tickets,
-            'startDate'      => $startDate,
-            'endDate'        => $endDate,
-            'totalFeedback'  => $totalFeedback,
-            'averageRating'  => $averageRating
+            'title'         => 'Laporan Kepuasan Pengguna',
+            'tickets'       => $tickets,
+            'startDate'     => $startDate,
+            'endDate'       => $endDate,
+            'totalFeedback' => $totalFeedback,
+            'averageRating' => $averageRating
         ]);
     }
 
@@ -275,11 +304,43 @@ class HelpdeskController extends Controller
         $averageRating = $tickets->avg(fn($t) => $t->feedback->rating) ?? 0;
 
         return view('admin.helpdesk.feedback_print', [
-            'tickets'        => $tickets,
-            'startDate'      => $startDate,
-            'endDate'         => $endDate,
-            'totalFeedback'  => $totalFeedback,
-            'averageRating'  => $averageRating
+            'tickets'       => $tickets,
+            'startDate'     => $startDate,
+            'endDate'       => $endDate,
+            'totalFeedback' => $totalFeedback,
+            'averageRating' => $averageRating
         ]);
+    }
+
+    /**
+     * Cetak Laporan Rekapitulasi Biaya Operasional ke PDF
+     */
+    public function cetakBiayaOperasional(Request $request)
+    {
+        $bulan = $request->get('bulan', now()->format('m'));
+        $tahun = $request->get('tahun', now()->format('Y'));
+        $staffId = $request->get('staff_id');
+
+        // Query data biaya operasional
+        $query = BiayaOperasional::with(['staff', 'ticket', 'pemberi'])
+            ->whereYear('tanggal_pemberian', $tahun)
+            ->whereMonth('tanggal_pemberian', $bulan);
+
+        if ($staffId) {
+            $query->where('staff_id', $staffId);
+        }
+
+        $dataRekap = $query->latest()->get();
+        $grandTotal = $dataRekap->sum('nominal');
+
+        // Format nama bulan untuk judul dokumen (Menggunakan Carbon diterjemahkan ke Bahasa Indonesia jika locale diset id)
+        $namaBulan = Carbon::createFromFormat('m', $bulan)->translatedFormat('F');
+
+        // Load view PDF
+        $pdf = Pdf::loadView('admin.helpdesk.cetak_biaya_operasional', compact(
+            'dataRekap', 'grandTotal', 'bulan', 'tahun', 'namaBulan'
+        ))->setPaper('A4', 'landscape'); // Orientasi landscape disarankan agar tabel muat
+
+        return $pdf->stream('Laporan_Biaya_Operasional_' . $namaBulan . '_' . $tahun . '.pdf');
     }
 }
