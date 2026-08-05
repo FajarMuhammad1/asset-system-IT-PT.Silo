@@ -72,4 +72,13 @@ class Ticket extends Model
         // Eloquent secara otomatis akan mencari kolom 'ticket_id' di tabel feedback
         return $this->hasOne(TicketFeedback::class);
     }
+
+    /**
+     * Relasi: Biaya Operasional / Bonus Staff
+     * Satu tiket hanya memiliki satu biaya operasional
+     */
+    public function biayaOperasional()
+    {
+        return $this->hasOne(BiayaOperasional::class, 'ticket_id');
+    }
 }

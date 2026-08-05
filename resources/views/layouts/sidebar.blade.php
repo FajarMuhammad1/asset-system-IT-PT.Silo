@@ -174,6 +174,13 @@
             </a>
         </li>
 
+        <li class="nav-item {{ Request::routeIs('admin.helpdesk.biaya*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('admin.helpdesk.biaya') }}">
+                <i class="fas fa-fw fa-money-bill-wave"></i>
+                <span>Biaya Operasional</span>
+            </a>
+        </li>
+
         <li class="nav-item {{ request()->routeIs('admin.taskreport.*') || request()->routeIs('taskreport.*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('taskreport.index') }}">
                 <i class="fas fa-fw fa-tasks"></i>

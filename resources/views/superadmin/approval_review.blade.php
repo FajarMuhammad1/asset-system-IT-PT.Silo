@@ -5,9 +5,14 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             
-            <a href="{{ route('superadmin.approval.index') }}" class="btn btn-secondary btn-sm mb-3">
-                <i class="fas fa-arrow-left"></i> Kembali
-            </a>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <a href="{{ route('superadmin.approval.index') }}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Kembali
+                </a>
+                <a href="{{ route('superadmin.approval.cetak', $ppi->id) }}" target="_blank" class="btn btn-danger btn-sm">
+                    <i class="fas fa-file-pdf"></i> Preview / Cetak PDF
+                </a>
+            </div>
 
             <div class="card shadow mb-4">
                 <div class="card-header bg-primary text-white">
@@ -32,8 +37,25 @@
                             <td>{{ $ppi->spesifikasi }}</td>
                         </tr>
                         <tr>
-                            <th>Keperluan</th>
-                            <td>{{ $ppi->keterangan }}</td>
+                            <th>Keperluan / Deskripsi</th>
+                            <td>{!! nl2br(e($ppi->ba_kerusakan ?? $ppi->keterangan)) !!}</td>
+                        </tr>
+                        <tr>
+                            <th>Tanda Tangan Pemohon</th>
+                            <td>
+                                @if(!empty($ppi->ttd_pemohon))
+                                    @php
+                                        $ttdPemohonSrc = \Illuminate\Support\Str::startsWith($ppi->ttd_pemohon, 'data:image') 
+                                            ? $ppi->ttd_pemohon 
+                                            : asset($ppi->ttd_pemohon);
+                                    @endphp
+                                    <div class="p-2 border rounded bg-white d-inline-block">
+                                        <img src="{{ $ttdPemohonSrc }}" style="max-height: 120px; width: auto;" alt="TTD Pemohon">
+                                    </div>
+                                @else
+                                    <span class="text-muted font-italic">(Pemohon belum tanda tangan)</span>
+                                @endif
+                            </td>
                         </tr>
                     </table>
                 </div>

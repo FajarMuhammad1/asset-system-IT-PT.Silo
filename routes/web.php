@@ -89,12 +89,16 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
         // 1. MONITORING PPI
         Route::get('/ppi-monitoring/export', [PpiAdminController::class, 'exportExcel'])->name('ppi.export'); 
         Route::get('/ppi-monitoring', [PpiAdminController::class, 'index'])->name('ppi.index');
+        Route::get('/ppi-monitoring/{id}/cetak', [PpiAdminController::class, 'cetakPdf'])->name('ppi.cetak');
         Route::get('/ppi-monitoring/{id}', [PpiAdminController::class, 'show'])->name('ppi.show');
         Route::put('/ppi-monitoring/{id}/update', [PpiAdminController::class, 'updateStatus'])->name('ppi.update');
         Route::put('/ppi-monitoring/{id}/forward', [PpiAdminController::class, 'forwardToSuperAdmin'])->name('ppi.forward');
 
         // 2. HELPDESK & LAPORAN KEPUASAN
         Route::get('/helpdesk', [HelpdeskController::class, 'index'])->name('helpdesk.index');
+        Route::get('/helpdesk/biaya-operasional', [HelpdeskController::class, 'rekapBiaya'])->name('helpdesk.biaya');
+        Route::post('/helpdesk/{id}/biaya-operasional', [HelpdeskController::class, 'tambahBiaya'])->name('helpdesk.biaya.store');
+        Route::delete('/helpdesk/biaya-operasional/{id}', [HelpdeskController::class, 'hapusBiaya'])->name('helpdesk.biaya.destroy');
         Route::get('/helpdesk/{id}', [HelpdeskController::class, 'show'])->name('helpdesk.show');
         Route::post('/helpdesk/{id}/assign', [HelpdeskController::class, 'assignTeknisi'])->name('helpdesk.assign');
         Route::put('/helpdesk/{id}/settings', [HelpdeskController::class, 'updateSettings'])->name('helpdesk.settings');
@@ -208,6 +212,7 @@ Route::middleware(['checkLogin:Admin'])->group(function () {
 Route::middleware(['checkLogin:SuperAdmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
     Route::get('/approval', [SuperAdminPpiController::class, 'index'])->name('approval.index');
     Route::get('/approval/{id}/review', [SuperAdminPpiController::class, 'showReview'])->name('approval.review');
+    Route::get('/approval/{id}/cetak', [SuperAdminPpiController::class, 'cetakPdf'])->name('approval.cetak');
     Route::put('/approval/{id}/approve', [SuperAdminPpiController::class, 'approve'])->name('approval.approve');
     Route::put('/approval/{id}/reject', [SuperAdminPpiController::class, 'reject'])->name('approval.reject');
 
@@ -226,6 +231,7 @@ Route::middleware(['checkLogin:Pengguna'])->prefix('Pengguna')->name('pengguna.'
     Route::get('/ppi/create', [PenggunaPpiController::class, 'create'])->name('ppi.create');
     Route::post('/ppi/store', [PenggunaPpiController::class, 'store'])->name('ppi.store');
     Route::get('/ppi/export/pdf', [PenggunaPpiController::class, 'exportPdf'])->name('ppi.pdf'); 
+    Route::get('/ppi/{id}/cetak-dokumen', [PenggunaPpiController::class, 'cetakSinglePdf'])->name('ppi.cetak-dokumen');
     Route::get('/ppi/riwayat', [PenggunaPpiController::class, 'index'])->name('ppi.index'); 
     
     Route::get('/helpdesk', [PenggunaTicketController::class, 'index'])->name('helpdesk.index');

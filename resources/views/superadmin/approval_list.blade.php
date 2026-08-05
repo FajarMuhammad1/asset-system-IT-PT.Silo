@@ -51,8 +51,11 @@
                                     <span class="badge badge-warning">Butuh TTD Anda</span>
                                 </td>
                                 <td class="text-center">
-                                    <a href="{{ route('superadmin.approval.review', $item->id) }}" class="btn btn-primary btn-sm shadow-sm">
+                                    <a href="{{ route('superadmin.approval.review', $item->id) }}" class="btn btn-primary btn-sm shadow-sm mr-1">
                                         <i class="fas fa-pen-fancy"></i> Review & TTD
+                                    </a>
+                                    <a href="{{ route('superadmin.approval.cetak', $item->id) }}" target="_blank" class="btn btn-danger btn-sm shadow-sm">
+                                        <i class="fas fa-file-pdf"></i> PDF
                                     </a>
                                 </td>
                             </tr>

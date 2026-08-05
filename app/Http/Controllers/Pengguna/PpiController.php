@@ -178,4 +178,17 @@ class PpiController extends Controller
         // 5. Download / Stream
         return $pdf->stream('Laporan_PPI_' . time() . '.pdf');
     }
+
+    public function cetakSinglePdf($id)
+    {
+        $ppi = Ppi::with('user')
+                  ->where('user_id', Auth::id())
+                  ->findOrFail($id);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('ppi.pdf_single', [
+            'ppi' => $ppi
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->stream('Dokumen_PPI_' . str_replace(['/', '\\'], '_', $ppi->no_ppi) . '.pdf');
+    }
 }

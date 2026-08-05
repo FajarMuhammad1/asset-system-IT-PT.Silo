@@ -102,4 +102,16 @@ class PpiAdminController extends Controller
         
         return Excel::download(new PpiExport($tanggal, $bulan, $tahun, $perusahaan), $nama_file);
     }
+
+    // 6. CETAK SINGLE DOKUMEN PDF PPI
+    public function cetakPdf($id)
+    {
+        $ppi = Ppi::with('user')->findOrFail($id);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('ppi.pdf_single', [
+            'ppi' => $ppi
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->stream('PPI_' . str_replace(['/', '\\'], '_', $ppi->no_ppi) . '.pdf');
+    }
 }

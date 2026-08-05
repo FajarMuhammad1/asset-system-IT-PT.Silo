@@ -8,7 +8,11 @@
         <a href="{{ route('admin.ppi.index') }}" class="btn btn-secondary shadow-sm">
             <i class="fas fa-arrow-left fa-sm text-white-50"></i> Kembali ke List
         </a>
-        <h1 class="h3 mb-0 text-gray-800">Detail Request PPI</h1>
+        <div class="d-flex align-items-center">
+            <a href="{{ route('admin.ppi.cetak', $ppi->id) }}" target="_blank" class="btn btn-danger shadow-sm">
+                <i class="fas fa-file-pdf fa-sm text-white-50"></i> Cetak Dokumen PDF
+            </a>
+        </div>
     </div>
 
     <div class="row">
@@ -97,6 +101,60 @@
                         </div>
                     </div>
                     @endif
+
+                    {{-- TANDA TANGAN DIGITAL --}}
+                    <div class="form-group row mt-3">
+                        <label class="col-sm-3 col-form-label font-weight-bold">Tanda Tangan Digital</label>
+                        <div class="col-sm-9">
+                            <div class="row">
+                                {{-- TTD Pemohon --}}
+                                <div class="col-md-6 mb-2">
+                                    <div class="card bg-light border">
+                                        <div class="card-header font-weight-bold text-dark py-2 text-center small">
+                                            Pemohon (Pengguna)
+                                        </div>
+                                        <div class="card-body text-center p-2 bg-white d-flex align-items-center justify-content-center" style="min-height: 90px;">
+                                            @if(!empty($ppi->ttd_pemohon))
+                                                @php
+                                                    $srcPemohon = \Illuminate\Support\Str::startsWith($ppi->ttd_pemohon, 'data:image') ? $ppi->ttd_pemohon : asset($ppi->ttd_pemohon);
+                                                @endphp
+                                                <img src="{{ $srcPemohon }}" style="max-height: 90px; max-width: 100%;" alt="TTD Pemohon">
+                                            @else
+                                                <span class="text-muted small font-italic">(Belum ada TTD)</span>
+                                            @endif
+                                        </div>
+                                        <div class="card-footer py-1 text-center small text-muted">
+                                            {{ $ppi->user->nama ?? 'Pemohon' }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- TTD Super Admin --}}
+                                <div class="col-md-6 mb-2">
+                                    <div class="card bg-light border">
+                                        <div class="card-header font-weight-bold text-dark py-2 text-center small">
+                                            Approval (Super Admin)
+                                        </div>
+                                        <div class="card-body text-center p-2 bg-white d-flex align-items-center justify-content-center" style="min-height: 90px;">
+                                            @if(!empty($ppi->ttd_superadmin) && in_array($ppi->status, ['disetujui', 'selesai']))
+                                                @php
+                                                    $srcSA = \Illuminate\Support\Str::startsWith($ppi->ttd_superadmin, 'data:image') ? $ppi->ttd_superadmin : asset($ppi->ttd_superadmin);
+                                                @endphp
+                                                <img src="{{ $srcSA }}" style="max-height: 90px; max-width: 100%;" alt="TTD Super Admin">
+                                            @elseif($ppi->status == 'ditolak')
+                                                <span class="text-danger font-weight-bold small">(DITOLAK)</span>
+                                            @else
+                                                <span class="text-muted small font-italic">(Menunggu Approval)</span>
+                                            @endif
+                                        </div>
+                                        <div class="card-footer py-1 text-center small text-muted">
+                                            {{ $ppi->tgl_approve ? \Carbon\Carbon::parse($ppi->tgl_approve)->format('d/m/Y H:i') : 'Super Admin' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 {{-- FOOTER CARD: AKSI TOMBOL APPROVE/REJECT --}}

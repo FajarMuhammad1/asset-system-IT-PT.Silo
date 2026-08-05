@@ -115,8 +115,11 @@
                                     
                                     <td class="align-middle">
                                         <div class="d-flex flex-column">
-                                            <a href="{{ route('admin.ppi.show', $item->id) }}" class="btn btn-sm btn-outline-primary mb-2">
+                                            <a href="{{ route('admin.ppi.show', $item->id) }}" class="btn btn-sm btn-outline-primary mb-1">
                                                 <i class="fas fa-eye"></i> Detail
+                                            </a>
+                                            <a href="{{ route('admin.ppi.cetak', $item->id) }}" target="_blank" class="btn btn-sm btn-outline-danger mb-1">
+                                                <i class="fas fa-file-pdf"></i> Cetak PDF
                                             </a>
 
                                             @if($item->status == 'pending')

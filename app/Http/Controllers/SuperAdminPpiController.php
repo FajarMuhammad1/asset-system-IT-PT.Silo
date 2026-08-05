@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Ppi;
+use Illuminate\Support\Facades\File;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SuperAdminPpiController extends Controller
 {
@@ -43,9 +45,26 @@ class SuperAdminPpiController extends Controller
             return back()->with('error', 'Tanda tangan diperlukan untuk menyetujui!');
         }
         
+        $ttdPath = $request->ttd_superadmin;
+        if (str_contains($request->ttd_superadmin, ';base64,')) {
+            $image_parts = explode(";base64,", $request->ttd_superadmin);
+            if (count($image_parts) == 2) {
+                $image_base64 = base64_decode($image_parts[1]);
+                $fileName = 'ttd_sa_ppi_' . uniqid() . '.png';
+                $folderPath = public_path('uploads/signatures/');
+                
+                if (!File::exists($folderPath)) {
+                    File::makeDirectory($folderPath, 0777, true, true);
+                }
+
+                file_put_contents($folderPath . $fileName, $image_base64);
+                $ttdPath = 'uploads/signatures/' . $fileName;
+            }
+        }
+
         $ppi->update([
             'status' => 'disetujui', // Status ini membuka kunci Admin buat input SJ
-            'ttd_superadmin' => $request->ttd_superadmin, // Simpan gambar TTD
+            'ttd_superadmin' => $ttdPath, // Simpan gambar TTD path
             'tgl_approve' => now()
         ]);
 
@@ -63,5 +82,17 @@ class SuperAdminPpiController extends Controller
         ]);
 
         return redirect()->route('superadmin.approval.index')->with('success', 'PPI Ditolak.');
+    }
+
+    // 5. Cetak Dokumen PDF PPI Individual
+    public function cetakPdf($id)
+    {
+        $ppi = Ppi::with('user')->findOrFail($id);
+
+        $pdf = Pdf::loadView('ppi.pdf_single', [
+            'ppi' => $ppi
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->stream('PPI_' . str_replace(['/', '\\'], '_', $ppi->no_ppi) . '.pdf');
     }
 }

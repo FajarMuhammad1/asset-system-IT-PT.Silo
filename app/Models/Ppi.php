@@ -19,7 +19,8 @@ class Ppi extends Model
     protected $fillable = [
         'no_ppi', 'tanggal', 'user_id', 
         'perangkat', 'ba_kerusakan', 'keterangan', 
-        'file_ppi', 'status'
+        'file_ppi', 'status',
+        'ttd_pemohon', 'ttd_superadmin', 'alasan_tolak', 'tgl_approve'
     ];
 
     /**

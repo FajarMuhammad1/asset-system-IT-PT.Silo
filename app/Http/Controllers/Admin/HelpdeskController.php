@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\BiayaOperasional;
 use Illuminate\Http\Request;
 use Carbon\Carbon; 
 use App\Notifications\TicketAssigned; // <-- Import class Notifikasi
+use Illuminate\Support\Facades\Auth;
 
 class HelpdeskController extends Controller
 {
@@ -33,7 +35,7 @@ class HelpdeskController extends Controller
      */
     public function show($id)
     {
-        $ticket = Ticket::with(['pelapor', 'teknisi'])
+        $ticket = Ticket::with(['pelapor', 'teknisi', 'biayaOperasional.staff', 'biayaOperasional.pemberi'])
                         ->findOrFail($id);
 
         // Ambil semua user dengan role Staff, lalu hitung tiket mereka hari ini
@@ -122,6 +124,105 @@ class HelpdeskController extends Controller
         return redirect()
             ->back()
             ->with('success', 'Pengaturan Prioritas dan Tipe Pengerjaan tiket berhasil diperbarui!');
+    }
+
+    /**
+     * Simpan Biaya Operasional / Bonus untuk Staff yang menyelesaikan tiket
+     */
+    public function tambahBiaya(Request $request, $id)
+    {
+        $ticket = Ticket::with('teknisi')->findOrFail($id);
+
+        // Hanya boleh ditambahkan jika tiket sudah Closed
+        if ($ticket->status !== 'Closed') {
+            return back()->with('error', 'Biaya operasional hanya dapat ditambahkan untuk tiket yang sudah Closed.');
+        }
+
+        // Harus ada teknisi yang mengerjakan
+        if (!$ticket->teknisi_id) {
+            return back()->with('error', 'Tiket ini belum memiliki teknisi yang mengerjakan.');
+        }
+
+        $request->validate([
+            'nominal'    => 'required|numeric|min:1',
+            'keterangan' => 'nullable|string|max:500',
+        ], [
+            'nominal.required' => 'Nominal biaya operasional wajib diisi.',
+            'nominal.min'      => 'Nominal minimum adalah Rp 1.',
+        ]);
+
+        // Cek apakah sudah ada (update) atau belum (create)
+        BiayaOperasional::updateOrCreate(
+            ['ticket_id' => $ticket->id],
+            [
+                'staff_id'         => $ticket->teknisi_id,
+                'diberikan_oleh'   => Auth::id(),
+                'nominal'          => $request->nominal,
+                'keterangan'       => $request->keterangan,
+                'tanggal_pemberian' => now()->toDateString(),
+            ]
+        );
+
+        return back()->with('success', 'Biaya operasional sebesar Rp ' . number_format($request->nominal, 0, ',', '.') . ' berhasil disimpan untuk ' . ($ticket->teknisi->nama ?? 'Staff') . '!');
+    }
+
+    /**
+     * Hapus Biaya Operasional
+     */
+    public function hapusBiaya($id)
+    {
+        $biaya = BiayaOperasional::findOrFail($id);
+        $biaya->delete();
+
+        return back()->with('success', 'Biaya operasional berhasil dihapus.');
+    }
+
+    /**
+     * Halaman Rekap Biaya Operasional per Staff
+     */
+    public function rekapBiaya(Request $request)
+    {
+        $bulan = $request->get('bulan', now()->format('m'));
+        $tahun = $request->get('tahun', now()->format('Y'));
+        $staffId = $request->get('staff_id');
+
+        // Query data biaya operasional
+        $query = BiayaOperasional::with(['staff', 'ticket', 'pemberi'])
+            ->whereYear('tanggal_pemberian', $tahun)
+            ->whereMonth('tanggal_pemberian', $bulan);
+
+        if ($staffId) {
+            $query->where('staff_id', $staffId);
+        }
+
+        $dataRekap = $query->latest()->get();
+
+        // Rekap per staff: group by staff
+        $rekapPerStaff = $dataRekap->groupBy('staff_id')->map(function ($items) {
+            return [
+                'staff'          => $items->first()->staff,
+                'jumlah_tiket'   => $items->count(),
+                'total_nominal'  => $items->sum('nominal'),
+                'items'          => $items,
+            ];
+        })->sortByDesc('total_nominal');
+
+        // Total keseluruhan
+        $grandTotal = $dataRekap->sum('nominal');
+
+        // Daftar staff untuk filter
+        $staffList = User::where('role', 'Staff')->orderBy('nama')->get();
+
+        return view('admin.helpdesk.rekap_biaya', [
+            'title'          => 'Rekap Biaya Operasional Staff',
+            'rekapPerStaff'  => $rekapPerStaff,
+            'dataRekap'      => $dataRekap,
+            'grandTotal'     => $grandTotal,
+            'staffList'      => $staffList,
+            'bulan'          => $bulan,
+            'tahun'          => $tahun,
+            'staffId'        => $staffId,
+        ]);
     }
 
     /**

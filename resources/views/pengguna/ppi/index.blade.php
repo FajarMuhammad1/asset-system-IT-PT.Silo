@@ -81,6 +81,7 @@
                                 <th>Perangkat</th>
                                 <th class="text-center">Status</th>
                                 <th>Keterangan Admin</th>
+                                <th class="text-center" width="12%">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -107,6 +108,11 @@
                                     @else
                                         <span class="text-muted">-</span>
                                     @endif
+                                </td>
+                                <td class="text-center">
+                                    <a href="{{ route('pengguna.ppi.cetak-dokumen', $item->id) }}" target="_blank" class="btn btn-sm btn-outline-danger shadow-sm">
+                                        <i class="fas fa-file-pdf"></i> PDF
+                                    </a>
                                 </td>
                             </tr>
                             @empty
@@ -173,6 +179,10 @@
                         <strong>Catatan:</strong> {{ $item->keterangan }}
                     </div>
                 @endif
+
+                <a href="{{ route('pengguna.ppi.cetak-dokumen', $item->id) }}" target="_blank" class="btn btn-sm btn-danger btn-block mt-3 shadow-sm">
+                    <i class="fas fa-file-pdf"></i> Cetak Dokumen PDF
+                </a>
 
             </div>
         </div>
