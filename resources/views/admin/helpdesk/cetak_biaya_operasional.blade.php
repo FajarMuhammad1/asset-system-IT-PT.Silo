@@ -5,85 +5,96 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laporan Biaya Operasional</title>
     <style>
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 11px;
-            color: #000;
-            line-height: 1.4;
+        @page {
+            margin: 25px 35px;
         }
-        /* KOP SURAT / HEADER STYLE */
-        .header-table {
-            width: 100%;
-            border-bottom: 3px solid #000;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
+        body { 
+            font-family: 'Helvetica', 'Arial', sans-serif; 
+            font-size: 9.5pt; 
+            color: #333; 
+            line-height: 1.4; 
         }
-        .header-table td {
-            vertical-align: middle;
-            border: none;
-            padding: 0;
+        
+        /* HEADER TABLE (KOP SURAT PPI) */
+        .header-table { 
+            width: 100%; 
+            border-bottom: 2px solid #000; 
+            padding-bottom: 8px; 
+            margin-bottom: 20px; 
+            table-layout: fixed;
         }
-        .logo-container {
-            width: 15%;
-            text-align: center;
-        }
-        .logo-container img {
-            width: 80px;
-        }
-        .company-info {
-            width: 85%;
+        .header-logo { 
+            width: 15%; 
+            vertical-align: middle; 
             text-align: left;
-            padding-left: 10px;
         }
-        .company-name {
-            font-size: 16px;
-            font-weight: bold;
-            margin: 0;
-            color: #000;
+        .header-text { 
+            width: 70%; 
+            vertical-align: middle; 
+            text-align: center; 
         }
-        .dept-name {
-            font-size: 12px;
-            margin: 3px 0 0 0;
-            color: #333;
+        .header-dummy {
+            width: 15%;
         }
-        
-        /* JUDUL DOKUMEN */
-        .doc-title-container {
-            text-align: center;
-            margin-bottom: 20px;
+
+        .header-text h2 { 
+            margin: 0; 
+            font-size: 15pt; 
+            font-weight: bold; 
+            color: #1a4d80; 
+            text-transform: uppercase; 
         }
-        .doc-title {
-            font-size: 14px;
-            font-weight: bold;
-            text-decoration: underline;
-            margin: 0;
-            text-transform: uppercase;
+        .header-text p { 
+            margin: 2px 0; 
+            font-size: 9pt; 
+            color: #555; 
         }
-        .doc-no {
-            font-size: 11px;
+
+        /* DOCUMENT TITLE */
+        .doc-title { 
+            text-align: center; 
+            margin-bottom: 20px; 
+        }
+        .doc-title h3 { 
+            margin: 0; 
+            font-size: 13pt; 
+            text-transform: uppercase; 
+            text-decoration: underline; 
+            color: #2c3e50;
+        }
+        .doc-title p {
             margin: 4px 0 0 0;
+            font-size: 9pt;
+            color: #555;
         }
-        
-        /* TABEL DATA */
-        table.data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
+
+        /* DATA TABLE */
+        .table-data { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 20px; 
         }
-        table.data-table, table.data-table th, table.data-table td {
-            border: 1px solid #000;
+        .table-data th, .table-data td { 
+            border: 1px solid #ccc; 
+            padding: 7px 8px; 
+            vertical-align: middle; 
         }
-        table.data-table th {
-            background-color: #f2f2f2;
-            padding: 8px 6px;
+        .table-data th { 
+            background-color: #1a4d80; 
+            color: #ffffff; 
+            font-weight: bold; 
+            font-size: 8.5pt; 
+            text-transform: uppercase;
             text-align: center;
-            font-weight: bold;
-            font-size: 11px;
         }
-        table.data-table td {
-            padding: 6px;
-            vertical-align: top;
-            font-size: 10px;
+        .table-data tr:nth-child(even) {
+            background-color: #f8fbfd;
+        }
+        .table-data tfoot td {
+            background-color: #eef4f9;
+            font-weight: bold;
+            border: 1px solid #bbb;
+            color: #1a4d80;
         }
 
         /* UTILITY CLASSES */
@@ -97,56 +108,68 @@
             font-weight: bold;
         }
 
-        /* FOOTER STYLE */
-        .footer {
-            margin-top: 30px;
-            font-size: 9px;
-            border-top: 1px solid #000;
-            padding-top: 5px;
+        /* FOOTER */
+        footer { 
+            position: fixed; 
+            bottom: -15px; 
+            left: 0px; 
+            right: 0px; 
+            height: 25px; 
+            font-size: 8pt; 
+            color: #888; 
+            border-top: 1px solid #ddd; 
+            padding-top: 4px; 
         }
-        .footer table {
-            width: 100%;
-            border: none;
-        }
-        .footer td {
-            border: none;
-            padding: 0;
-            vertical-align: top;
-        }
+        .page-number:after { content: counter(page); }
     </style>
 </head>
 <body>
 
-    <!-- KOP SURAT -->
+    @php
+        $logoPath = null;
+        if (file_exists(public_path('image/images.png'))) {
+            $logoPath = public_path('image/images.png');
+        } elseif (file_exists(public_path('image/logo.png'))) {
+            $logoPath = public_path('image/logo.png');
+        } elseif (file_exists(public_path('img/logo-silo.png'))) {
+            $logoPath = public_path('img/logo-silo.png');
+        } elseif (file_exists(public_path('img/logo.png'))) {
+            $logoPath = public_path('img/logo.png');
+        }
+
+        $logoData = $logoPath ? base64_encode(file_get_contents($logoPath)) : null;
+    @endphp
+
+    <!-- KOP SURAT (SESUAI STYLE PPI) -->
     <table class="header-table">
         <tr>
-            <td class="logo-container">
-                <!-- LOGO DIMUAT MENGGUNAKAN BASE64 AGAR TERBACA OLEH DOMPDF -->
-                @php
-                    $imagePath = public_path('img/logo.png');
-                    $imageData = file_exists($imagePath) ? base64_encode(file_get_contents($imagePath)) : '';
-                @endphp
-                @if($imageData)
-                    <img src="data:image/png;base64,{{ $imageData }}" alt="Logo SILO">
+            <td class="header-logo">
+                @if($logoData)
+                    <img src="data:image/png;base64,{{ $logoData }}" alt="Logo SILO" style="width: 75px; height: auto;">
+                @elseif($logoPath)
+                    <img src="{{ $logoPath }}" alt="Logo SILO" style="width: 75px; height: auto;">
                 @else
-                    <span>[LOGO]</span>
+                    <strong style="font-size: 14pt; color: #1a4d80;">PT. SILO</strong>
                 @endif
             </td>
-            <td class="company-info">
-                <h1 class="company-name">PT. SEBUKU IRON LATERITIC ORES</h1>
-                <p class="dept-name">Departemen IT Support & Communication System</p>
+            
+            <td class="header-text">
+                <h2>PT. SEBUKU IRON LATERITIC ORES</h2>
+                <p>Departemen IT Support & Communication System</p>
             </td>
+
+            <td class="header-dummy"></td>
         </tr>
     </table>
 
     <!-- JUDUL DOKUMEN -->
-    <div class="doc-title-container">
-        <h2 class="doc-title">LAPORAN BIAYA OPERASIONAL TEKNISI</h2>
-        <p class="doc-no">Periode: {{ $namaBulan }} {{ $tahun }}</p>
+    <div class="doc-title">
+        <h3>LAPORAN BIAYA OPERASIONAL TEKNISI</h3>
+        <p>Periode: <strong>{{ $namaBulan }} {{ $tahun }}</strong></p>
     </div>
 
     <!-- DATA REKAP BIAYA OPERASIONAL -->
-    <table class="data-table">
+    <table class="table-data">
         <thead>
             <tr>
                 <th width="5%">No</th>
@@ -175,7 +198,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="text-center">Tidak ada data biaya operasional pada periode ini.</td>
+                    <td colspan="6" class="text-center" style="padding: 15px;">Tidak ada data biaya operasional pada periode ini.</td>
                 </tr>
             @endforelse
         </tbody>
@@ -187,15 +210,20 @@
         </tfoot>
     </table>
 
-    <!-- FOOTER DOKUMEN -->
-    <div class="footer">
-        <table>
+    <!-- KETERANGAN SISTEM -->
+    <div style="margin-top: 15px; font-size: 8.5pt; color: #666;">
+        <p><em>* Dokumen ini dibuat dan dikelola secara digital melalui Sistem IT Support Asset PT. Sebuku Iron Lateritic Ores.</em></p>
+    </div>
+
+    <!-- FOOTER HALAMAN -->
+    <footer>
+        <table width="100%">
             <tr>
-                <td>* Dokumen ini dibuat dan dikelola secara digital melalui Sistem IT Support Asset PT. Sebuku Iron Lateritic Ores.</td>
-                <td class="text-right">Dicetak pada: {{ now()->format('d-m-Y H:i') }} WIB</td>
+                <td align="left" width="60%"><i>Dicetak pada: {{ now()->format('d-m-Y H:i') }} WIB</i></td>
+                <td align="right" width="40%">Hal <span class="page-number"></span></td>
             </tr>
         </table>
-    </div>
+    </footer>
 
 </body>
 </html>
