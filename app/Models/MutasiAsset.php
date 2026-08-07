@@ -13,9 +13,15 @@ class MutasiAsset extends Model
 
     // Sesuaikan fillable dengan kolom database Anda yang baru
     protected $fillable = [
-        'barang_masuk_id', // UPDATED: Menggunakan standar Laravel
+        'barang_masuk_id',
         'user_asal_id',
         'user_tujuan_id',
+        'pemohon_id',
+        'approved_by_id',
+        'status',
+        'alasan_penolakan',
+        'lokasi_baru',
+        'log_serah_terima_id',
         'keterangan',
         'tanggal_mutasi'
     ];
@@ -25,7 +31,6 @@ class MutasiAsset extends Model
      */
     public function barangMasuk()
     {
-        // UPDATED: Menggunakan foreign key baru 'barang_masuk_id'
         return $this->belongsTo(BarangMasuk::class, 'barang_masuk_id');
     }
 
@@ -37,5 +42,20 @@ class MutasiAsset extends Model
     public function userTujuan()
     {
         return $this->belongsTo(User::class, 'user_tujuan_id');
+    }
+
+    public function pemohon()
+    {
+        return $this->belongsTo(User::class, 'pemohon_id');
+    }
+
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by_id');
+    }
+
+    public function logSerahTerima()
+    {
+        return $this->belongsTo(LogSerahTerima::class, 'log_serah_terima_id');
     }
 }

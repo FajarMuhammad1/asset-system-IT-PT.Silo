@@ -39,6 +39,7 @@ use App\Http\Controllers\Staff\StaffReportController;
 use App\Http\Controllers\PenggunaDashboardController;
 use App\Http\Controllers\Pengguna\PpiController as PenggunaPpiController;
 use App\Http\Controllers\Pengguna\TicketController as PenggunaTicketController;
+use App\Http\Controllers\Pengguna\PenggunaMutasiController;
 use App\Http\Controllers\UserBASTController;
 
 /*
@@ -148,6 +149,9 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::get('/disposal/{id}/print', [DisposalController::class, 'print'])->name('disposal.print');
     
     Route::get('/mutasi', [MutasiController::class, 'index'])->name('mutasi.index');
+    Route::post('/mutasi/{id}/approve', [MutasiController::class, 'approveByManager'])->name('mutasi.approve');
+    Route::post('/mutasi/{id}/reject', [MutasiController::class, 'rejectByManager'])->name('mutasi.reject');
+    Route::post('/mutasi/{id}/process', [MutasiController::class, 'processByAdmin'])->name('mutasi.process');
 
     // --- RKAB ANALYSIS ---
     Route::get('/rkab-analysis', [RkabController::class, 'index'])->name('rkab.index');
@@ -255,6 +259,13 @@ Route::middleware(['checkLogin:Pengguna'])->prefix('Pengguna')->name('pengguna.'
         Route::get('/', [UserBASTController::class, 'index'])->name('index');
         Route::get('/sign/{id}', [UserBASTController::class, 'sign'])->name('sign');
         Route::post('/sign/{id}', [UserBASTController::class, 'submitSign'])->name('submit');
+    });
+
+    // Fitur Mutasi Aset Pengguna
+    Route::prefix('mutasi')->name('mutasi.')->group(function () {
+        Route::get('/', [PenggunaMutasiController::class, 'index'])->name('index');
+        Route::get('/create', [PenggunaMutasiController::class, 'create'])->name('create');
+        Route::post('/store', [PenggunaMutasiController::class, 'store'])->name('store');
     });
 });
 

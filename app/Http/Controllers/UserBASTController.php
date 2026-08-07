@@ -81,6 +81,24 @@ class UserBASTController extends Controller
         $bast->status = 'menunggu_ttd_admin'; // Update status agar admin bisa memproses
         $bast->save();
 
+        // Update status MutasiAsset jika transaksi ini berasal dari mutasi
+        $mutasi = \App\Models\MutasiAsset::where('log_serah_terima_id', $bast->id)->first();
+        if ($mutasi) {
+            $mutasi->update([
+                'status' => 'Selesai'
+            ]);
+
+            // Kirim notifikasi ke Pemohon jika ada
+            if ($mutasi->pemohon) {
+                $mutasi->pemohon->notify(new \App\Notifications\MutasiNotification(
+                    $mutasi,
+                    'Mutasi Aset Selesai',
+                    'Aset ' . ($mutasi->barangMasuk->kode_asset ?? '') . ' telah selesai dimutasi & ditandatangani oleh penerima.',
+                    route('pengguna.mutasi.index')
+                ));
+            }
+        }
+
         // Redirect kembali ke halaman index (Daftar BAST)
         return redirect()->route('pengguna.userbast.index')
             ->with('success', 'Tanda tangan berhasil dikirim! Menunggu konfirmasi admin.');

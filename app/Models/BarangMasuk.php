@@ -14,7 +14,16 @@ class BarangMasuk extends Model
 {
     protected $table = 'barang_masuk'; 
 
-    // ... [property $fillable Anda] ...
+    protected $fillable = [
+        'kode_asset',
+        'serial_number',
+        'master_barang_id',
+        'surat_jalan_id',
+        'tanggal_masuk',
+        'keterangan',
+        'status',
+        'user_pemegang_id',
+    ];
 
     public function masterBarang()
     {
@@ -54,7 +63,7 @@ class BarangMasuk extends Model
      */
     public function pemegang()
     {
-        return $this->belongsTo(User::class, 'pemegang_id'); 
+        return $this->belongsTo(User::class, 'user_pemegang_id'); 
     }
 
     // =========================================================================

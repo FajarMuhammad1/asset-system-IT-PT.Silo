@@ -402,6 +402,12 @@
                 <span>Informasi Barang</span>
             </a>
         </li>
+        <li class="nav-item {{ Request::routeIs('pengguna.mutasi.*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('pengguna.mutasi.index') }}">
+                <i class="fas fa-fw fa-exchange-alt"></i>
+                <span>Pengajuan Mutasi</span>
+            </a>
+        </li>
     
     @endif
     {{-- =============================================== --}}
