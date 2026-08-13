@@ -94,7 +94,7 @@ class PenggunaMutasiController extends Controller
                 $mutasi,
                 'Pengajuan Mutasi Aset Baru',
                 Auth::user()->nama . ' mengajukan mutasi untuk aset ' . ($asset->kode_asset ?? 'Aset') . '.',
-                route('superadmin.mutasi.index')
+                route('mutasi.index')
             ));
         }
 

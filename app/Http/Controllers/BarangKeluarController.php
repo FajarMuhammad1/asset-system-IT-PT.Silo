@@ -196,6 +196,9 @@ class BarangKeluarController extends Controller
             $namaFile = str_starts_with($kodeBersih, 'BAST') ? $kodeBersih : 'BAST-' . $kodeBersih;
         }
 
+        // Sanitasi nama file agar tidak mengandung '/' atau '\'
+        $namaFile = str_replace(['/', '\\'], '-', $namaFile);
+
         // 4. Siapkan data view
         $data = [
             'title' => 'BAST - ' . $namaFile, 
