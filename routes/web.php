@@ -88,6 +88,7 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::prefix('admin')->name('admin.')->group(function() {
 
         // 1. MONITORING PPI
+        Route::get('/ppi-monitoring/realtime-check', [PpiAdminController::class, 'realtimeCheck'])->name('ppi.realtime_check');
         Route::get('/ppi-monitoring/export', [PpiAdminController::class, 'exportExcel'])->name('ppi.export'); 
         Route::get('/ppi-monitoring', [PpiAdminController::class, 'index'])->name('ppi.index');
         Route::get('/ppi-monitoring/{id}/cetak', [PpiAdminController::class, 'cetakPdf'])->name('ppi.cetak');
@@ -223,6 +224,7 @@ Route::middleware(['checkLogin:Admin'])->group(function () {
 // KAVLING 3: KHUSUS SUPER ADMIN (APPROVAL)
 // ====================================================
 Route::middleware(['checkLogin:SuperAdmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+    Route::get('/approval/realtime-check', [SuperAdminPpiController::class, 'realtimeCheck'])->name('approval.realtime_check');
     Route::get('/approval', [SuperAdminPpiController::class, 'index'])->name('approval.index');
     Route::get('/approval/{id}/review', [SuperAdminPpiController::class, 'showReview'])->name('approval.review');
     Route::get('/approval/{id}/cetak', [SuperAdminPpiController::class, 'cetakPdf'])->name('approval.cetak');
@@ -241,6 +243,7 @@ Route::middleware(['checkLogin:SuperAdmin'])->prefix('superadmin')->name('supera
 Route::middleware(['checkLogin:Pengguna'])->prefix('Pengguna')->name('pengguna.')->group(function () {
     Route::get('/dashboard', [PenggunaDashboardController::class, 'index'])->name('dashboard');
     
+    Route::get('/ppi/realtime-check', [PenggunaPpiController::class, 'realtimeCheck'])->name('ppi.realtime_check');
     Route::get('/ppi/create', [PenggunaPpiController::class, 'create'])->name('ppi.create');
     Route::post('/ppi/store', [PenggunaPpiController::class, 'store'])->name('ppi.store');
     Route::get('/ppi/export/pdf', [PenggunaPpiController::class, 'exportPdf'])->name('ppi.pdf'); 

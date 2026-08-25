@@ -63,8 +63,8 @@
      @if(session('success'))
     <script>
         Swal.fire({
-            title: "Sukses jer",
-            text: "{{ session('success') }}",
+            title: "Berhasil",
+            text: "{!! session('success') !!}",
             icon: "success"
         });
     </script>
@@ -73,8 +73,8 @@
 @if(session('error'))
     <script>
         Swal.fire({
-            title: "gagal login cuy",
-            text: "{{ session('error') }}",
+            title: "Pemberitahuan",
+            text: "{!! session('error') !!}",
             icon: "error"
         });
     </script>

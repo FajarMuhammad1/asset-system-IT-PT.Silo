@@ -64,17 +64,18 @@
             margin-bottom: 10px;
         }
 
-        /* PERBAIKAN: Paksa Barcode Besar & Di Tengah */
+        /* PERBAIKAN: Barcode Vektor Tajam & Presisi Rasio */
         .barcode-container > div, 
         .barcode-container > img, 
         .barcode-container > svg {
-            width: 100% !important;     /* Paksa lebar memenuhi kontainer */
-            height: 90px !important;    /* Tinggi dinaikkan drastis agar tidak kekecilan */
-            max-height: 100px !important;
-            object-fit: fill;           /* Gunakan fill agar garis barcode memanjang dengan rata */
+            width: auto !important;
+            max-width: 100% !important;
+            height: 80px !important;
+            max-height: 90px !important;
+            shape-rendering: crispEdges;
             mix-blend-mode: multiply;
             display: block;
-            margin: 0 auto !important;  /* Paksa posisi absolut di tengah */
+            margin: 0 auto !important;
         }
 
         .text-kode {

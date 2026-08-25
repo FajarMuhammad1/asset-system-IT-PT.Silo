@@ -166,8 +166,7 @@
                                 <i class="fas fa-paper-plane"></i> Ajukan ke SA
                             </button>
                         </form>
-                        
-                        {{-- Opsi Tolak Langsung (Optional jika admin boleh nolak) --}}
+
                         <form action="{{ route('admin.ppi.update', $ppi->id) }}" method="POST" class="d-inline ml-2">
                             @csrf @method('PUT')
                             <input type="hidden" name="status" value="ditolak">
@@ -176,8 +175,29 @@
                             </button>
                         </form>
 
+                    @elseif($ppi->status == 'disetujui')
+                        {{-- TOMBOL TANDAI SELESAI: Perbaikan bug - admin tidak bisa set selesai --}}
+                        <form action="{{ route('admin.ppi.update', $ppi->id) }}" method="POST" class="d-inline">
+                            @csrf @method('PUT')
+                            <input type="hidden" name="status" value="selesai">
+                            <button type="submit" class="btn btn-success shadow-sm" onclick="return confirm('Tandai PPI ini sebagai SELESAI? Status pengguna akan diperbarui secara otomatis.')">
+                                <i class="fas fa-check-double mr-1"></i> Tandai Selesai
+                            </button>
+                        </form>
+
+                        <form action="{{ route('admin.ppi.update', $ppi->id) }}" method="POST" class="d-inline ml-2">
+                            @csrf @method('PUT')
+                            <input type="hidden" name="status" value="ditolak">
+                            <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Tolak dan tutup permintaan ini?')">
+                                <i class="fas fa-times mr-1"></i> Tolak
+                            </button>
+                        </form>
+
                     @elseif($ppi->status == 'selesai')
-                        <button class="btn btn-secondary" disabled>Tiket Closed</button>
+                        <span class="badge badge-success px-3 py-2"><i class="fas fa-check-double mr-1"></i> PPI Telah Diselesaikan</span>
+
+                    @elseif($ppi->status == 'ditolak')
+                        <span class="badge badge-danger px-3 py-2"><i class="fas fa-ban mr-1"></i> PPI Ditolak</span>
                     @endif
                 </div>
             </div>

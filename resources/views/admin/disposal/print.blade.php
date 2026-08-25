@@ -124,13 +124,13 @@
 
         <div class="signature-section">
             <div class="signature-box">
-                <p>Dibuat & Diaksekusi Oleh,<br><strong>Admin IT (Lokal)</strong></p>
+                <p>Dibuat & Diaksekusi Oleh,<br><strong>Admin IT </strong></p>
                 <div class="signature-space"></div>
                 <p><u>{{ $disposal->pengaju->nama ?? '...................................' }}</u></p>
             </div>
             
             <div class="signature-box">
-                <p>Disetujui & Diketahui Oleh,<br><strong>Super Admin (HO)</strong></p>
+                <p>Disetujui & Diketahui Oleh,<br><strong>Super Admin (Head Manager IT)</strong></p>
                 <div class="signature-space"></div>
                 <p><u>...................................</u></p>
             </div>

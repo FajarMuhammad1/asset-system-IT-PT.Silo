@@ -130,6 +130,30 @@ class PpiController extends Controller
             ->with('success', 'PPI Berhasil dibuat! No Tiket: ' . $nomerOtomatis);
     }
 
+    public function realtimeCheck(Request $request)
+    {
+        $userId = Auth::id();
+        $riwayatPpi = Ppi::where('user_id', $userId)->latest()->get();
+        $latest = $riwayatPpi->first();
+        $latestId = $latest ? $latest->id : 0;
+        $latestUpdatedAt = Ppi::where('user_id', $userId)->max('updated_at') ?? '';
+
+        $statusSignature = md5($riwayatPpi->pluck('status', 'id')->toJson() . $riwayatPpi->pluck('updated_at', 'id')->toJson());
+
+        return response()->json([
+            'status'            => 'success',
+            'count'             => $riwayatPpi->count(),
+            'latest_id'         => $latestId,
+            'latest_updated_at' => (string) $latestUpdatedAt,
+            'status_signature'  => $statusSignature,
+            'latest_item'       => $latest ? [
+                'no_ppi'    => $latest->no_ppi,
+                'status'    => $latest->status,
+                'perangkat' => $latest->perangkat,
+            ] : null,
+        ]);
+    }
+
     public function index()
     {
         $riwayatPpi = Ppi::where('user_id', Auth::id())

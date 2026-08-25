@@ -10,6 +10,39 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class PpiAdminController extends Controller
 {
+    // 0. REALTIME CHECK FOR AJAX AUTO UPDATE
+    public function realtimeCheck(Request $request)
+    {
+        $allPpi = Ppi::with('user')->latest()->get();
+        $latest = $allPpi->first();
+        
+        $latestId = $latest ? $latest->id : 0;
+        $latestUpdatedAt = Ppi::max('updated_at') ?? '';
+
+        $counts = [
+            'all'       => $allPpi->count(),
+            'pending'   => $allPpi->where('status', 'pending')->count(),
+            'spv'       => $allPpi->where('status', 'pending_superadmin')->count(),
+            'disetujui' => $allPpi->where('status', 'disetujui')->count(),
+            'selesai'   => $allPpi->where('status', 'selesai')->count(),
+            'ditolak'   => $allPpi->where('status', 'ditolak')->count(),
+        ];
+
+        return response()->json([
+            'status'            => 'success',
+            'latest_id'         => $latestId,
+            'latest_updated_at' => (string) $latestUpdatedAt,
+            'counts'            => $counts,
+            'latest_ppi'        => $latest ? [
+                'id'         => $latest->id,
+                'no_ppi'     => $latest->no_ppi,
+                'pemohon'    => $latest->user->nama ?? 'User',
+                'perangkat'  => $latest->perangkat,
+                'created_at' => $latest->created_at ? $latest->created_at->format('d-m-Y H:i') : '',
+            ] : null,
+        ]);
+    }
+
     // 1. TAMPILKAN SEMUA REQUEST
     public function index()
     {

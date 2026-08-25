@@ -3,7 +3,43 @@
 @section('content')
 <div class="container-fluid">
 
-    <h1 class="h3 mb-4 text-gray-800">Monitoring Request PPI (Admin IT)</h1>
+    <style>
+        .pulse-green {
+            width: 10px;
+            height: 10px;
+            background-color: #28a745;
+            border-radius: 50%;
+            box-shadow: 0 0 0 rgba(40, 167, 69, 0.4);
+            animation: pulse-green 1.5s infinite;
+            display: inline-block;
+        }
+        .pulse-gray {
+            width: 10px;
+            height: 10px;
+            background-color: #6c757d;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        }
+    </style>
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 m-0 text-gray-800">Monitoring Request PPI (Admin IT)</h1>
+        
+        <div class="d-flex align-items-center bg-white px-3 py-2 rounded shadow-sm border">
+            <div id="realtimeStatusBadge" class="d-flex align-items-center mr-3">
+                <span id="pulseDot" class="pulse-green mr-2"></span>
+                <small class="font-weight-bold text-success" id="realtimeStatusText">Realtime Active</small>
+            </div>
+            <button id="btnToggleRealtime" class="btn btn-sm btn-outline-secondary py-0 px-2" title="Toggle Auto Refresh">
+                <i id="btnToggleIcon" class="fas fa-pause mr-1"></i> <span id="btnToggleText">Pause</span>
+            </button>
+        </div>
+    </div>
 
     @if(session('success'))
         <div class="alert alert-success border-left-success shadow-sm alert-dismissible fade show" role="alert">
@@ -39,7 +75,7 @@
         @foreach($tabs as $index => $tab)
         <li class="nav-item">
             <a class="nav-link {{ $index == 0 ? 'active' : '' }} font-weight-bold px-4 text-{{ $tab['color'] }}" data-toggle="tab" href="#tab-{{ $tab['id'] }}" role="tab">
-                <i class="fas {{ $tab['icon'] }} mr-1"></i> {{ $tab['label'] }} ({{ $tab['data']->count() }})
+                <i class="fas {{ $tab['icon'] }} mr-1"></i> {{ $tab['label'] }} (<span id="tab-count-{{ $tab['id'] }}">{{ $tab['data']->count() }}</span>)
             </a>
         </li>
         @endforeach
@@ -232,12 +268,11 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Tunggu jQuery & DataTables selesai dimuat
+        // 1. Inisialisasi DataTables
         var initDataTables = setInterval(function() {
             if (window.jQuery && $.fn.DataTable) {
                 clearInterval(initDataTables);
                 
-                // Inisialisasi tabel khusus untuk tab ini
                 $('.datatable-multi').DataTable({
                     "pageLength": 10,
                     "language": {
@@ -245,12 +280,183 @@
                     }
                 });
 
-                // Memperbaiki masalah lebar kolom DataTables saat tab berpindah
                 $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
                     $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
                 });
             }
         }, 100);
+
+        // 2. REALTIME ENGINE LOGIC
+        let isRealtimeActive = true;
+        let lastPpiId = null;
+        let lastUpdatedAt = null;
+        let pollTimer = null;
+
+        // Fungsi Membunyikan Suara Chime Notifikasi (Web Audio API - Tanpa File Eksternal)
+        function playNotificationChime() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                
+                // Nada 1: E5 (659Hz)
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(659.25, ctx.currentTime);
+                gain1.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                osc1.connect(gain1);
+                gain1.connect(ctx.destination);
+                osc1.start(ctx.currentTime);
+                osc1.stop(ctx.currentTime + 0.3);
+
+                // Nada 2: B5 (987.77Hz)
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(987.77, ctx.currentTime + 0.15);
+                gain2.gain.setValueAtTime(0.2, ctx.currentTime + 0.15);
+                gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.start(ctx.currentTime + 0.15);
+                osc2.stop(ctx.currentTime + 0.6);
+            } catch (e) {
+                console.log('Audio chime info:', e);
+            }
+        }
+
+        // Tampilkan Toast Alert
+        function showPpiToast(title, body) {
+            if (window.Swal) {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'info',
+                    title: title,
+                    text: body,
+                    showConfirmButton: false,
+                    timer: 5000,
+                    timerProgressBar: true
+                });
+            } else {
+                let toastId = 'toast-' + Date.now();
+                let toastHtml = `
+                    <div id="${toastId}" class="position-fixed p-3" style="top: 20px; right: 20px; z-index: 9999; max-width: 350px;">
+                        <div class="toast show shadow-lg border-primary" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="toast-header bg-primary text-white">
+                                <i class="fas fa-bell mr-2"></i>
+                                <strong class="mr-auto">${title}</strong>
+                                <small>Baru saja</small>
+                                <button type="button" class="ml-2 mb-1 close text-white" onclick="document.getElementById('${toastId}').remove()">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="toast-body bg-white text-dark font-weight-bold">
+                                ${body}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', toastHtml);
+                setTimeout(() => {
+                    let el = document.getElementById(toastId);
+                    if (el) el.remove();
+                }, 6000);
+            }
+        }
+
+        // Update Counter Tab
+        function updateTabCounts(counts) {
+            if (!counts) return;
+            if (document.getElementById('tab-count-all')) document.getElementById('tab-count-all').innerText = counts.all || 0;
+            if (document.getElementById('tab-count-pending')) document.getElementById('tab-count-pending').innerText = counts.pending || 0;
+            if (document.getElementById('tab-count-spv')) document.getElementById('tab-count-spv').innerText = counts.spv || 0;
+            if (document.getElementById('tab-count-disetujui')) document.getElementById('tab-count-disetujui').innerText = counts.disetujui || 0;
+            if (document.getElementById('tab-count-selesai')) document.getElementById('tab-count-selesai').innerText = counts.selesai || 0;
+        }
+
+        // Check Update Server
+        function checkPpiRealtime() {
+            if (!isRealtimeActive) return;
+
+            fetch("{{ route('admin.ppi.realtime_check') }}", {
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Accept": "application/json"
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update counter tabs
+                    updateTabCounts(data.counts);
+
+                    // First init
+                    if (lastPpiId === null) {
+                        lastPpiId = data.latest_id;
+                        lastUpdatedAt = data.latest_updated_at;
+                        return;
+                    }
+
+                    // Cek jika ada PPI baru dibuat (ID lebih tinggi)
+                    if (data.latest_id > lastPpiId) {
+                        lastPpiId = data.latest_id;
+                        lastUpdatedAt = data.latest_updated_at;
+                        
+                        playNotificationChime();
+                        let ppiInfo = data.latest_ppi ? `${data.latest_ppi.no_ppi} - ${data.latest_ppi.pemohon} (${data.latest_ppi.perangkat})` : 'Ada permohonan baru';
+                        showPpiToast('🔔 PPI Baru Masuk!', ppiInfo);
+
+                        // Reload tabel otomatis secara mulus
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1200);
+                    } 
+                    // Cek jika ada perubahan status data existing
+                    else if (data.latest_updated_at !== lastUpdatedAt) {
+                        lastUpdatedAt = data.latest_updated_at;
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1200);
+                    }
+                }
+            })
+            .catch(err => console.log('Realtime check notice:', err));
+        }
+
+        // Switch Toggle Pause/Play
+        const btnToggle = document.getElementById('btnToggleRealtime');
+        const pulseDot = document.getElementById('pulseDot');
+        const statusText = document.getElementById('realtimeStatusText');
+        const btnIcon = document.getElementById('btnToggleIcon');
+        const btnText = document.getElementById('btnToggleText');
+
+        if (btnToggle) {
+            btnToggle.addEventListener('click', function() {
+                isRealtimeActive = !isRealtimeActive;
+                if (isRealtimeActive) {
+                    pulseDot.className = 'pulse-green mr-2';
+                    statusText.className = 'font-weight-bold text-success';
+                    statusText.innerText = 'Realtime Active';
+                    btnIcon.className = 'fas fa-pause mr-1';
+                    btnText.innerText = 'Pause';
+                    checkPpiRealtime();
+                } else {
+                    pulseDot.className = 'pulse-gray mr-2';
+                    statusText.className = 'font-weight-bold text-secondary';
+                    statusText.innerText = 'Realtime Paused';
+                    btnIcon.className = 'fas fa-play mr-1';
+                    btnText.innerText = 'Resume';
+                }
+            });
+        }
+
+        // Jalankan Polling setiap 5 detik
+        pollTimer = setInterval(checkPpiRealtime, 5000);
+        // Panggil langsung pada awal pemuatan
+        checkPpiRealtime();
     });
 </script>
 @endsection

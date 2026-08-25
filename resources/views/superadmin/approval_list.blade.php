@@ -3,7 +3,32 @@
 @section('content')
 <div class="container-fluid">
 
-    <h1 class="h3 mb-4 text-gray-800">Dashboard Approval (SuperAdmin)</h1>
+    <style>
+        .pulse-green {
+            width: 10px;
+            height: 10px;
+            background-color: #28a745;
+            border-radius: 50%;
+            box-shadow: 0 0 0 rgba(40, 167, 69, 0.4);
+            animation: pulse-green 1.5s infinite;
+            display: inline-block;
+        }
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        }
+    </style>
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 m-0 text-gray-800">Dashboard Approval (SuperAdmin)</h1>
+        
+        <div class="d-flex align-items-center bg-white px-3 py-2 rounded shadow-sm border">
+            <span class="pulse-green mr-2"></span>
+            <small class="font-weight-bold text-success mr-2">Realtime Active</small>
+            <span class="badge badge-warning text-dark ml-1" id="saPendingBadge">{{ $requestMasuk->count() }} Pending</span>
+        </div>
+    </div>
 
     @if(session('success'))
         <div class="alert alert-success border-left-success shadow-sm">
@@ -43,8 +68,8 @@
                                 <td class="font-weight-bold">{{ $item->no_ppi }}</td>
                                 <td>{{ \Carbon\Carbon::parse($item->created_at)->format('d M Y') }}</td>
                                 <td>
-                                    <strong>{{ $item->user->nama }}</strong><br>
-                                    <small class="text-muted">{{ $item->user->departemen }} - {{ $item->user->perusahaan }}</small>
+                                    <strong>{{ $item->user->nama ?? '-' }}</strong><br>
+                                    <small class="text-muted">{{ $item->user->departemen ?? '' }} - {{ $item->user->perusahaan ?? '' }}</small>
                                 </td>
                                 <td>{{ $item->perangkat }}</td>
                                 <td>
@@ -67,4 +92,52 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let lastCount = {{ $requestMasuk->count() }};
+        let lastId = {{ $requestMasuk->first()->id ?? 0 }};
+
+        function playChime() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.4);
+            } catch(e) {}
+        }
+
+        function checkSuperAdminRealtime() {
+            fetch("{{ route('superadmin.approval.realtime_check') }}", {
+                headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const badge = document.getElementById('saPendingBadge');
+                    if (badge) badge.innerText = data.count_pending + ' Pending';
+
+                    if (data.count_pending > lastCount || data.latest_id > lastId) {
+                        playChime();
+                        setTimeout(() => location.reload(), 1000);
+                    } else if (data.count_pending < lastCount) {
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                }
+            })
+            .catch(err => console.log(err));
+        }
+
+        setInterval(checkSuperAdminRealtime, 5000);
+    });
+</script>
 @endsection

@@ -3,8 +3,31 @@
 @section('content')
 <div class="container-fluid">
 
+    <style>
+        .pulse-green {
+            width: 10px;
+            height: 10px;
+            background-color: #28a745;
+            border-radius: 50%;
+            box-shadow: 0 0 0 rgba(40, 167, 69, 0.4);
+            animation: pulse-green 1.5s infinite;
+            display: inline-block;
+        }
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        }
+    </style>
+
     <div class="d-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 text-gray-800">{{ $title }}</h1>
+        <div class="d-flex align-items-center">
+            <h1 class="h3 text-gray-800 m-0 mr-3">{{ $title }}</h1>
+            <div class="d-flex align-items-center bg-white px-3 py-1 rounded shadow-sm border">
+                <span class="pulse-green mr-2"></span>
+                <small class="font-weight-bold text-success">Realtime Active</small>
+            </div>
+        </div>
         
         {{-- Tombol Filter & Cetak PDF --}}
         <button class="btn btn-danger btn-sm shadow-sm" data-toggle="modal" data-target="#modalCetakPdf">
@@ -199,9 +222,78 @@
 
 @push('scripts')
 <script>
-    // Aktifkan Popover untuk Mobile Info
     $(function () {
-        $('[data-toggle="popover"]').popover()
-    })
+        $('[data-toggle="popover"]').popover();
+
+        let lastSignature = null;
+        let lastCount = null;
+        let lastId = null;
+
+        function playChime() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(784, ctx.currentTime); // G5
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.4);
+            } catch(e) {}
+        }
+
+        function showUserToast(title, body) {
+            if (window.Swal) {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: title,
+                    text: body,
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true
+                });
+            }
+        }
+
+        function checkPenggunaPpiRealtime() {
+            fetch("{{ route('pengguna.ppi.realtime_check') }}", {
+                headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (lastSignature === null) {
+                        lastSignature = data.status_signature;
+                        lastCount = data.count;
+                        lastId = data.latest_id;
+                        return;
+                    }
+
+                    if (data.status_signature !== lastSignature || data.count !== lastCount || data.latest_id !== lastId) {
+                        lastSignature = data.status_signature;
+                        lastCount = data.count;
+                        lastId = data.latest_id;
+
+                        playChime();
+                        let msg = data.latest_item ? `Status PPI ${data.latest_item.no_ppi} saat ini: ${data.latest_item.status.toUpperCase()}` : 'Data PPI Anda telah diperbarui.';
+                        showUserToast('🔔 Status PPI Diperbarui!', msg);
+
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                }
+            })
+            .catch(err => console.log('Pengguna realtime check notice:', err));
+        }
+
+        setInterval(checkPenggunaPpiRealtime, 4000);
+        checkPenggunaPpiRealtime();
+    });
 </script>
 @endpush

@@ -156,7 +156,7 @@
                             <label>Serial Number (SN)</label>
                             <input type="text" name="serial_number" 
                                    class="form-control @error('serial_number') is-invalid @enderror" 
-                                   value="{{ old('serial_number') }}" 
+                                   value="{{ old('serial_number', request('serial_number')) }}" 
                                    placeholder="Masukkan SN pabrik (jika ada)">
                             @error('serial_number')
                                 <div class="invalid-feedback">{{ $message }}</div>

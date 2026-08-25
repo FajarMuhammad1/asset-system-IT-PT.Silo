@@ -69,16 +69,42 @@ class UserBASTController extends Controller
             'ttd_penerima' => 'required|string' // Gambar Base64
         ]);
 
-        $bast = LogSerahTerima::findOrFail($id);
+        $bast = LogSerahTerima::with('aset')->findOrFail($id);
 
         // Validasi Pemilik
         if ($bast->user_pemegang_id != Auth::id()) {
             abort(403);
         }
 
-        // Simpan TTD & Update Status
+        // Simpan TTD Penerima
         $bast->ttd_penerima = $request->ttd_penerima;
-        $bast->status = 'menunggu_ttd_admin'; // Update status agar admin bisa memproses
+
+        // Cek apakah Admin sudah TTD terlebih dahulu
+        $isAdminSigned = !empty($bast->ttd_petugas);
+
+        if ($isAdminSigned) {
+            // Jika Admin sudah TTD & User baru TTD => Status langsung SELESAI
+            $bast->status = 'selesai';
+            $pesan = 'Tanda tangan BAST berhasil disimpan! Dokumen BAST Resmi Selesai.';
+
+            // Perbarui status Aset menjadi Dipakai
+            if ($bast->aset) {
+                $bast->aset->update([
+                    'status'           => 'Dipakai',
+                    'user_pemegang_id' => $bast->user_pemegang_id,
+                    'lokasi_sekarang'  => 'User ID: ' . $bast->user_pemegang_id
+                ]);
+
+                if ($bast->aset->surat_jalan_id) {
+                    $this->checkAndCloseSuratJalan($bast->aset->surat_jalan_id);
+                }
+            }
+        } else {
+            // Jika Admin belum TTD => Status menunggu TTD Admin
+            $bast->status = 'menunggu_ttd_admin';
+            $pesan = 'Tanda tangan berhasil dikirim! Menunggu konfirmasi admin.';
+        }
+
         $bast->save();
 
         // Update status MutasiAsset jika transaksi ini berasal dari mutasi
@@ -100,7 +126,28 @@ class UserBASTController extends Controller
         }
 
         // Redirect kembali ke halaman index (Daftar BAST)
-        return redirect()->route('pengguna.userbast.index')
-            ->with('success', 'Tanda tangan berhasil dikirim! Menunggu konfirmasi admin.');
+        return redirect()->route('pengguna.userbast.index')->with('success', $pesan);
+    }
+
+    /**
+     * HELPER: Cek Close Surat Jalan
+     */
+    private function checkAndCloseSuratJalan($suratJalanId)
+    {
+        $suratJalan = \App\Models\SuratJalan::with('BarangMasuk')->find($suratJalanId);
+        if (!$suratJalan) return;
+
+        $totalItems = $suratJalan->barangMasuk->count();
+        if ($totalItems === 0) return;
+
+        $completedItems = $suratJalan->barangMasuk
+            ->whereIn('status', ['Dipakai', 'Rusak']) 
+            ->count();
+
+        if ($completedItems === $totalItems) {
+            $suratJalan->update(['is_bast_submitted' => true]);
+        } else {
+            $suratJalan->update(['is_bast_submitted' => false]);
+        }
     }
 }

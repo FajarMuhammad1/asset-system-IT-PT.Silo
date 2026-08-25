@@ -293,16 +293,16 @@
                 @if($srcSuperAdmin && in_array($ppi->status, ['disetujui', 'selesai']))
                     <img src="{{ $srcSuperAdmin }}" class="sig-image" alt="TTD Super Admin">
                     <br>
-                    <strong style="text-decoration: underline;">Super Admin / Management</strong><br>
+                    <strong style="text-decoration: underline;">Super Admin / Head Manager IT</strong><br>
                     <span style="font-size: 8.5pt; color: #555;">
                         Approved: {{ $ppi->tgl_approve ? \Carbon\Carbon::parse($ppi->tgl_approve)->format('d/m/Y H:i') : date('d/m/Y') }}
                     </span>
                 @elseif($ppi->status == 'ditolak')
                     <br><br><span style="color: #c9302c; font-weight: bold;">(DITOLAK)</span><br><br>
-                    <strong style="text-decoration: underline;">Super Admin / Management</strong>
+                    <strong style="text-decoration: underline;">Super Admin /  Head Manager IT</strong>
                 @else
                     <br><br><span style="color: #999; font-style: italic;">(Menunggu Approval)</span><br><br>
-                    <strong style="text-decoration: underline;">Super Admin / Management</strong>
+                    <strong style="text-decoration: underline;">Super Admin / Head Manager IT</strong>
                 @endif
             </td>
         </tr>

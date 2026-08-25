@@ -10,6 +10,32 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class SuperAdminPpiController extends Controller
 {
+    // 0. REALTIME CHECK FOR SUPERADMIN
+    public function realtimeCheck(Request $request)
+    {
+        $requestMasuk = Ppi::with('user')
+                           ->where('status', 'pending_superadmin')
+                           ->orderBy('created_at', 'desc')
+                           ->get();
+
+        $latest = $requestMasuk->first();
+        $latestId = $latest ? $latest->id : 0;
+        $latestUpdatedAt = Ppi::where('status', 'pending_superadmin')->max('updated_at') ?? '';
+
+        return response()->json([
+            'status'            => 'success',
+            'count_pending'     => $requestMasuk->count(),
+            'latest_id'         => $latestId,
+            'latest_updated_at' => (string) $latestUpdatedAt,
+            'latest_ppi'        => $latest ? [
+                'id'        => $latest->id,
+                'no_ppi'    => $latest->no_ppi,
+                'pemohon'   => $latest->user->nama ?? 'User',
+                'perangkat' => $latest->perangkat,
+            ] : null,
+        ]);
+    }
+
     // 1. Halaman List Approval
     public function index()
     {

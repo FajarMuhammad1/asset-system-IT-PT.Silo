@@ -140,7 +140,27 @@ class BarangKeluarController extends Controller
      */
     public function index()
     {
-        // Pastikan tidak memanggil relasi 'kategori' yang menyebabkan error
+        // Auto-fix: Jika kedua pihak (Admin & User) sudah TTD tetapi status masih 'menunggu_ttd_admin' atau 'menunggu_ttd_user'
+        LogSerahTerima::whereNotNull('ttd_petugas')
+            ->whereNotNull('ttd_penerima')
+            ->where('ttd_petugas', '!=', '')
+            ->where('ttd_penerima', '!=', '')
+            ->where('status', '!=', 'selesai')
+            ->get()
+            ->each(function ($item) {
+                $item->update(['status' => 'selesai']);
+                if ($item->aset && $item->aset->status !== 'Dipakai') {
+                    $item->aset->update([
+                        'status'           => 'Dipakai',
+                        'user_pemegang_id' => $item->user_pemegang_id,
+                        'lokasi_sekarang'  => 'User ID: ' . $item->user_pemegang_id
+                    ]);
+                    if ($item->aset->surat_jalan_id) {
+                        $this->checkAndCloseSuratJalan($item->aset->surat_jalan_id);
+                    }
+                }
+            });
+
         $logs = LogSerahTerima::with(['aset.masterBarang', 'pemegang', 'admin'])
             ->latest()
             ->get();
@@ -237,14 +257,29 @@ class BarangKeluarController extends Controller
     {
         $request->validate(['ttd_penerima' => 'required|string']);
 
-        $log = LogSerahTerima::findOrFail($id);
+        $log = LogSerahTerima::with('aset')->findOrFail($id);
         
+        $hasAdminTtd = !empty($log->ttd_petugas);
+        $newStatus = $hasAdminTtd ? 'selesai' : 'menunggu_ttd_admin';
+
         $log->update([
             'ttd_penerima' => $request->ttd_penerima, 
-            'status' => 'menunggu_ttd_admin'
+            'status'       => $newStatus
         ]);
         
-        return back()->with('success', 'TTD User berhasil disimpan.');
+        if ($newStatus === 'selesai' && $log->aset) {
+            $log->aset->update([
+                'status'           => 'Dipakai',
+                'user_pemegang_id' => $log->user_pemegang_id,
+                'lokasi_sekarang'  => 'User ID: ' . $log->user_pemegang_id
+            ]);
+
+            if ($log->aset->surat_jalan_id) {
+                $this->checkAndCloseSuratJalan($log->aset->surat_jalan_id);
+            }
+        }
+
+        return back()->with('success', 'TTD User berhasil disimpan. ' . ($newStatus === 'selesai' ? 'BAST Selesai!' : ''));
     }
 
     /**
@@ -256,16 +291,19 @@ class BarangKeluarController extends Controller
 
         $log = LogSerahTerima::with('aset')->findOrFail($id);
         
+        $hasUserTtd = !empty($log->ttd_penerima);
+        $newStatus = $hasUserTtd ? 'selesai' : 'menunggu_ttd_user';
+
         $log->update([
             'ttd_petugas' => $request->ttd_petugas, 
-            'status' => 'selesai'
+            'status'      => $newStatus
         ]);
 
-        if ($log->aset) {
+        if ($newStatus === 'selesai' && $log->aset) {
             $log->aset->update([
-                'status' => 'Dipakai',
+                'status'           => 'Dipakai',
                 'user_pemegang_id' => $log->user_pemegang_id,
-                'lokasi_sekarang' => 'User ID: ' . $log->user_pemegang_id
+                'lokasi_sekarang'  => 'User ID: ' . $log->user_pemegang_id
             ]);
 
             if ($log->aset->surat_jalan_id) {
@@ -273,7 +311,7 @@ class BarangKeluarController extends Controller
             }
         }
 
-        return back()->with('success', 'TTD Admin disimpan. BAST Selesai.');
+        return back()->with('success', 'TTD Admin disimpan. ' . ($newStatus === 'selesai' ? 'BAST Selesai.' : 'Menunggu TTD User.'));
     }
 
     /**
