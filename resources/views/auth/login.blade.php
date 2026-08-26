@@ -73,9 +73,16 @@
                                         </div>
 
                                         <div class="form-group">
-                                            <input type="password" class="form-control form-control-user @error('password') is-invalid @enderror" 
-                                                placeholder="Masukkan Password" name="password">
-                                                  @error('password')
+                                            <div class="position-relative">
+                                                <input type="password" class="form-control form-control-user @error('password') is-invalid @enderror" 
+                                                    id="passwordInput"
+                                                    placeholder="Masukkan Password" name="password" style="padding-right: 48px;">
+                                                <button type="button" id="togglePassword" class="btn btn-link position-absolute text-muted" 
+                                                    style="right: 15px; top: 50%; transform: translateY(-50%); z-index: 10; padding: 0; border: none; text-decoration: none; outline: none; box-shadow: none;">
+                                                    <i class="fas fa-eye" id="togglePasswordIcon"></i>
+                                                </button>
+                                            </div>
+                                            @error('password')
                                             <small class="text-danger">
                                                 {{$message}}
                                             </small>
@@ -116,6 +123,29 @@
     <!-- Custom scripts for all pages-->
     <script src="{{ asset('/sbadmin2js/sb-admin-2.min.js') }}"></script>
     <script src="{{ asset('sweetalert2/dist/sweetalert2.all.min.js') }}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const togglePassword = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('passwordInput');
+            const togglePasswordIcon = document.getElementById('togglePasswordIcon');
+
+            if (togglePassword && passwordInput && togglePasswordIcon) {
+                togglePassword.addEventListener('click', function () {
+                    const isPassword = passwordInput.getAttribute('type') === 'password';
+                    passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+                    
+                    if (isPassword) {
+                        togglePasswordIcon.classList.remove('fa-eye');
+                        togglePasswordIcon.classList.add('fa-eye-slash');
+                    } else {
+                        togglePasswordIcon.classList.remove('fa-eye-slash');
+                        togglePasswordIcon.classList.add('fa-eye');
+                    }
+                });
+            }
+        });
+    </script>
 
   @if(session('success'))
     <script>

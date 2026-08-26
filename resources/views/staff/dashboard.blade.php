@@ -86,101 +86,155 @@
 </div>
 
 
-<div class="d-flex align-items-center mb-3">
-    <h5 class="m-0 font-weight-bold text-gray-800"><i class="fas fa-headset mr-2 text-primary"></i> Antrean Helpdesk Hari Ini</h5>
-    <span class="badge badge-primary ml-2 rounded-pill px-2">Insidental</span>
-</div>
-
-<div class="row">
-    @forelse($recentTugas as $t)
-        @if($t->status !== 'Closed' && $t->status !== 'Ditolak')
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-0 shadow-sm rounded-lg h-100 bg-white" style="border-top: 4px solid {{ $t->status == 'Open' ? '#f6c23e' : '#36b9cc' }} !important;">
-                <div class="card-body d-flex flex-column justify-content-between">
-                    <div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="text-xs font-weight-bold text-muted"><i class="fas fa-hashtag"></i> {{ $t->no_tiket }}</span>
-                            <small class="text-secondary font-weight-bold"><i class="far fa-clock"></i> {{ $t->created_at->format('d M Y') }}</small>
-                        </div>
-
-                        <div class="mb-2">
-                            <span class="badge badge-light border text-dark text-xs mb-1">
-                                <i class="fas fa-user mr-1 text-primary"></i> Pelapor: {{ $t->pelapor->nama ?? 'Tidak Diketahui' }}
-                            </span>
-                            <h5 class="font-weight-bold text-dark mb-2 mt-1">{{ $t->judul_masalah }}</h5>
-                        </div>
-
-                        <div class="mb-3">
-                            @if($t->status == 'Open')
-                                <span class="badge badge-warning text-dark"><i class="fas fa-folder-open mr-1"></i> Tugas Baru (Open)</span>
-                            @else
-                                <span class="badge badge-info"><i class="fas fa-spinner fa-spin mr-1"></i> Sedang Dikerjakan</span>
-                            @endif
-                        </div>
-
-                        <hr class="my-3 border-gray-200">
-
-                        <form action="{{ route('staff.helpdesk.update', $t->id) }}" method="POST">
-                            @csrf
-                            @method('PUT')
-                            
-                            <p class="text-xs font-weight-bold text-uppercase text-gray-600 mb-2">Checklist Penyelesaian:</p>
-                            <div class="bg-light p-3 rounded border mb-3">
-                                <div class="custom-control custom-checkbox mb-2">
-                                    <input type="checkbox" class="custom-control-input" id="chk1_{{ $t->id }}" name="checklist[]" value="Pemeriksaan Awal Gejala">
-                                    <label class="custom-control-label text-sm w-100 text-dark" style="cursor:pointer;" for="chk1_{{ $t->id }}">Pemeriksaan Awal Gejala</label>
-                                </div>
-                                <div class="custom-control custom-checkbox mb-2">
-                                    <input type="checkbox" class="custom-control-input" id="chk2_{{ $t->id }}" name="checklist[]" value="Perbaikan Komponen / Sistem">
-                                    <label class="custom-control-label text-sm w-100 text-dark" style="cursor:pointer;" for="chk2_{{ $t->id }}">Perbaikan Komponen / Sistem</label>
-                                </div>
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="chk3_{{ $t->id }}" name="checklist[]" value="Uji Coba Fungsional Akhir">
-                                    <label class="custom-control-label text-sm w-100 text-dark" style="cursor:pointer;" for="chk3_{{ $t->id }}">Uji Coba Fungsional Akhir</label>
-                                </div>
-                            </div>
-
-                            <div class="form-group mb-3">
-                                <label class="text-xs font-weight-bold text-uppercase text-gray-600">Catatan Perbaikan:</label>
-                                <textarea name="catatan_staff" class="form-control form-control-sm" rows="2" placeholder="Tulis tindakan atau suku cadang yang diganti..." required></textarea>
-                            </div>
-                    </div> <div class="mt-2">
-                            <button type="submit" class="btn btn-success btn-block font-weight-bold shadow-sm py-2" onclick="return confirm('Kirim laporan penyelesaian untuk tiket ini?');">
-                                <i class="fas fa-check-circle mr-1"></i> Selesaikan Helpdesk
-                            </button>
-                        </form> <a href="{{ route('staff.helpdesk.show', $t->id) }}" class="btn btn-light btn-block btn-sm text-muted font-weight-bold mt-2 border">
-                            <i class="fas fa-info-circle mr-1"></i> Detail Lengkap
-                        </a>
-                    </div>
-                </div>
-            </div>
+<!-- BAGIAN 1: DAFTAR PENUGASAN HELPDESK (TABEL RINCI) -->
+<div class="card shadow-sm border-0 mb-4 rounded-lg bg-white">
+    <div class="card-header py-3 bg-white d-flex align-items-center justify-content-between border-bottom">
+        <div class="d-flex align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-headset mr-2"></i> Antrean & Penugasan Helpdesk
+            </h6>
+            <span class="badge badge-primary ml-2 rounded-pill px-2">Tiket Insidental</span>
         </div>
-        @endif
-    @empty
-        <div class="col-12">
-            <div class="card border-0 shadow-sm rounded-lg text-center py-4 bg-white mb-4">
-                <div class="card-body">
-                    <i class="fas fa-mug-hot fa-2x text-success mb-2"></i>
-                    <h6 class="font-weight-bold text-dark">Antrean Helpdesk Kosong</h6>
-                    <p class="text-muted small mb-0">Tidak ada keluhan baru dari pengguna saat ini.</p>
-                </div>
-            </div>
+        <a href="{{ route('staff.helpdesk.index') }}" class="btn btn-sm btn-outline-primary shadow-sm rounded-pill px-3">
+            <i class="fas fa-list mr-1"></i> Semua Tiket
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0 align-middle">
+                <thead class="bg-light text-dark text-uppercase text-xs">
+                    <tr>
+                        <th class="py-3 px-3">No. Tiket</th>
+                        <th class="py-3">Pelapor</th>
+                        <th class="py-3">Perangkat / Aset</th>
+                        <th class="py-3">Keluhan & Masalah</th>
+                        <th class="py-3 text-center">Prioritas</th>
+                        <th class="py-3 text-center">Penugasan</th>
+                        <th class="py-3 text-center">Status</th>
+                        <th class="py-3">Waktu Masuk</th>
+                        <th class="py-3 text-center" width="130px">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($recentTugas as $t)
+                        <tr>
+                            {{-- No Tiket --}}
+                            <td class="px-3 font-weight-bold text-primary text-nowrap">
+                                <i class="fas fa-ticket-alt mr-1 text-primary"></i> {{ $t->no_tiket }}
+                            </td>
+
+                            {{-- Pelapor --}}
+                            <td>
+                                <div class="font-weight-bold text-dark">{{ $t->pelapor->nama ?? 'Tidak Diketahui' }}</div>
+                                <small class="text-muted"><i class="fas fa-briefcase mr-1"></i>{{ $t->pelapor->jabatan ?? 'Pengguna' }}</small>
+                            </td>
+
+                            {{-- Perangkat / Aset --}}
+                            <td>
+                                @if($t->barangMasuk)
+                                    <div class="font-weight-bold text-dark">{{ $t->barangMasuk->masterBarang->nama_barang ?? 'Aset' }}</div>
+                                    <small class="badge badge-light border text-muted">
+                                        <i class="fas fa-barcode mr-1"></i>{{ $t->barangMasuk->kode_asset ?? '-' }}
+                                    </small>
+                                @else
+                                    <span class="text-muted small"><em>Non-Aset / Perangkat Umum</em></span>
+                                @endif
+                            </td>
+
+                            {{-- Judul & Deskripsi --}}
+                            <td>
+                                <div class="font-weight-bold text-dark">{{ $t->judul_masalah }}</div>
+                                <small class="text-secondary d-block" style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    {{ $t->deskripsi ?? '-' }}
+                                </small>
+                            </td>
+
+                            {{-- Prioritas --}}
+                            <td class="text-center">
+                                @php
+                                    $colorPrio = ['Low' => 'secondary', 'Normal' => 'info', 'High' => 'warning', 'Urgent' => 'danger'][$t->prioritas] ?? 'info';
+                                @endphp
+                                <span class="badge badge-{{ $colorPrio }} px-2 py-1 font-weight-bold">{{ $t->prioritas ?? 'Normal' }}</span>
+                            </td>
+
+                            {{-- Tipe Penugasan --}}
+                            <td class="text-center">
+                                @if($t->tipe_penyelesaian == 'Tim')
+                                    <span class="badge badge-primary px-2 py-1"><i class="fas fa-users mr-1"></i> Tim</span>
+                                    @if($t->teknisi_id == Auth::id())
+                                        <div class="text-xs text-success font-weight-bold mt-1"><i class="fas fa-star text-warning"></i> PIC Utama</div>
+                                    @endif
+                                @else
+                                    <span class="badge badge-secondary px-2 py-1"><i class="fas fa-user mr-1"></i> Individu</span>
+                                @endif
+                            </td>
+
+                            {{-- Status Tiket --}}
+                            <td class="text-center">
+                                @if($t->status == 'Open')
+                                    <span class="badge badge-warning text-dark px-2 py-1"><i class="fas fa-envelope-open mr-1"></i> Open</span>
+                                @elseif($t->status == 'Progres')
+                                    <span class="badge badge-info px-2 py-1"><i class="fas fa-spinner fa-spin mr-1"></i> Progres</span>
+                                @elseif($t->status == 'Closed')
+                                    <span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i> Closed</span>
+                                @elseif($t->status == 'Ditolak' || $t->status == 'Reject')
+                                    <span class="badge badge-danger px-2 py-1"><i class="fas fa-times-circle mr-1"></i> Ditolak</span>
+                                @else
+                                    <span class="badge badge-secondary px-2 py-1">{{ $t->status }}</span>
+                                @endif
+                            </td>
+
+                            {{-- Waktu Masuk --}}
+                            <td class="text-nowrap small text-muted">
+                                <div><i class="far fa-calendar-alt mr-1"></i>{{ $t->created_at->format('d M Y') }}</div>
+                                <div><i class="far fa-clock mr-1"></i>{{ $t->created_at->format('H:i') }} WIB</div>
+                            </td>
+
+                            {{-- Aksi --}}
+                            <td class="text-center align-middle">
+                                @if($t->teknisi_id == Auth::id() && $t->status == 'Open')
+                                    <a href="{{ route('staff.helpdesk.show', $t->id) }}" class="btn btn-sm btn-primary shadow-sm font-weight-bold" title="Mulai & Buka Detail">
+                                        <i class="fas fa-play mr-1"></i> Mulai
+                                    </a>
+                                @else
+                                    <a href="{{ route('staff.helpdesk.show', $t->id) }}" class="btn btn-sm btn-info shadow-sm font-weight-bold" title="Lihat Detail Lengkap">
+                                        <i class="fas fa-info-circle mr-1"></i> Detail
+                                    </a>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-muted">
+                                <i class="fas fa-inbox fa-2x text-muted mb-2 d-block"></i>
+                                Tidak ada penugasan tiket helpdesk aktif saat ini.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
-    @endforelse
+    </div>
 </div>
 
 <hr class="my-4 border-gray-300">
 
-<div class="d-flex align-items-center mb-3">
-    <h5 class="m-0 font-weight-bold text-gray-800"><i class="fas fa-tools mr-2 text-warning"></i> Jadwal Perawatan Hari Ini</h5>
-    <span class="badge badge-warning text-dark ml-2 rounded-pill px-2">Rutin / Terjadwal</span>
+<!-- BAGIAN 2: JADWAL PERAWATAN RUTIN ASET (FORMAT CARD DENGAN SOP & CHECKLIST) -->
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div class="d-flex align-items-center">
+        <h5 class="m-0 font-weight-bold text-gray-800"><i class="fas fa-tools mr-2 text-warning"></i> Jadwal Perawatan Aset Hari Ini</h5>
+        <span class="badge badge-warning text-dark ml-2 rounded-pill px-2">Maintenance Terjadwal</span>
+    </div>
+    <a href="{{ route('staff.maintenance.index') }}" class="btn btn-sm btn-outline-warning text-dark font-weight-bold rounded-pill px-3 shadow-sm">
+        <i class="fas fa-calendar-alt mr-1"></i> Semua Jadwal
+    </a>
 </div>
 
 <div class="row">
     @php $adaTugasMaintenance = false; @endphp
     
-    @if(isset($tickets) && count($tickets) > 0)
-        @foreach($tickets as $ticket)
+    @if(isset($tugasPerawatan) && count($tugasPerawatan) > 0)
+        @foreach($tugasPerawatan as $ticket)
             @php $adaTugasMaintenance = true; @endphp
             <div class="col-xl-4 col-md-6 mb-4">
                 <div class="card border-0 shadow-sm rounded-lg h-100 bg-white" style="border-left: 5px solid #f6c23e !important;">
@@ -189,10 +243,10 @@
                         <div>
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <span class="badge badge-warning text-dark px-2 py-1 small font-weight-bold">
-                                    <i class="fas fa-clock mr-1"></i> Menunggu
+                                    <i class="fas fa-clock mr-1"></i> {{ $ticket->status ?? 'Menunggu' }}
                                 </span>
                                 <small class="text-muted font-weight-bold">
-                                    <i class="fas fa-calendar-alt mr-1"></i> {{ \Carbon\Carbon::parse($ticket->tanggal_jadwal)->translatedFormat('d M Y') }}
+                                    <i class="fas fa-calendar-alt mr-1"></i> {{ $ticket->tanggal_jadwal ? \Carbon\Carbon::parse($ticket->tanggal_jadwal)->translatedFormat('d M Y') : '-' }}
                                 </small>
                             </div>
                             
@@ -203,7 +257,7 @@
                             
                             <hr class="my-3 border-gray-200">
 
-                            <form action="{{ route('admin.maintenance.ticket.selesai', $ticket->id) }}" method="POST">
+                            <form action="{{ route('staff.maintenance.tugas.selesai', $ticket->id) }}" method="POST">
                                 @csrf
                                 @method('PUT')
                                 
@@ -253,7 +307,7 @@
                 <div class="card-body">
                     <i class="fas fa-calendar-check fa-2x text-warning mb-2"></i>
                     <h6 class="font-weight-bold text-dark">Jadwal Perawatan Kosong</h6>
-                    <p class="text-muted small mb-0">Tidak ada jadwal perawatan aset rutin untuk hari ini.</p>
+                    <p class="text-muted small mb-0">Tidak ada jadwal perawatan aset rutin yang menunggu pengerjaan.</p>
                 </div>
             </div>
         </div>

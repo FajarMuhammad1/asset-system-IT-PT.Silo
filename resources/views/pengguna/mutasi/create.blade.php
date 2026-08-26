@@ -73,7 +73,7 @@
 
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle mr-1"></i> 
-                        <strong>Alur Proses:</strong> Pengajuan ini akan dikirimkan ke <strong>Manager / Atasan</strong> untuk direview. Setelah disetujui, Admin IT akan memproses mutasi barang dan menerbitkan <strong>BAST Digital</strong> untuk ditandatangani oleh penerima baru.
+                        <strong>Alur Proses:</strong> Pengajuan ini akan dikirimkan ke <strong>Super Admin</strong> untuk direview. Setelah disetujui, Admin IT akan memproses mutasi barang dan menerbitkan <strong>BAST Digital</strong> untuk ditandatangani oleh penerima baru.
                     </div>
 
                     <div class="text-right">

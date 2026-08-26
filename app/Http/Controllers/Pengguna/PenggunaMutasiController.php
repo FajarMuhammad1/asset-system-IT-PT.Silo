@@ -84,13 +84,11 @@ class PenggunaMutasiController extends Controller
             'tanggal_mutasi'  => now(),
         ]);
 
-        // Kirim notifikasi ke SuperAdmin / Manager
-        $managers = User::whereIn('role', ['SuperAdmin', 'Admin'])
-            ->orWhere('jabatan', 'LIKE', '%Manager%')
-            ->get();
+        // Kirim notifikasi ke SuperAdmin untuk direview
+        $superAdmins = User::where('role', 'SuperAdmin')->get();
 
-        foreach ($managers as $manager) {
-            $manager->notify(new MutasiNotification(
+        foreach ($superAdmins as $superAdmin) {
+            $superAdmin->notify(new MutasiNotification(
                 $mutasi,
                 'Pengajuan Mutasi Aset Baru',
                 Auth::user()->nama . ' mengajukan mutasi untuk aset ' . ($asset->kode_asset ?? 'Aset') . '.',
@@ -99,6 +97,6 @@ class PenggunaMutasiController extends Controller
         }
 
         return redirect()->route('pengguna.mutasi.index')
-            ->with('success', 'Pengajuan mutasi berhasil dikirim dan menunggu persetujuan Manager.');
+            ->with('success', 'Pengajuan mutasi berhasil dikirim dan menunggu review Super Admin.');
     }
 }

@@ -62,6 +62,10 @@ class MutasiController extends Controller
      */
     public function store(Request $request)
     {
+        if (Auth::user()->role !== 'Admin') {
+            return redirect()->back()->with('error', 'Hanya role Admin IT yang memiliki izin untuk melakukan penginputan mutasi langsung.');
+        }
+
         $request->validate([
             'barang_masuk_id' => 'required|exists:barang_masuk,id',
             'user_tujuan_id'  => 'required|exists:users,id',
@@ -86,10 +90,14 @@ class MutasiController extends Controller
     }
 
     /**
-     * Manager / Atasan Menyutujui Pengajuan Mutasi
+     * Super Admin Menyutujui Pengajuan Mutasi
      */
     public function approveByManager(Request $request, $id)
     {
+        if (Auth::user()->role !== 'SuperAdmin') {
+            return redirect()->back()->with('error', 'Hanya Super Admin yang memiliki hak akses untuk mereview dan menyetujui pengajuan mutasi.');
+        }
+
         $mutasi = MutasiAsset::with(['barangMasuk', 'pemohon'])->findOrFail($id);
 
         $mutasi->update([
@@ -101,8 +109,8 @@ class MutasiController extends Controller
         if ($mutasi->pemohon) {
             $mutasi->pemohon->notify(new MutasiNotification(
                 $mutasi,
-                'Pengajuan Mutasi Disetujui Manager',
-                'Pengajuan mutasi aset ' . ($mutasi->barangMasuk->kode_asset ?? '') . ' telah disetujui Manager dan akan diproses oleh Admin IT.',
+                'Pengajuan Mutasi Disetujui Super Admin',
+                'Pengajuan mutasi aset ' . ($mutasi->barangMasuk->kode_asset ?? '') . ' telah disetujui Super Admin dan akan diproses oleh Admin IT.',
                 route('pengguna.mutasi.index')
             ));
         }
@@ -113,7 +121,7 @@ class MutasiController extends Controller
             $admin->notify(new MutasiNotification(
                 $mutasi,
                 'Mutasi Siap Dieksekusi IT',
-                'Mutasi aset ' . ($mutasi->barangMasuk->kode_asset ?? '') . ' disetujui Manager. Silakan lakukan eksekusi fisik & terbitkan BAST.',
+                'Mutasi aset ' . ($mutasi->barangMasuk->kode_asset ?? '') . ' disetujui Super Admin. Silakan lakukan eksekusi fisik & terbitkan BAST.',
                 route('mutasi.index')
             ));
         }
@@ -122,10 +130,14 @@ class MutasiController extends Controller
     }
 
     /**
-     * Manager / Atasan Menolak Pengajuan Mutasi
+     * Super Admin Menolak Pengajuan Mutasi
      */
     public function rejectByManager(Request $request, $id)
     {
+        if (Auth::user()->role !== 'SuperAdmin') {
+            return redirect()->back()->with('error', 'Hanya Super Admin yang memiliki hak akses untuk menolak pengajuan mutasi.');
+        }
+
         $request->validate([
             'alasan_penolakan' => 'required|string|max:500',
         ], [
@@ -145,7 +157,7 @@ class MutasiController extends Controller
             $mutasi->pemohon->notify(new MutasiNotification(
                 $mutasi,
                 'Pengajuan Mutasi Ditolak',
-                'Pengajuan mutasi aset ' . ($mutasi->barangMasuk->kode_asset ?? '') . ' ditolak oleh Manager. Alasan: ' . $request->alasan_penolakan,
+                'Pengajuan mutasi aset ' . ($mutasi->barangMasuk->kode_asset ?? '') . ' ditolak oleh Super Admin. Alasan: ' . $request->alasan_penolakan,
                 route('pengguna.mutasi.index')
             ));
         }

@@ -26,96 +26,139 @@
 
     <!-- Cards Stats Ringkasan Mutasi -->
     <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Menunggu Approval Manager</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $pendingApprovals->count() }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clock fa-2x text-warning"></i>
+        @if(Auth::user()->role === 'SuperAdmin')
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Menunggu Review Super Admin</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $pendingApprovals->count() }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clock fa-2x text-warning"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Disetujui (Perlu Eksekusi IT)</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $readyForIT->count() }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-tools fa-2x text-primary"></i>
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Disetujui (Dalam Proses IT)</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $readyForIT->count() + $completedMutations->where('status', 'Menunggu TTD BAST')->count() }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-tasks fa-2x text-primary"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Menunggu TTD BAST</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $completedMutations->where('status', 'Menunggu TTD BAST')->count() }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-signature fa-2x text-info"></i>
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Mutasi Selesai</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $completedMutations->where('status', 'Selesai')->count() }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-check-double fa-2x text-success"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        @else
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Disetujui (Perlu Eksekusi IT)</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $readyForIT->count() }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-tools fa-2x text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Mutasi Selesai</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $completedMutations->where('status', 'Selesai')->count() }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-check-double fa-2x text-success"></i>
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="card border-left-info shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Menunggu TTD BAST</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $completedMutations->where('status', 'Menunggu TTD BAST')->count() }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-signature fa-2x text-info"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Mutasi Selesai</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $completedMutations->where('status', 'Selesai')->count() }}</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-check-double fa-2x text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 
     <!-- TABS ALUR MUTASI -->
     <ul class="nav nav-tabs id-mutasi-tabs mb-4" id="mutasiTab" role="tablist">
-        <li class="nav-item">
-            <a class="nav-link active font-weight-bold" id="approval-tab" data-toggle="tab" href="#approval" role="tab">
-                <i class="fas fa-user-check mr-1 text-warning"></i> Review Manager ({{ $pendingApprovals->count() }})
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link font-weight-bold" id="eksekusi-tab" data-toggle="tab" href="#eksekusi" role="tab">
-                <i class="fas fa-truck-loading mr-1 text-primary"></i> Eksekusi IT ({{ $readyForIT->count() }})
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link font-weight-bold" id="riwayat-tab" data-toggle="tab" href="#riwayat" role="tab">
-                <i class="fas fa-history mr-1 text-secondary"></i> Semuar Riwayat Mutasi ({{ $riwayatMutasi->count() }})
-            </a>
-        </li>
-        <li class="nav-item ml-auto">
-            <button class="btn btn-primary btn-sm shadow-sm" data-toggle="collapse" data-target="#formDirectMutasi">
-                <i class="fas fa-plus mr-1"></i> Form Mutasi IT Langsung
-            </button>
-        </li>
+        @if(Auth::user()->role === 'SuperAdmin')
+            <li class="nav-item">
+                <a class="nav-link active font-weight-bold" id="approval-tab" data-toggle="tab" href="#approval" role="tab">
+                    <i class="fas fa-user-check mr-1 text-warning"></i> Approval Mutasi ({{ $pendingApprovals->count() }})
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link font-weight-bold" id="riwayat-tab" data-toggle="tab" href="#riwayat" role="tab">
+                    <i class="fas fa-history mr-1 text-secondary"></i> Semua Riwayat Mutasi ({{ $riwayatMutasi->count() }})
+                </a>
+            </li>
+        @else
+            <li class="nav-item">
+                <a class="nav-link active font-weight-bold" id="eksekusi-tab" data-toggle="tab" href="#eksekusi" role="tab">
+                    <i class="fas fa-truck-loading mr-1 text-primary"></i> Eksekusi IT ({{ $readyForIT->count() }})
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link font-weight-bold" id="riwayat-tab" data-toggle="tab" href="#riwayat" role="tab">
+                    <i class="fas fa-history mr-1 text-secondary"></i> Semua Riwayat Mutasi ({{ $riwayatMutasi->count() }})
+                </a>
+            </li>
+            <li class="nav-item ml-auto">
+                <button class="btn btn-primary btn-sm shadow-sm" data-toggle="collapse" data-target="#formDirectMutasi">
+                    <i class="fas fa-plus mr-1"></i> Form Mutasi IT Langsung
+                </button>
+            </li>
+        @endif
     </ul>
 
-    <!-- FORM MUTASI LANGSUNG IT (COLLAPSIBLE) -->
+    @if(Auth::user()->role === 'Admin')
+    <!-- FORM MUTASI LANGSUNG IT (KHUSUS ROLE ADMIN) -->
     <div class="collapse mb-4" id="formDirectMutasi">
         <div class="card shadow border-left-primary">
             <div class="card-header py-3 bg-white">
@@ -169,15 +212,17 @@
             </div>
         </div>
     </div>
+    @endif
 
     <!-- TAB CONTENTS -->
     <div class="tab-content" id="mutasiTabContent">
         
-        <!-- TAB 1: PENDING APPROVAL MANAGER -->
+        @if(Auth::user()->role === 'SuperAdmin')
+        <!-- TAB 1: PENDING APPROVAL SUPER ADMIN -->
         <div class="tab-pane fade show active" id="approval" role="tabpanel">
             <div class="card shadow mb-4">
                 <div class="card-header bg-white py-3">
-                    <h6 class="m-0 font-weight-bold text-warning"><i class="fas fa-user-clock mr-1"></i> Permintaan Mutasi Menunggu Persetujuan Manager / Atasan</h6>
+                    <h6 class="m-0 font-weight-bold text-warning"><i class="fas fa-user-clock mr-1"></i> Permintaan Mutasi Menunggu Persetujuan Super Admin</h6>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -191,7 +236,7 @@
                                     <th>User Tujuan</th>
                                     <th>Alasan Mutasi</th>
                                     <th>Tanggal Pengajuan</th>
-                                    <th width="15%">Aksi Manager</th>
+                                    <th width="15%">Aksi Review</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -208,49 +253,45 @@
                                         <td>{{ $item->keterangan }}</td>
                                         <td>{{ \Carbon\Carbon::parse($item->created_at)->format('d M Y H:i') }}</td>
                                         <td>
-                                            @if(in_array(Auth::user()->role, ['SuperAdmin', 'Admin']) || str_contains(Auth::user()->jabatan, 'Manager'))
-                                                <form action="{{ route('mutasi.approve', $item->id) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-success mb-1" onclick="return confirm('Setujui pengajuan mutasi ini?')">
-                                                        <i class="fas fa-check mr-1"></i> Approve
-                                                    </button>
-                                                </form>
-                                                <button type="button" class="btn btn-sm btn-danger mb-1" data-toggle="modal" data-target="#rejectModal{{ $item->id }}">
-                                                    <i class="fas fa-times mr-1"></i> Reject
+                                            <form action="{{ route('mutasi.approve', $item->id) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-success mb-1" onclick="return confirm('Setujui pengajuan mutasi ini?')">
+                                                    <i class="fas fa-check mr-1"></i> Approve
                                                 </button>
+                                            </form>
+                                            <button type="button" class="btn btn-sm btn-danger mb-1" data-toggle="modal" data-target="#rejectModal{{ $item->id }}">
+                                                <i class="fas fa-times mr-1"></i> Reject
+                                            </button>
 
-                                                <!-- MODAL REJECT -->
-                                                <div class="modal fade" id="rejectModal{{ $item->id }}" tabindex="-1">
-                                                    <div class="modal-dialog">
-                                                        <div class="modal-content">
-                                                            <form action="{{ route('mutasi.reject', $item->id) }}" method="POST">
-                                                                @csrf
-                                                                <div class="modal-header bg-danger text-white">
-                                                                    <h5 class="modal-title"><i class="fas fa-times-circle mr-1"></i> Penolakan Mutasi</h5>
-                                                                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                                            <!-- MODAL REJECT -->
+                                            <div class="modal fade" id="rejectModal{{ $item->id }}" tabindex="-1">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <form action="{{ route('mutasi.reject', $item->id) }}" method="POST">
+                                                            @csrf
+                                                            <div class="modal-header bg-danger text-white">
+                                                                <h5 class="modal-title"><i class="fas fa-times-circle mr-1"></i> Penolakan Mutasi</h5>
+                                                                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                                                            </div>
+                                                            <div class="modal-body text-left">
+                                                                <p>Berikan alasan penolakan pengajuan mutasi ini untuk diinfokan ke pemohon:</p>
+                                                                <div class="form-group">
+                                                                    <textarea name="alasan_penolakan" class="form-control" rows="3" required placeholder="Tuliskan alasan penolakan..."></textarea>
                                                                 </div>
-                                                                <div class="modal-body text-left">
-                                                                    <p>Berikan alasan penolakan pengajuan mutasi ini untuk diinfokan ke pemohon:</p>
-                                                                    <div class="form-group">
-                                                                        <textarea name="alasan_penolakan" class="form-control" rows="3" required placeholder="Tuliskan alasan penolakan..."></textarea>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="modal-footer">
-                                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                                                                    <button type="submit" class="btn btn-danger">Tolak Pengajuan</button>
-                                                                </div>
-                                                            </form>
-                                                        </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                                                                <button type="submit" class="btn btn-danger">Tolak Pengajuan</button>
+                                                            </div>
+                                                        </form>
                                                     </div>
                                                 </div>
-                                            @else
-                                                <span class="badge badge-warning">Menunggu Manager</span>
-                                            @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="text-center py-4 text-muted">TIDAK ADA PENGAJUAN MUTASI YANG MENUNGGU APPROVAL MANAGER.</td>
+                                        <td colspan="8" class="text-center py-4 text-muted">TIDAK ADA PENGAJUAN MUTASI YANG MENUNGGU REVIEW SUPER ADMIN.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -259,12 +300,14 @@
                 </div>
             </div>
         </div>
+        @endif
 
-        <!-- TAB 2: EKSEKUSI IT (DISETUJUI MANAGER) -->
-        <div class="tab-pane fade" id="eksekusi" role="tabpanel">
+        @if(Auth::user()->role === 'Admin')
+        <!-- TAB 2: EKSEKUSI IT (KHUSUS ROLE ADMIN) -->
+        <div class="tab-pane fade show active" id="eksekusi" role="tabpanel">
             <div class="card shadow mb-4">
                 <div class="card-header bg-white py-3">
-                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-tools mr-1"></i> Mutasi Disetujui Manager - Siap Eksekusi Fisik & Terbitkan BAST Digital</h6>
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-tools mr-1"></i> Mutasi Disetujui Super Admin - Siap Eksekusi Fisik & Terbitkan BAST Digital</h6>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -290,7 +333,7 @@
                                         </td>
                                         <td>{{ $item->userAsal->nama ?? 'Stok Gudang' }}</td>
                                         <td><span class="badge badge-info">{{ $item->userTujuan->nama ?? '-' }}</span></td>
-                                        <td><small class="text-success"><i class="fas fa-user-check mr-1"></i>{{ $item->approver->nama ?? 'Manager' }}</small></td>
+                                        <td><small class="text-success"><i class="fas fa-user-check mr-1"></i>{{ $item->approver->nama ?? 'Super Admin' }}</small></td>
                                         <td>{{ $item->keterangan }}</td>
                                         <td>
                                             <form action="{{ route('mutasi.process', $item->id) }}" method="POST">
@@ -312,12 +355,13 @@
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- TAB 3: RIWAYAT LENGKAP -->
         <div class="tab-pane fade" id="riwayat" role="tabpanel">
             <div class="card shadow mb-4">
                 <div class="card-header bg-white py-3">
-                    <h6 class="m-0 font-weight-bold text-secondary"><i class="fas fa-history mr-1"></i> Semuar Log Riwayat Mutasi Aset</h6>
+                    <h6 class="m-0 font-weight-bold text-secondary"><i class="fas fa-history mr-1"></i> Semua Log Riwayat Mutasi Aset</h6>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
