@@ -10,6 +10,8 @@ use App\Models\LogSerahTerima;
 use App\Notifications\MutasiNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class MutasiController extends Controller
 {
@@ -175,10 +177,23 @@ class MutasiController extends Controller
             $mutasi = MutasiAsset::with(['barangMasuk', 'userTujuan', 'pemohon'])->findOrFail($id);
             $asset = $mutasi->barangMasuk;
 
+            // Fallback jika relasi barangMasuk null tapi kolom foreign key ada
+            if (!$asset && !empty($mutasi->barang_masuk_id)) {
+                $asset = BarangMasuk::find($mutasi->barang_masuk_id);
+            }
+            if (!$asset && !empty($mutasi->id_barang_masuk)) {
+                $asset = BarangMasuk::find($mutasi->id_barang_masuk);
+            }
+
+            if (!$asset) {
+                DB::rollBack();
+                return redirect()->back()->with('error', 'Gagal memproses mutasi: Data aset terkait mutasi ini tidak ditemukan di database.');
+            }
+
             // 1. Perbarui Pemegang & Status pada BarangMasuk
             $asset->update([
                 'user_pemegang_id' => $mutasi->user_tujuan_id,
-                'status'           => 'Digunakan',
+                'status'           => 'Dipakai',
             ]);
 
             // 2. Terbitkan Log BAST Serah Terima untuk ditandatangani User Baru
@@ -194,6 +209,7 @@ class MutasiController extends Controller
 
             // 3. Update status mutasi & hubungkan ke log_serah_terima_id
             $mutasi->update([
+                'barang_masuk_id'     => $asset->id,
                 'status'              => 'Menunggu TTD BAST',
                 'log_serah_terima_id' => $bast->id,
                 'tanggal_mutasi'      => now(),
@@ -218,5 +234,46 @@ class MutasiController extends Controller
             DB::rollBack();
             return redirect()->back()->with('error', 'Gagal memproses mutasi: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Cetak Berita Acara / Laporan Mutasi Aset PDF (3 Tanda Tangan: Pengguna Lama, Pengguna Baru, Admin)
+     */
+    public function cetakPdf($id)
+    {
+        $mutasi = MutasiAsset::with([
+            'barangMasuk.masterBarang',
+            'userAsal',
+            'userTujuan',
+            'pemohon',
+            'approver',
+            'logSerahTerima.admin'
+        ])->findOrFail($id);
+
+        // Siapkan Logo Perusahaan
+        $path = public_path('image/images.png'); 
+        $logoBase64 = null;
+        if (file_exists($path)) {
+            $type = pathinfo($path, PATHINFO_EXTENSION);
+            $dataImg = file_get_contents($path);
+            $logoBase64 = 'data:image/' . $type . ';base64,' . base64_encode($dataImg);
+        }
+
+        $kodeAsset = $mutasi->barangMasuk->kode_asset ?? ('MUTASI-' . $mutasi->id);
+        $cleanKode = preg_replace('/[^A-Za-z0-9_\-]/', '_', $kodeAsset);
+        $namaFile = 'Berita_Acara_Mutasi_' . $cleanKode . '_' . date('Ymd_His');
+
+        $data = [
+            'title'         => 'Berita Acara Mutasi Aset - ' . $kodeAsset,
+            'mutasi'        => $mutasi,
+            'logo'          => $logoBase64,
+            'tanggal_cetak' => Carbon::parse($mutasi->tanggal_mutasi ?? $mutasi->created_at)->translatedFormat('d F Y'),
+            'hari_ini'      => Carbon::now()->translatedFormat('d F Y')
+        ];
+
+        $pdf = Pdf::loadView('admin.mutasi.pdf_mutasi', $data);
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->stream($namaFile . '.pdf');
     }
 }

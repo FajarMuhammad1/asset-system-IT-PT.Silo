@@ -76,13 +76,19 @@
                             </td>
                             <td>
                                 @if($item->status == 'Menunggu TTD BAST' && $item->user_tujuan_id == Auth::id())
-                                    <a href="{{ route('pengguna.userbast.index') }}" class="btn btn-sm btn-success">
+                                    <a href="{{ route('pengguna.userbast.index') }}" class="btn btn-sm btn-success mb-1">
                                         <i class="fas fa-signature mr-1"></i> TTD BAST Digital
                                     </a>
+                                @endif
+
+                                @if(in_array($item->status, ['Menunggu TTD BAST', 'Selesai']))
+                                    <a href="{{ route('pengguna.mutasi.cetak', $item->id) }}" target="_blank" class="btn btn-sm btn-outline-danger shadow-sm mb-1">
+                                        <i class="fas fa-file-pdf mr-1"></i> Cetak Berita Acara
+                                    </a>
                                 @elseif($item->status == 'Ditolak Manager')
-                                    <small class="text-danger"><strong>Alasan:</strong> {{ $item->alasan_penolakan ?? 'Tidak ada catatan' }}</small>
+                                    <small class="text-danger d-block"><strong>Alasan:</strong> {{ $item->alasan_penolakan ?? 'Tidak ada catatan' }}</small>
                                 @else
-                                    <small class="text-muted"><i class="fas fa-calendar-alt mr-1"></i> {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y') }}</small>
+                                    <small class="text-muted d-block"><i class="fas fa-calendar-alt mr-1"></i> {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y') }}</small>
                                 @endif
                             </td>
                         </tr>

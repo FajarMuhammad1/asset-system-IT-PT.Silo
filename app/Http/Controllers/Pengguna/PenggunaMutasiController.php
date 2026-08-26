@@ -9,6 +9,8 @@ use App\Models\BarangMasuk;
 use App\Models\User;
 use App\Notifications\MutasiNotification;
 use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class PenggunaMutasiController extends Controller
 {
@@ -98,5 +100,50 @@ class PenggunaMutasiController extends Controller
 
         return redirect()->route('pengguna.mutasi.index')
             ->with('success', 'Pengajuan mutasi berhasil dikirim dan menunggu review Super Admin.');
+    }
+
+    /**
+     * Cetak Dokumen PDF Mutasi Aset untuk Pengguna
+     */
+    public function cetakPdf($id)
+    {
+        $user = Auth::user();
+        $mutasi = MutasiAsset::with([
+            'barangMasuk.masterBarang',
+            'userAsal',
+            'userTujuan',
+            'pemohon',
+            'approver',
+            'logSerahTerima.admin'
+        ])->where(function($query) use ($user) {
+            $query->where('pemohon_id', $user->id)
+                  ->orWhere('user_tujuan_id', $user->id)
+                  ->orWhere('user_asal_id', $user->id);
+        })->findOrFail($id);
+
+        $path = public_path('image/images.png'); 
+        $logoBase64 = null;
+        if (file_exists($path)) {
+            $type = pathinfo($path, PATHINFO_EXTENSION);
+            $dataImg = file_get_contents($path);
+            $logoBase64 = 'data:image/' . $type . ';base64,' . base64_encode($dataImg);
+        }
+
+        $kodeAsset = $mutasi->barangMasuk->kode_asset ?? ('MUTASI-' . $mutasi->id);
+        $cleanKode = preg_replace('/[^A-Za-z0-9_\-]/', '_', $kodeAsset);
+        $namaFile = 'Berita_Acara_Mutasi_' . $cleanKode . '_' . date('Ymd_His');
+
+        $data = [
+            'title'         => 'Berita Acara Mutasi Aset - ' . $kodeAsset,
+            'mutasi'        => $mutasi,
+            'logo'          => $logoBase64,
+            'tanggal_cetak' => Carbon::parse($mutasi->tanggal_mutasi ?? $mutasi->created_at)->translatedFormat('d F Y'),
+            'hari_ini'      => Carbon::now()->translatedFormat('d F Y')
+        ];
+
+        $pdf = Pdf::loadView('admin.mutasi.pdf_mutasi', $data);
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->stream($namaFile . '.pdf');
     }
 }

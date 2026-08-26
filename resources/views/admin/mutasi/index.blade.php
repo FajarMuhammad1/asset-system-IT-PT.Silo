@@ -376,6 +376,7 @@
                                     <th>Status Mutasi</th>
                                     <th>Tanggal</th>
                                     <th>BAST Status</th>
+                                    <th>Aksi Cetak</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -414,10 +415,15 @@
                                                 <span class="text-muted small">-</span>
                                             @endif
                                         </td>
+                                        <td>
+                                            <a href="{{ route('mutasi.cetak', $item->id) }}" target="_blank" class="btn btn-sm btn-outline-danger shadow-sm">
+                                                <i class="fas fa-file-pdf mr-1"></i> Cetak Berita Acara
+                                            </a>
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="text-center py-4 text-muted">Belum ada riwayat mutasi.</td>
+                                        <td colspan="9" class="text-center py-4 text-muted">Belum ada riwayat mutasi.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

@@ -150,6 +150,7 @@ Route::middleware(['checkLogin:SuperAdmin,Admin'])->group(function () {
     Route::get('/disposal/{id}/print', [DisposalController::class, 'print'])->name('disposal.print');
     
     Route::get('/mutasi', [MutasiController::class, 'index'])->name('mutasi.index');
+    Route::get('/mutasi/{id}/cetak-pdf', [MutasiController::class, 'cetakPdf'])->name('mutasi.cetak');
     Route::post('/mutasi/{id}/approve', [MutasiController::class, 'approveByManager'])->name('mutasi.approve');
     Route::post('/mutasi/{id}/reject', [MutasiController::class, 'rejectByManager'])->name('mutasi.reject');
     Route::post('/mutasi/{id}/process', [MutasiController::class, 'processByAdmin'])->name('mutasi.process');
@@ -269,6 +270,7 @@ Route::middleware(['checkLogin:Pengguna'])->prefix('Pengguna')->name('pengguna.'
         Route::get('/', [PenggunaMutasiController::class, 'index'])->name('index');
         Route::get('/create', [PenggunaMutasiController::class, 'create'])->name('create');
         Route::post('/store', [PenggunaMutasiController::class, 'store'])->name('store');
+        Route::get('/{id}/cetak-pdf', [PenggunaMutasiController::class, 'cetakPdf'])->name('cetak');
     });
 });
 

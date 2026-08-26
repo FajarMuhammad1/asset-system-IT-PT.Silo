@@ -70,8 +70,8 @@ class BarangMasukController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'surat_jalan_id'   => 'required|exists:surat_jalans,id_sj',
-            'master_barang_id' => 'required|exists:master_barangs,id',
+            'surat_jalan_id'   => 'required|exists:surat_jalan,id_sj',
+            'master_barang_id' => 'required|exists:master_barang,id',
             'tanggal_masuk'    => 'required|date',
             'keterangan'       => 'nullable|string',
             'serial_number'    => 'nullable|string|max:255',
@@ -174,11 +174,13 @@ class BarangMasukController extends Controller
         $barangMasuk = BarangMasuk::findOrFail($id);
         $daftarSuratJalan = SuratJalan::all();
         $daftarMasterBarang = MasterBarang::all();
+        $users = User::orderBy('nama', 'asc')->get();
 
         return view('admin.barangmasuk.edit', [
             'barangMasuk' => $barangMasuk,
             'daftarSuratJalan' => $daftarSuratJalan,
             'daftarMasterBarang' => $daftarMasterBarang,
+            'users' => $users,
             'title' => 'Edit Data Aset'
         ]);
     }
@@ -194,8 +196,8 @@ class BarangMasukController extends Controller
             'surat_jalan_id'   => 'required|exists:surat_jalan,id_sj',
             'master_barang_id' => 'required|exists:master_barang,id',
             'serial_number'    => 'nullable|string|max:255',
-            'status'           => 'required|in:Tersedia,Dipakai,Rusak,Perbaikan,Diarsipkan',
-            'lokasi_saat_ini'  => 'required|string|max:255',
+            'status'           => 'required|string|max:50',
+            'user_pemegang_id' => 'nullable|exists:users,id',
             'tanggal_masuk'    => 'required|date',
             'keterangan'       => 'nullable|string',
         ]);
@@ -206,7 +208,7 @@ class BarangMasukController extends Controller
                 'master_barang_id' => $request->master_barang_id,
                 'serial_number'    => $request->serial_number,
                 'status'           => $request->status,
-                'lokasi_saat_ini'  => $request->lokasi_saat_ini,
+                'user_pemegang_id' => $request->user_pemegang_id,
                 'tanggal_masuk'    => $request->tanggal_masuk,
                 'keterangan'       => $request->keterangan,
             ]);
